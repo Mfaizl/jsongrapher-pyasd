@@ -1,6 +1,5 @@
 import json
 
-
 class JSONGrapherRecord:
     """
     This class enables making JSONGrapher records. Each instance represents a structured JSON record for a graph.
@@ -36,13 +35,16 @@ class JSONGrapherRecord:
         self.comments = comments # Description and metadata for the record goes into the top level comments field.
         self.title = data_type  #The data_type is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. This ends up being the top level title field of the full JSONGrapher file.
         self.data = data_objects_list
-        self.layout = layout
+        if len(layout) > 0:
+            self.layout = layout
+        else:
+            self.layout = self.set_layout() #initialize layout if it is not populated yet.
         if len(graph_title) > 0:
             self.layout["title"] = graph_title
         if len(x_axis_label_including_units) > 0:
-            self.layout["title"] = graph_title
+            self.layout["xaxis"]["title"] = graph_title
         if len(y_axis_label_including_units) > 0:
-            self.layout["title"] = graph_title
+            self.layout["yaxis"]["title"] = graph_title
         # Populate attributes if an existing JSONGrapher record is provided.
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
@@ -131,19 +133,33 @@ class JSONGrapherRecord:
             "xaxis": {"title": x_axis_label_including_units, "comments": x_axis_comments},
             "yaxis": {"title": y_axis_label_including_units, "comments": y_axis_comments,}
         }
+        return self.layout
     
-    def to_json(self, filepath):
-        # filepath: Path to save the JSON file.
-        
-        record = {
+    def to_json(self, filename=""):
+        """
+        returns the json as a dictionary.
+        optionally writes the json to a file.
+        """
+        # filepath: Optional, filename with path to save the JSON file.       
+        record_json_dict = {
             "comments": self.comments,
             "title": self.title,
             "data": self.data,
             "layout": self.layout
-        }
-        with open(filepath, 'w') as f:
-            json.dump(record, f, indent=4)
+            }
+        if len(filename) > 0: #this means we will be writing to file.
+            # Check if the filename has an extension and append `.json` if not
+            if '.' not in filename:
+                filename += ".json"
+            #Write to file.
+            with open(filename, 'w') as f:
+                json.dump(record_json_dict, f, indent=4)
+        return record_json_dict
 
+#create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
+# intuitive to create class objects that way, this variable is actually just a reference 
+# so that we don't have to map the arguments.
+create_new_JSONGrapherRecord=JSONGrapherRecord
 
 # Example Usage
 if __name__ == "__main__":

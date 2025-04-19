@@ -209,7 +209,8 @@ class JSONGrapherRecord:
             self.record['layout']["yaxis"]["comments"] = y_axis_comments       
         return self.record['layout']
     
-    def to_json(self, filename=""):
+    #TODO: add record validation to this function.
+    def export_to_json_file(self, filename):
         """
         returns the json as a dictionary.
         optionally writes the json to a file.
@@ -512,5 +513,5 @@ if __name__ == "__main__":
         ],
     }
     record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=existing_JSONGrapher_record)
-    record.to_json("test.json")
+    record.export_to_json_file("test.json")
     print(record)

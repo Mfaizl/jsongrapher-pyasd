@@ -19,16 +19,29 @@ class JSONRecord:
         to_json: Saves the entire record (comments, title, data, layout) as a JSON file.
     """
     
-    def __init__(self):
-        self.comments = ""  # Description or metadata for the record as a whole.
-        self.title = ""  # Title of the graph or dataset.
-        self.data = []  # List to store all data series added to the record.
-        self.layout = {
-            "comments": "",  # Comments specific to the layout.
-            "title": "",  # Title of the graph.
-            "xaxis": {"comments": "", "title": ""},  # x-axis configuration.
-            "yaxis": {"comments": "", "title": ""}   # y-axis configuration.
-        }
+    def __init__(self, existing_JSONGrapher_record=None):
+        # If an existing JSONGrapher record is provided, populate the instance with its data.
+        if existing_JSONGrapher_record:
+            self.comments = existing_JSONGrapher_record.get("comments", "")
+            self.title = existing_JSONGrapher_record.get("title", "")
+            self.data = existing_JSONGrapher_record.get("data", [])
+            self.layout = existing_JSONGrapher_record.get("layout", {
+                "comments": "", 
+                "title": "", 
+                "xaxis": {"comments": "", "title": ""}, 
+                "yaxis": {"comments": "", "title": ""}
+            })
+        else:
+            # Default attributes for a new record.
+            self.comments = ""  # Description or metadata for the record as a whole.
+            self.title = ""  # Title of the graph or dataset.
+            self.data = []  # List to store all data series added to the record.
+            self.layout = {
+                "comments": "",  # Comments specific to the layout.
+                "title": "",  # Title of the graph.
+                "xaxis": {"comments": "", "title": ""},  # x-axis configuration.
+                "yaxis": {"comments": "", "title": ""}   # y-axis configuration.
+            }
     
     def add_data_series(self, comments, name, data_type, x, y, uid="", line="", extra_fields=None):
         # comments: Description of the data series.
@@ -54,6 +67,7 @@ class JSONRecord:
         if extra_fields:
             series.update(extra_fields)
 
+        # Finally, add to the class object.
         self.data.append(series)
 
     def set_layout(self, comments, title, xaxis_title, xaxis_comments, yaxis_title, yaxis_comments):
@@ -63,7 +77,6 @@ class JSONRecord:
         # xaxis_comments: Comments related to the x-axis.
         # yaxis_title: Title of the y-axis, including units.
         # yaxis_comments: Comments related to the y-axis.
-        
         self.layout = {
             "comments": comments,
             "title": title,
@@ -86,6 +99,7 @@ class JSONRecord:
 
 # Example Usage
 if __name__ == "__main__":
+    # Example of creating a record from scratch.
     record = JSONRecord()
     record.comments = "Here is a description."
     record.title = "ACS Division Records"
@@ -120,3 +134,20 @@ if __name__ == "__main__":
     )
     
     record.to_json("output.json")
+    
+    # Example of creating a record from an existing dictionary.
+    existing_JSONGrapher_record = {
+        "comments": "Existing record description.",
+        "title": "Existing Graph",
+        "data": [
+            {"comments": "Data series 1", "uid": "123", "line": {"shape": "solid"}, "name": "Series A", "type": "line", "x": [1, 2, 3], "y": [4, 5, 6]}
+        ],
+        "layout": {
+            "comments": "Layout comments",
+            "title": "Existing Layout Title",
+            "xaxis": {"comments": "Existing X-axis comments", "title": "Existing X-axis Title"},
+            "yaxis": {"comments": "Existing Y-axis comments", "title": "Existing Y-axis Title"}
+        }
+    }
+    record_from_existing = JSONRecord(existing_JSONGrapher_record)
+    print(record_from_existing.comments)  # Outputs: Existing record description

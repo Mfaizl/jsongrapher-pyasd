@@ -38,7 +38,7 @@ class JSONRecord:
         # data_type: Type of the data (e.g., scatter, line).
         # x: List of x-axis values.
         # y: List of y-axis values.
-        # extra_info: Additional information about the series.
+        # extra_fields: Dictionary containing additional fields to add to the series.
         
         series = {
             "comments": comments,
@@ -49,6 +49,11 @@ class JSONRecord:
             "x": x,
             "y": y,
         }
+        
+        # Add extra fields if provided
+        if extra_fields:
+            series.update(extra_fields)
+
         self.data.append(series)
 
     def set_layout(self, comments, title, xaxis_title, xaxis_comments, yaxis_title, yaxis_comments):
@@ -102,7 +107,7 @@ if __name__ == "__main__":
             24040.25748, 38925.42691, 62793.54327, 86187.40393,
             11462.58649, 51201.1442, 14270.19414, 55233.99833
         ],
-        extra_fields = {"extra_info":"This is just an example of how to add extra information for a series."}
+        extra_fields={"extra_info": "This is just an example of how to add extra information for a series."}
     )
 
     record.set_layout(

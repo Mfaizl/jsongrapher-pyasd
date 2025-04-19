@@ -48,7 +48,33 @@ class JSONGrapherRecord:
         # Populate attributes if an existing JSONGrapher record is provided.
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
-    
+
+    #this function enables printing the current record.
+    def __str__(self):
+        """
+        Returns a JSON-formatted string of the record with an indent of 4.
+        """
+        record_json_dict = {
+            "comments": self.comments,
+            "title": self.title,
+            "data": self.data,
+            "layout": self.layout
+        }
+        return json.dumps(record_json_dict, indent=4)
+
+    #this function returns the current record.
+    def get_record():
+        """
+        Returns a JSON-dict string of the record
+        """
+        record_json_dict = {
+            "comments": self.comments,
+            "title": self.title,
+            "data": self.data,
+            "layout": self.layout
+        }
+        return record_json_dict
+
     def populate_from_existing_record(self, existing_JSONGrapher_record):
         """
         Populates attributes from an existing JSONGrapher record.

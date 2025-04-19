@@ -7,7 +7,7 @@ class JSONGrapherRecord:
 
     Arguments & Attributes (all are optional):
         comments (str): General description or metadata related to the entire record. Can include citation links.
-        data_type: The data_type is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. This ends up being the top level title field of the full JSONGrapher file.
+        data_type: The data_type is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. This ends up being the top level title field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical data_types.
         graph_title: Title of the graph or the dataset being represented.
         data_objects_list (list): List of data series dictionaries to pre-populate the record. 
         x_data: Single series x data in a list or array-like structure. 
@@ -62,8 +62,49 @@ class JSONGrapherRecord:
         }
         return json.dumps(record_json_dict, indent=4)
 
+
+    def add_data_series(self, series_name, x=[], y=[], simulate=None, comments="", plotting_style="",  uid="", line="", extra_fields=None):
+        """
+        This is the normal way of adding an x,y data series.
+        """
+        # series_name: Name of the data series.
+        # x: List of x-axis values. Or similar structure.
+        # y: List of y-axis values. Or similar structure.
+        # simulate: This is an optional field which, if used, is a JSON object with entries for calling external simulation scripts.
+        # comments: Optional description of the data series.
+        # plotting_style: Type of the data (e.g., scatter, line).
+        # line: Dictionary describing line properties (e.g., shape, width).
+        # uid: Optional unique identifier for the series (e.g., a DOI).
+        # extra_fields: Dictionary containing additional fields to add to the series.
+        x = list(x)
+        y = list(y)
+
+        series = {
+            "name": series_name,
+            "x": x, 
+            "y": y,
+        }
+
+        #Add optional inputs.
+        if len(plotting_style) > 0:
+            series["type"] = plotting_style
+        if len(comments) > 0:
+            series["comments"]: comments
+        if len(uid) > 0:
+            series["uid"]: uid
+        if len(line) > 0:
+            series["line"]: line
+        #add simulate field if included.
+        if simulate != None:
+            series["simulate"] = simulate
+        # Add extra fields if provided, they will be added.
+        if extra_fields:
+            series.update(extra_fields)
+        # Finally, add to the class object's data list.
+        self.data.append(series)
+
     #this function returns the current record.
-    def get_record():
+    def get_record(self):
         """
         Returns a JSON-dict string of the record
         """
@@ -85,13 +126,27 @@ class JSONGrapherRecord:
         if "data" in existing_JSONGrapher_record: self.data = existing_JSONGrapher_record["data"]
         if "layout" in existing_JSONGrapher_record: self.layout = existing_JSONGrapher_record["layout"]
 
+    def set_data_type(self, data_type):
+        """
+        Sets the top-level title field used as the experiment type or schema identifier.
+            data_type (str): The new data type to set.
+        """
+        self.title = data_type
+
+    def set_comments(self, comments):
+        """
+        Updates the comments field for the record.
+            str: The updated comments value.
+        """
+        self.comments = comments
+        return self.comments
+
     def set_graph_title(self, graph_title):
         """
         Updates the title of the graph in the layout dictionary.
         graph_title (str): The new title to set for the graph.
         """
         self.layout["title"] = graph_title
-
 
     def set_x_axis_label(self, x_axis_label_including_units):
         """
@@ -102,7 +157,6 @@ class JSONGrapherRecord:
             self.layout["xaxis"] = {}  # Initialize x-axis as a dictionary if it doesn't exist.
         
         self.layout["xaxis"]["title"] = x_axis_label_including_units
-
 
     def set_y_axis_label(self, y_axis_label_including_units):
         """
@@ -115,36 +169,6 @@ class JSONGrapherRecord:
         self.layout["yaxis"]["title"] = y_axis_label_including_units
 
 
-    def add_data_series(self, series_name, x=[], y=[], simulate=None, comments="", plotting_style="",  uid="", line="", extra_fields=None):
-        """
-        This is the normal way of adding an x,y data series.
-        """
-        # series_name: Name of the data series.
-        # x: List of x-axis values.
-        # y: List of y-axis values.
-        # simulate: This is an optional field which, if used, is a JSON object with entries for calling external simulation scripts.
-        # comments: Optional description of the data series.
-        # plotting_style: Type of the data (e.g., scatter, line).
-        # line: Dictionary describing line properties (e.g., shape, width).
-        # uid: Optional unique identifier for the series (e.g., a DOI).
-        # extra_fields: Dictionary containing additional fields to add to the series.
-        series = {
-            "name": series_name,
-            "type": plotting_style,
-            "x": x,
-            "y": y,
-            "comments": comments,
-            "uid": uid,
-            "line": line,
-        }
-        #add simulate field if included.
-        if simulate != None:
-            series["simulate"] = simulate
-        # Add extra fields if provided, they will be added.
-        if extra_fields:
-            series.update(extra_fields)
-        # Finally, add to the class object's data list.
-        self.data.append(series)
 
     def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments=""):
         # comments: General comments about the layout.
@@ -154,11 +178,18 @@ class JSONGrapherRecord:
         # yaxis_title: Title of the y-axis, including units.
         # yaxis_comments: Comments related to the y-axis.
         self.layout = {
-            "comments": comments,
             "title": graph_title,
-            "xaxis": {"title": x_axis_label_including_units, "comments": x_axis_comments},
-            "yaxis": {"title": y_axis_label_including_units, "comments": y_axis_comments,}
+            "xaxis": {"title": x_axis_label_including_units},
+            "yaxis": {"title": y_axis_label_including_units}
         }
+
+        #populate any optional fields, if provided:
+        if len(comments) > 0:
+            self.layout["comments"] = comments
+        if len(x_axis_comments) > 0:
+            self.layout["xaxis"]["comments"] = x_axis_comments
+        if len(y_axis_comments) > 0:
+            self.layout["yaxis"]["comments"] = y_axis_comments       
         return self.layout
     
     def to_json(self, filename=""):
@@ -185,7 +216,16 @@ class JSONGrapherRecord:
 #create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
 # intuitive to create class objects that way, this variable is actually just a reference 
 # so that we don't have to map the arguments.
-create_new_JSONGrapherRecord=JSONGrapherRecord
+def create_new_JSONGrapherRecord(hints=False):
+    #we will create a new record. While we could populate it with the init,
+    #we will use the functions since it makes thsi function a bit easier to follow.
+    new_record = JSONGrapherRecord()
+    if hints == True:
+        new_record.set_data_type("Use RecordObjectName.set_data_type() to populate this field. This is the data_type, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical data_types.")
+        new_record.set_graph_title("Use RecordObjectName.set_graph_title() to populate this field. This is the tile for the graph.")
+        new_record.set_x_axis_label("Use RecordObjectName.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'.")
+        new_record.set_y_axis_label("Use RecordObjectName.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'.")
+    return new_record
 
 # Example Usage
 if __name__ == "__main__":

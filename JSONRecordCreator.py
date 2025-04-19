@@ -49,6 +49,15 @@ class JSONGrapherRecord:
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
 
+        # Initialize the hints dictionary, for use later, since the actual locations in the JSONRecord can be non-intuitive.
+        self.hints_dictionary = {}
+        # Adding hints, key matches the actual field location
+        self.hints_dictionary["title"] = "Use RecordObjectName.set_data_type() to populate this field. This is the data_type, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical data_types."
+        self.hints_dictionary["layout['title']"] = "Use RecordObjectName.set_graph_title() to populate this field. This is the title for the graph."
+        self.hints_dictionary["layout['xaxis']['title']"] = "Use RecordObjectName.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."  # x-axis label
+        self.hints_dictionary["layout['yaxis']['title']"] = "Use RecordObjectName.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."
+
+
     #this function enables printing the current record.
     def __str__(self):
         """
@@ -221,11 +230,40 @@ def create_new_JSONGrapherRecord(hints=False):
     #we will use the functions since it makes thsi function a bit easier to follow.
     new_record = JSONGrapherRecord()
     if hints == True:
-        new_record.set_data_type("Use RecordObjectName.set_data_type() to populate this field. This is the data_type, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical data_types.")
-        new_record.set_graph_title("Use RecordObjectName.set_graph_title() to populate this field. This is the tile for the graph.")
-        new_record.set_x_axis_label("Use RecordObjectName.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'.")
-        new_record.set_y_axis_label("Use RecordObjectName.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'.")
+        self.add_hints()
     return new_record
+
+def add_hints(self):
+    """
+    Adds hints to fields that are currently empty strings using self.hints_dictionary.
+    The keys in the dictionary represent the actual field locations.
+    """
+    # Adding hints if fields are empty
+    if self.title == "":
+        self.set_data_type(self.hints_dictionary["title"])
+    if self.layout.get("title", "") == "":
+        self.set_graph_title(self.hints_dictionary["layout['title']"])
+    if self.layout.get("xaxis", {}).get("title", "") == "":
+        self.set_x_axis_label(self.hints_dictionary["layout['xaxis']['title']"])
+    if self.layout.get("yaxis", {}).get("title", "") == "":
+        self.set_y_axis_label(self.hints_dictionary["layout['yaxis']['title']"])
+
+
+def remove_hints(self):
+    """
+    Removes hints by converting fields back to empty strings if their value matches the hints in self.hints_dictionary.
+    """
+    # Removing hints if fields match hint values
+    if self.title == self.hints_dictionary["title"]:
+        self.title = ""
+    if self.layout.get("title", "") == self.hints_dictionary["layout['title']"]:
+        self.layout["title"] = ""
+    if self.layout.get("xaxis", {}).get("title", "") == self.hints_dictionary["layout['xaxis']['title']"]:
+        self.layout["xaxis"]["title"] = ""
+    if self.layout.get("yaxis", {}).get("title", "") == self.hints_dictionary["layout['yaxis']['title']"]:
+        self.layout["yaxis"]["title"] = ""
+
+
 
 # Example Usage
 if __name__ == "__main__":

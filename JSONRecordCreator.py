@@ -19,7 +19,7 @@ class JSONGrapherRecord:
 
     Arguments & Attributes (all are optional):
         comments (str): General description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
-        data_type: The data_type is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. This ends up being the top level title field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical data_types.
+        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes.
         graph_title: Title of the graph or the dataset being represented.
         data_objects_list (list): List of data series dictionaries to pre-populate the record. 
         x_data: Single series x data in a list or array-like structure. 
@@ -32,11 +32,11 @@ class JSONGrapherRecord:
     Methods:
         add_data_series: Adds a new data series to the record.
         set_layout: Updates the layout configuration for the graph.
-        to_json: Saves the entire record (comments, title, data, layout) as a JSON file.
+        to_json: Saves the entire record (comments, datatype, data, layout) as a JSON file.
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
     
-    def __init__(self, comments="", graph_title="", data_type="", data_objects_list = None, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="",  layout={}, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="",  layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
@@ -58,7 +58,7 @@ class JSONGrapherRecord:
 
         self.record = {
             "comments": comments,  # Top-level comments
-            "title": data_type,  # Top-level title (data_type)
+            "datatype": datatype,  # Top-level datatype (datatype)
             "data": data_objects_list if data_objects_list else [],  # Data series list
             "layout": layout if layout else {
                 "title": graph_title,
@@ -74,7 +74,7 @@ class JSONGrapherRecord:
         # Initialize the hints dictionary, for use later, since the actual locations in the JSONRecord can be non-intuitive.
         self.hints_dictionary = {}
         # Adding hints. Here, the keys are the full field locations within the record.
-        self.hints_dictionary["['title']"] = "Use RecordObjectName.set_data_type() to populate this field. This is the data_type, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical data_types."
+        self.hints_dictionary["['datatype']"] = "Use RecordObjectName.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes."
         self.hints_dictionary["['layout']['title']"] = "Use RecordObjectName.set_graph_title() to populate this field. This is the title for the graph."
         self.hints_dictionary["['layout']['xaxis']['title']"] = "Use RecordObjectName.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."  # x-axis label
         self.hints_dictionary["['layout']['yaxis']['title']"] = "Use RecordObjectName.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."
@@ -141,17 +141,17 @@ class JSONGrapherRecord:
         existing_JSONGrapher_record: A dictionary representing an existing JSONGrapher record.
         """
         if "comments" in existing_JSONGrapher_record:   self.record["comments"] = existing_JSONGrapher_record["comments"]
-        if "title" in existing_JSONGrapher_record:      self.record["title"] = existing_JSONGrapher_record["title"]
+        if "datatype" in existing_JSONGrapher_record:      self.record["datatype"] = existing_JSONGrapher_record["datatype"]
         if "data" in existing_JSONGrapher_record:       self.record["data"] = existing_JSONGrapher_record["data"]
         if "layout" in existing_JSONGrapher_record:     self.record["layout"] = existing_JSONGrapher_record["layout"]
 
 
-    def set_data_type(self, data_type):
+    def set_datatype(self, datatype):
         """
-        Sets the top-level title field used as the experiment type or schema identifier.
-            data_type (str): The new data type to set.
+        Sets the datatype field used as the experiment type or schema identifier.
+            datatype (str): The new data type to set.
         """
-        self.record['title'] = data_type
+        self.record['datatype'] = datatype
 
     def set_comments(self, comments):
         """
@@ -435,11 +435,11 @@ def validate_JSONGrapher_record(record):
     elif not isinstance(record["comments"], str):
         errors_list.append("'comments' should be a string.")
     
-    # Validate "title"
-    if "title" not in record:
-        errors_list.append("Missing top-level 'title' field.")
-    elif not isinstance(record["title"], str):
-        errors_list.append("'title' should be a string.")
+    # Validate "datatype"
+    if "datatype" not in record:
+        errors_list.append("Missing 'datatype' field.")
+    elif not isinstance(record["datatype"], str):
+        errors_list.append("'datatype' should be a string.")
     
     # Validate "data"
     if "data" not in record:

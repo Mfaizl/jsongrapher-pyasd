@@ -1,0 +1,32 @@
+{
+    "comments": "Tree Growth Data collected from ... ... ",
+    "datatype": "Tree_Growth_Curve",
+    "data": [
+        {
+            "name": "pear tree growth",
+            "x": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "y": [
+                0,
+                0.42,
+                0.86,
+                1.19,
+                1.45
+            ]
+        }
+    ],
+    "layout": {
+        "title": "Pear Tree Growth Versus Time",
+        "xaxis": {
+            "title": "Time(year)"
+        },
+        "yaxis": {
+            "title": "Height (m)"
+        }
+    }
+}

@@ -1,5 +1,4 @@
 import json
-
 #create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
 # intuitive to create class objects that way, this variable is actually just a reference 
 # so that we don't have to map the arguments.
@@ -19,7 +18,7 @@ class JSONGrapherRecord:
 
     Arguments & Attributes (all are optional):
         comments (str): General description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
-        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes.
+        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes.
         graph_title: Title of the graph or the dataset being represented.
         data_objects_list (list): List of data series dictionaries to pre-populate the record. 
         x_data: Single series x data in a list or array-like structure. 
@@ -32,11 +31,11 @@ class JSONGrapherRecord:
     Methods:
         add_data_series: Adds a new data series to the record.
         set_layout: Updates the layout configuration for the graph.
-        to_json: Saves the entire record (comments, datatype, data, layout) as a JSON file.
+        export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
     
-    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="",  layout={}, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
@@ -52,9 +51,9 @@ class JSONGrapherRecord:
             validate_plotly_data_list(data_objects_list) #call a function from outside the class.
         #if receiving axis labels, validate them.
         if x_axis_label_including_units:
-            validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x")
+            validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=False)
         if y_axis_label_including_units:
-            validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y")
+            validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=False)
 
         self.record = {
             "comments": comments,  # Top-level comments
@@ -67,6 +66,10 @@ class JSONGrapherRecord:
             }
         }
 
+        self.plot_type = plot_type #the plot_type is actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
+        if plot_type != "":
+            self.record["plot_type"] = plot_type
+
         # Populate attributes if an existing JSONGrapher record is provided.
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
@@ -74,10 +77,11 @@ class JSONGrapherRecord:
         # Initialize the hints dictionary, for use later, since the actual locations in the JSONRecord can be non-intuitive.
         self.hints_dictionary = {}
         # Adding hints. Here, the keys are the full field locations within the record.
-        self.hints_dictionary["['datatype']"] = "Use RecordObjectName.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes."
-        self.hints_dictionary["['layout']['title']"] = "Use RecordObjectName.set_graph_title() to populate this field. This is the title for the graph."
-        self.hints_dictionary["['layout']['xaxis']['title']"] = "Use RecordObjectName.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."  # x-axis label
-        self.hints_dictionary["['layout']['yaxis']['title']"] = "Use RecordObjectName.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."
+        self.hints_dictionary["['comments']"] = "Use Record.set_comments() to populate this field. Put in a general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field."
+        self.hints_dictionary["['datatype']"] = "Use Record.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes."
+        self.hints_dictionary["['layout']['title']"] = "Use Record.set_graph_title() to populate this field. This is the title for the graph."
+        self.hints_dictionary["['layout']['xaxis']['title']"] = "Use Record.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."  # x-axis label
+        self.hints_dictionary["['layout']['yaxis']['title']"] = "Use Record.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."
 
 
     #this function enables printing the current record.
@@ -85,10 +89,11 @@ class JSONGrapherRecord:
         """
         Returns a JSON-formatted string of the record with an indent of 4.
         """
+        print("Warning: Printing directly will return the raw record without some automatic updates. Please use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
         return json.dumps(self.record, indent=4)
 
 
-    def add_data_series(self, series_name, x=[], y=[], simulate=None, comments="", plotting_style="",  uid="", line="", extra_fields=None):
+    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, comments="", plot_type="",  uid="", line="", extra_fields=None):
         """
         This is the normal way of adding an x,y data series.
         """
@@ -97,36 +102,36 @@ class JSONGrapherRecord:
         # y: List of y-axis values. Or similar structure.
         # simulate: This is an optional field which, if used, is a JSON object with entries for calling external simulation scripts.
         # comments: Optional description of the data series.
-        # plotting_style: Type of the data (e.g., scatter, line).
+        # plot_type: Type of the data (e.g., scatter, line).
         # line: Dictionary describing line properties (e.g., shape, width).
         # uid: Optional unique identifier for the series (e.g., a DOI).
         # extra_fields: Dictionary containing additional fields to add to the series.
-        x = list(x)
-        y = list(y)
+        x_values = list(x_values)
+        y_values = list(y_values)
 
-        series = {
+        data_series_dict = {
             "name": series_name,
-            "x": x, 
-            "y": y,
+            "x": x_values, 
+            "y": y_values,
         }
 
         #Add optional inputs.
-        if len(plotting_style) > 0:
-            series["type"] = plotting_style
+        if len(plot_type) > 0:
+            data_series_dict["type"] = plot_type
         if len(comments) > 0:
-            series["comments"]: comments
+            data_series_dict["comments"]: comments
         if len(uid) > 0:
-            series["uid"]: uid
+            data_series_dict["uid"]: uid
         if len(line) > 0:
-            series["line"]: line
+            data_series_dict["line"]: line
         #add simulate field if included.
-        if simulate != None:
-            series["simulate"] = simulate
+        if simulate:
+            data_series_dict["simulate"] = simulate
         # Add extra fields if provided, they will be added.
         if extra_fields:
-            series.update(extra_fields)
+            data_series_dict.update(extra_fields)
         # Finally, add to the class object's data list.
-        self.record["data"].append(series)
+        self.record["data"].append(data_series_dict)
 
     #this function returns the current record.
     def get_record(self):
@@ -134,6 +139,15 @@ class JSONGrapherRecord:
         Returns a JSON-dict string of the record
         """
         return self.record
+
+    def print_to_inspect(self, update_and_validate=True, validate=True, remove_remaining_hints=False):
+        if remove_remaining_hints == True:
+            self.remove_hints()
+        if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
+            self.update_and_validate_JSONGrapher_record()
+        elif validate: #this will validate without doing automatic updates.
+            self.validate_JSONGrapher_record()
+        print(json.dumps(self.record, indent=4))
 
     def populate_from_existing_record(self, existing_JSONGrapher_record):
         """
@@ -145,6 +159,20 @@ class JSONGrapherRecord:
         if "data" in existing_JSONGrapher_record:       self.record["data"] = existing_JSONGrapher_record["data"]
         if "layout" in existing_JSONGrapher_record:     self.record["layout"] = existing_JSONGrapher_record["layout"]
 
+
+    def set_plot_type(self, plot_type):
+        """
+        Sets the plot_type field for the record and also any existing data series.
+        """
+        self.record["plot_type"] = plot_type
+
+    def update_plot_types(self):
+        """
+        updates the plot types for any existing data series.
+        """        
+        if self.plot_type:
+            for data_series_dict in self.record['data']:
+                data_series_dict["type"] = plot_type
 
     def set_datatype(self, datatype):
         """
@@ -167,17 +195,17 @@ class JSONGrapherRecord:
         """
         self.record['layout']['title'] = graph_title
 
-    def set_x_axis_label(self, x_axis_label_including_units):
+    def set_x_axis_label_including_units(self, x_axis_label_including_units, remove_plural_units=True):
         """
         Updates the title of the x-axis in the layout dictionary.
         xaxis_title (str): The new title to set for the x-axis.
         """
         if "xaxis" not in self.record['layout'] or not isinstance(self.record['layout'].get("xaxis"), dict):
             self.record['layout']["xaxis"] = {}  # Initialize x-axis as a dictionary if it doesn't exist.
-        
+        validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)
         self.record['layout']["xaxis"]["title"] = x_axis_label_including_units
 
-    def set_y_axis_label(self, y_axis_label_including_units):
+    def set_y_axis_label_including_units(self, y_axis_label_including_units, remove_plural_units=True):
         """
         Updates the title of the y-axis in the layout dictionary.
         yaxis_title (str): The new title to set for the y-axis.
@@ -185,15 +213,19 @@ class JSONGrapherRecord:
         if "yaxis" not in self.record['layout'] or not isinstance(self.record['layout'].get("yaxis"), dict):
             self.record['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
         
+        validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
         self.record['layout']["yaxis"]["title"] = y_axis_label_including_units
 
-    def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments=""):
+    def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
         # comments: General comments about the layout.
         # graph_title: Title of the graph.
         # xaxis_title: Title of the x-axis, including units.
         # xaxis_comments: Comments related to the x-axis.
         # yaxis_title: Title of the y-axis, including units.
         # yaxis_comments: Comments related to the y-axis.
+        
+        validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)              
+        validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
         self.record['layout'] = {
             "title": graph_title,
             "xaxis": {"title": x_axis_label_including_units},
@@ -206,15 +238,25 @@ class JSONGrapherRecord:
         if len(x_axis_comments) > 0:
             self.record['layout']["xaxis"]["comments"] = x_axis_comments
         if len(y_axis_comments) > 0:
-            self.record['layout']["yaxis"]["comments"] = y_axis_comments       
+            self.record['layout']["yaxis"]["comments"] = y_axis_comments     
+
+
         return self.record['layout']
     
     #TODO: add record validation to this function.
-    def export_to_json_file(self, filename):
+    def export_to_json_file(self, filename, update_and_validate=True, validate=True, remove_remaining_hints=False):
         """
+        writes the json to a file
         returns the json as a dictionary.
-        optionally writes the json to a file.
+        optionally removes hints before export and return.
         """
+        if remove_remaining_hints == True:
+            self.remove_hints()
+        if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
+            self.update_and_validate_JSONGrapher_record()
+        elif validate: #this will validate without doing automatic updates.
+            self.validate_JSONGrapher_record()
+
         # filepath: Optional, filename with path to save the JSON file.       
         if len(filename) > 0: #this means we will be writing to file.
             # Check if the filename has an extension and append `.json` if not
@@ -285,34 +327,126 @@ class JSONGrapherRecord:
                     if current_field.get(current_path_key, "") == hint_text:
                         current_field[current_path_key] = ""
 
+    #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
+    def validate_JSONGrapher_record(self):
+        validate_JSONGrapher_record(self)
+    def update_and_validate_JSONGrapher_record(self):
+        update_and_validate_JSONGrapher_record(self)
 
-# Small helper function to validate x axis and y axis labels.
+# helper function to validate x axis and y axis labels.
 # label string will be the full label including units. Axis_name is typically "x" or "y"
-def validate_JSONGrapher_axis_label(label_string, axis_name=""):
+def validate_JSONGrapher_axis_label(label_string, axis_name="", remove_plural_units=True):
     """
     Validates the axis label provided to JSONGrapher.
 
     Args:
         label_string (str): The axis label containing a numeric value and units.
         axis_name (str): The name of the axis being validated (e.g., 'x' or 'y').
+        remove_plural_units (boolean) : Instructions wil to remove plural units or not. Will remove them in the returned stringif set to True, or will simply provide a warning if set to False.
 
     Returns:
         None: Prints warnings if any validation issues are found.
     """
+    warnings_list = []
+    
     #First check if the label is empty.
     if label_string == '':
-        print(f"Warning: Your {axis_name} axis label is an empty string. JSONGrapher records should not have empty strings for axis labels.")
+        warnings_list.append(f"Your {axis_name} axis label is an empty string. JSONGrapher records should not have empty strings for axis labels.")
     else:    
-        parsing_result = parse_units(label_string)  # Parse the numeric value and units from the label string
+        parsing_result = separate_label_text_from_units(label_string)  # Parse the numeric value and units from the label string
         # Check if units are missing
         if parsing_result["units"] == "":
-            print(f"Warning: Your {axis_name} axis label is missing units. JSONGrapher is expected to handle axis labels with units.")    
+            warnings_list.append(f"Your {axis_name} axis label is missing units. JSONGrapher is expected to handle axis labels with units, with the units between parentheses '( )'.")    
         # Check if the units string has balanced parentheses
         open_parens = parsing_result["units"].count("(")
         close_parens = parsing_result["units"].count(")")
         if open_parens != close_parens:
-            print(f"Warning: Your {axis_name} axis label has unbalanced parentheses in the units. The number of opening parentheses '(' must equal the number of closing parentheses ')'.")
+            warnings_list.append(f"Your {axis_name} axis label has unbalanced parentheses in the units. The number of opening parentheses '(' must equal the number of closing parentheses ')'.")
+    
+    #now do the plural units check.
+    units_changed_flag, units_singularized = units_plural_removal(parsing_result["units"])
+    if units_changed_flag == True:
+        warnings_list.append("The units of " + parsing_result["units"] + " appear to be plural. Units should be entered as singular, such as 'year' rather than 'years'.")
+        if remove_plural_units==True:
+            label_string = parsing_result["text"] + "(" + units_singularized + ")"
+            warnings_list.append("Now removing the 's' to change the units into singular '" + units_singularized + "'.  To avoid this change, use the function you've called with the optional argument of remove_plural_units set to False.")
+    else:
+        pass
 
+    # Return validation result
+    if warnings_list:
+        print(f"Warning: Your  {axis_name} axis label did not pass expected vaidation checks. You may use Record.set_x_axis_label() or Record.set_y_axis_label() to change the labels. The validity check fail messages are as follows: \n", warnings_list)
+        return False, warnings_list, label_string
+    else:
+        return True, [], label_string    
+    
+def units_plural_removal(units_to_check):
+    """
+    Parses a units string to remove "s" if the string is found as an exact match without an s in the units lists.
+    Args:
+        units_to_check (str): A string containing units to check.
+
+    Returns:
+        tuple: A tuple of two values
+              - "changed" (Boolean): True, or False, where True means the string was changed to remove an "s" at the end.
+              - "singularized" (string): The units parsed to be singular, if needed.
+    """
+    #first check if we have the module we need. If not, return with no change.
+    import units_list
+    try:
+        import units_list
+    except:
+        units_changed_flag = False
+        return units_changed_flag, units_to_check #return None if there was no test.
+    #First try to check if units are blank or ends with "s" is in the units list. 
+
+    if (units_to_check == "") or (units_to_check[-1] != "s"):
+        units_changed_flag = False
+        units_singularized = units_to_check #return if string is blank or does not end with s.
+    elif (units_to_check != "") and (units_to_check[-1] == "s"): #continue if not blank and ends with s. 
+        if (units_to_check in units_list.expanded_ids_set) or (units_to_check in units_list.expanded_names_set):#return unchanged if unit is recognized.
+            units_changed_flag = False
+            units_singularized = units_to_check #No change if was found.
+        else:
+            truncated_string = units_to_check[0:-1] #remove last letter.
+            if (truncated_string in units_list.expanded_ids_set) or (truncated_string in units_list.expanded_names_set):
+                units_changed_flag = True
+                units_singularized = truncated_string #return without the s.   
+            else: #No change if the truncated string isn't found.
+                units_changed_flag = False
+                units_singularized = units_to_check
+    return units_changed_flag, units_singularized
+
+
+def separate_label_text_from_units(label_with_units):
+    """
+    Parses a label with text string and units in parentheses after that to return the two parts.
+
+    Args:
+        value (str): A string containing a label and optional units enclosed in parentheses.
+                     Example: "Time (Years)" or "Speed (km/s)
+
+    Returns:
+        dict: A dictionary with two keys:
+              - "text" (str): The label text parsed from the input string.
+              - "units" (str): The units parsed from the input string, or an empty string if no units are present.
+    """
+    # Find the position of the first '(' and the last ')'
+    start = label_with_units.find('(')
+    end = label_with_units.rfind(')')
+    
+    # Ensure both are found and properly ordered
+    if start != -1 and end != -1 and end > start:
+        text_part = label_with_units[:start].strip()  # Everything before '('
+        units_part = label_with_units[start + 1:end].strip()  # Everything inside '()'
+    else:
+        text_part = label_with_units
+        units_part = ""
+    parsed_output = {
+                "text":text_part,
+                "units":units_part
+            }
+    return parsed_output
 
 
 def validate_plotly_data_list(data):
@@ -340,11 +474,11 @@ def validate_plotly_data_list(data):
         "heatmap": ["z"],
     }
     
-    errors_list = []
+    warnings_list = []
 
     for i, trace in enumerate(data):
         if not isinstance(trace, dict):
-            errors_list.append(f"Trace {i} is not a dictionary.")
+            warnings_list.append(f"Trace {i} is not a dictionary.")
             continue
         
         # Determine the type based on the fields provided
@@ -363,23 +497,25 @@ def validate_plotly_data_list(data):
             elif "z" in trace:
                 trace_type = "heatmap"
             else:
-                errors_list.append(f"Trace {i} cannot be inferred as a valid type.")
+                warnings_list.append(f"Trace {i} cannot be inferred as a valid type.")
                 continue
         
         # Check for required fields
         required_fields = required_fields_by_type.get(trace_type, [])
         for field in required_fields:
             if field not in trace:
-                errors_list.append(f"Trace {i} (type inferred as {trace_type}) is missing required field: {field}.")
+                warnings_list.append(f"Trace {i} (type inferred as {trace_type}) is missing required field: {field}.")
 
-    if errors_list:
-        print("Warning. There are errors in your data list: \n", errors_list)
-        return False, errors_list
-    return True, []
+    if warnings_list:
+        print("Warning: There are some entries in your data list that did not pass validation checks: \n", warnings_list)
+        return False, warnings_list
+    else:
+        return True, []
 
 def parse_units(value):
     """
-    Parses a numerical value and its associated units from a string.
+    Parses a numerical value and its associated units from a string. This meant for scientific constants and parameters
+    Such as rate constants, gravitational constant, or simiilar.
 
     Args:
         value (str): A string containing a numeric value and optional units enclosed in parentheses.
@@ -411,6 +547,14 @@ def parse_units(value):
     return parsed_output
 
 
+
+
+#This function does updating of internal things before validating
+#This is used before printing and returning the JSON record.
+def update_and_validate_JSONGrapher_record(record):
+    record.update_plot_types()
+    record.validate_JSONGrapher_record()
+
 #TODO: add the ability for this function to check against the schema.
 def validate_JSONGrapher_record(record):
     """
@@ -423,7 +567,7 @@ def validate_JSONGrapher_record(record):
         bool: True if the record is valid, False otherwise.
         list: A list of errors describing any validation issues.
     """
-    errors_list = []
+    warnings_list = []
 
     # Check top-level fields
     if not isinstance(record, dict):
@@ -431,66 +575,68 @@ def validate_JSONGrapher_record(record):
     
     # Validate "comments"
     if "comments" not in record:
-        errors_list.append("Missing top-level 'comments' field.")
+        warnings_list.append("Missing top-level 'comments' field.")
     elif not isinstance(record["comments"], str):
-        errors_list.append("'comments' should be a string.")
+        warnings_list.append("'comments' is a recommended field and should be a string with a description and/or metadata of the record, and citation references may also be included.")
     
     # Validate "datatype"
     if "datatype" not in record:
-        errors_list.append("Missing 'datatype' field.")
+        warnings_list.append("Missing 'datatype' field.")
     elif not isinstance(record["datatype"], str):
-        errors_list.append("'datatype' should be a string.")
+        warnings_list.append("'datatype' should be a string.")
     
     # Validate "data"
     if "data" not in record:
-        errors_list.append("Missing top-level 'data' field.")
+        warnings_list.append("Missing top-level 'data' field.")
     elif not isinstance(record["data"], list):
-        errors_list.append("'data' should be a list.")
+        warnings_list.append("'data' should be a list.")
+        validate_plotly_data_list(record["data"]) #No need to append warnings, they will print within that function.
     
     # Validate "layout"
     if "layout" not in record:
-        errors_list.append("Missing top-level 'layout' field.")
+        warnings_list.append("Missing top-level 'layout' field.")
     elif not isinstance(record["layout"], dict):
-        errors_list.append("'layout' should be a dictionary.")
+        warnings_list.append("'layout' should be a dictionary.")
     else:
         # Validate "layout" subfields
         layout = record["layout"]
         
         # Validate "title"
         if "title" not in layout:
-            errors_list.append("Missing 'layout.title' field.")
+            warnings_list.append("Missing 'layout.title' field.")
         elif not isinstance(layout["title"], str):
-            errors_list.append("'layout.title' should be a string.")
+            warnings_list.append("'layout.title' should be a string.")
         
         # Validate "xaxis"
         if "xaxis" not in layout:
-            errors_list.append("Missing 'layout.xaxis' field.")
+            warnings_list.append("Missing 'layout.xaxis' field.")
         elif not isinstance(layout["xaxis"], dict):
-            errors_list.append("'layout.xaxis' should be a dictionary.")
+            warnings_list.append("'layout.xaxis' should be a dictionary.")
         else:
             # Validate "xaxis.title"
             if "title" not in layout["xaxis"]:
-                errors_list.append("Missing 'layout.xaxis.title' field.")
+                warnings_list.append("Missing 'layout.xaxis.title' field.")
             elif not isinstance(layout["xaxis"]["title"], str):
-                errors_list.append("'layout.xaxis.title' should be a string.")
+                warnings_list.append("'layout.xaxis.title' should be a string.")
         
         # Validate "yaxis"
         if "yaxis" not in layout:
-            errors_list.append("Missing 'layout.yaxis' field.")
+            warnings_list.append("Missing 'layout.yaxis' field.")
         elif not isinstance(layout["yaxis"], dict):
-            errors_list.append("'layout.yaxis' should be a dictionary.")
+            warnings_list.append("'layout.yaxis' should be a dictionary.")
         else:
             # Validate "yaxis.title"
             if "title" not in layout["yaxis"]:
-                errors_list.append("Missing 'layout.yaxis.title' field.")
+                warnings_list.append("Missing 'layout.yaxis.title' field.")
             elif not isinstance(layout["yaxis"]["title"], str):
-                errors_list.append("'layout.yaxis.title' should be a string.")
+                warnings_list.append("'layout.yaxis.title' should be a string.")
     
     # Return validation result
-    if errors_list:
-        print("Warning. There are errors in your JSONGrapher record: \n", errors_list)
-        return False, errors_list
-    return True, []
+    if warnings_list:
+        print("Warning: There are missing fields in your JSONGrapher record: \n", warnings_list)
+        return False, warnings_list
+    else:
+        return True, []
 
 
 # Example Usage

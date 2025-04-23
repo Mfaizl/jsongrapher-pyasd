@@ -73,3 +73,5 @@ We can also plot the data using Matplotlib and export the plot as a PNG file.
 Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("ExampleFromTutorial")
 </pre>
+
+[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/ExampleFromTutorial.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/ExampleFromTutorial.png)

@@ -3,7 +3,7 @@ A python package for creating JSONGrapher Records
 
 To use JSONGrapherRC, first install it using pip:
 <pre>
-pip install JSONGrapherRC
+pip install JSONGrapherRC[COMPLETE]
 </pre>
 
 Alternatively, you can download the directory directly.<br> 

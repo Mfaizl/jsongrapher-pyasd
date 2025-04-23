@@ -1,5 +1,8 @@
 import json
-#create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
+#TODO: put an option to suppress warnings from JSONRecordCreator
+
+
+#the function create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
 # intuitive to create class objects that way, this variable is actually just a reference 
 # so that we don't have to map the arguments.
 def create_new_JSONGrapherRecord(hints=False):

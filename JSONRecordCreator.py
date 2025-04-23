@@ -163,9 +163,7 @@ class JSONGrapherRecord:
 
 
     def set_plot_type_one_data_series(self, data_series_index, plot_type):
-        print("line 164", plot_type)
         fields_dict = plot_type_to_field_values(plot_type)
-        print("line 166", fields_dict)
         #get the data_series_dict.
         data_series_dict = self.fig_dict['data'][data_series_index]
         #update the data_series_dict.
@@ -186,7 +184,6 @@ class JSONGrapherRecord:
         options are: scatter, spline, scatter_spline
         """
         self.plot_type = plot_type
-        print("line 186", self.plot_type)
         for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
             self.set_plot_type_one_data_series(data_series_index, plot_type)
      
@@ -199,10 +196,8 @@ class JSONGrapherRecord:
         #If optional argument not provided, take class instance setting.
         if plot_type == None: 
             plot_type = self.plot_type
-            print("line 197", plot_type)
         #If the plot_type is not blank, use it for all series.
         if plot_type != "":
-            print("line 201", plot_type)
             self.set_plot_type_all_series(plot_type)
  
     def set_datatype(self, datatype):
@@ -224,7 +219,6 @@ class JSONGrapherRecord:
         Updates the title of the graph in the layout dictionary.
         graph_title (str): The new title to set for the graph.
         """
-        print("line 197", self.fig_dict)
         self.fig_dict['layout']['title'] = graph_title
 
     def set_x_axis_label_including_units(self, x_axis_label_including_units, remove_plural_units=True):
@@ -630,7 +624,6 @@ def plot_type_to_field_values(plot_type):
         fields_dict["type_field"] = None
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "spline"
-    print("line 605", fields_dict)
     return fields_dict
 
 #This function does updating of internal things before validating
@@ -773,7 +766,6 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     # Extract traces (data series)
     for trace in fig_dict.get("data", []):
         trace_type = trace.get("type", None)
-        print("line 84", trace_type)
         # If type is missing, but mode indicates lines and shape is spline, assume it's a spline
         if not trace_type and trace.get("mode") == "lines" and trace.get("line", {}).get("shape") == "spline":
             trace_type = "spline"

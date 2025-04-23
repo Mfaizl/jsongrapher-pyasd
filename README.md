@@ -1,5 +1,5 @@
 # JSONGrapherRC
-A python package for creating JSON Grapher Records
+A python package for creating JSONGrapher Records
 
 To use JSONGrapherRC, first install it using pip:
 <pre>

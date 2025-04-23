@@ -18,7 +18,7 @@ time_in_years = [0, 1, 2, 3, 4]
 tree_heights = [0, 0.42, 0.86, 1.19, 1.45]
 </pre>
 
-## **2\. Creating a New JSONGrapher Record**
+## **2\. Creating and Populating a New JSONGrapher Record**
 
 The easiest way to start is with the `create_new_JSONGrapherRecord()` function. While you *can* instantiate the JSONGrapherRecord class directly, this function is generally more convenient. We'll create a record and inspect its default fields.
 <pre>
@@ -28,13 +28,6 @@ except ImportError:
     import JSONRecordCreator  # If the class file is local
 
 Record = JSONRecordCreator.create_new_JSONGrapherRecord()
-print(Record)
-</pre>
-
-## **3\. Populating Fields**
-
-The hints from the previous step show the fields we need to populate.
-<pre>
 Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
 Record.set_x_axis_label_including_units(x_label_including_units)
@@ -43,16 +36,11 @@ Record.add_data_series(series_name="pear tree growth", x_values=time_in_years, y
 Record.set_graph_title("Pear Tree Growth Versus Time")
 </pre>
 
-## **4\. Exporting to File**
+## **3\. Exporting to File**
 
-We now have a JSONGrapher record! We can export it to a file, which can then be used with JSONGrapher. For convenience, we'll remove the hints before exporting.
+We now have a JSONGrapher record! We can export it to a file, which can then be used with JSONGrapher. 
 <pre>
-Record.remove_hints()
-filename_to_export_to = "./ExampleFromTutorial.json"  # The path can be included.
-Record.export_to_json_file(filename_to_export_to)
-print(f"JSONGrapher Record exported to, {filename_to_export_to}\n")
-
-# Print the final record:
+Record.export_to_json_file("ExampleFromTutorial.json")
 Record.print_to_inspect()
 </pre>
 
@@ -79,7 +67,6 @@ JSONGrapher Record exported to, ./ExampleFromTutorial.json
 }
 </pre>
 
-## **5\. Examining with Matplotlib**
 
 We can also plot the data using Matplotlib and export the plot as a PNG file.
 <pre>

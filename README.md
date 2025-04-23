@@ -32,7 +32,7 @@ Record.add\_hints()
 Record.print\_to\_inspect()
 
 <p><strong>Expected Output:</strong></p>
-        <pre>
+<pre>
 Warning: Printing directly will return the raw record without some automatic updates.
 {
     "comments": "",
@@ -57,7 +57,7 @@ After adding hints, Record.print_to_inspect() is expected to give the below outp
         "yaxis": { "title": "Use Record.set_y_axis_label() to populate this field..." }
     }
 }
-        </pre>
+</pre>
 
 ## **3\. Populating Fields**
 
@@ -84,8 +84,8 @@ print(f"JSONGrapher Record exported to, {filename\_to\_export\_to}\\n")
 \# Print the final record:  
 Record.print\_to\_inspect()
 
-        <p><strong>Expected Output:</strong></p>
-        <pre>
+<p><strong>Expected Output:</strong></p>
+<pre>
 JSONGrapher Record exported to, ./ExampleFromTutorial.json
 {
     "comments": "Tree Growth Data collected from the US National Arboretum",
@@ -105,7 +105,7 @@ JSONGrapher Record exported to, ./ExampleFromTutorial.json
         "yaxis": { "title": "Height (m)" }
     }
 }
-
+</pre>
 
 ## **Data Series Options**
 

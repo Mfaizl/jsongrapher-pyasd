@@ -35,7 +35,7 @@ Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
 Record.set_x_axis_label_including_units(x_label_including_units)
 Record.set_y_axis_label_including_units(y_label_including_units)
-Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights)
+Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type="scatter_spline")
 Record.set_graph_title("Pear Tree Growth Versus Time")
 print("line 41 of the runfile")
 Record.update_plot_types()
@@ -56,3 +56,65 @@ Record.print_to_inspect()
 #Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "scatter_spline")
 #Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "spline")
 #Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "scatter")
+
+#We can also export the graph locally:
+
+import matplotlib.pyplot as plt
+import plotly.io as pio
+import json
+
+def convert_plotly_dict_to_matplotlib(fig_dict):
+    """
+    Converts a Plotly figure dictionary into a Matplotlib figure.
+    
+    Supports: Bar Charts, Scatter Plots, Splines (lines).
+    
+    Args:
+        fig_dict (dict): A dictionary representing a Plotly figure.
+    
+    Returns:
+        matplotlib.figure.Figure: The corresponding Matplotlib figure.
+    """
+    # Convert JSON dictionary into a Plotly figure
+    plotly_fig = pio.from_json(json.dumps(fig_dict))
+
+    # Create a Matplotlib figure
+    fig, ax = plt.subplots()
+
+    for trace in plotly_fig.data:
+        if trace.type == "bar":
+            ax.bar(trace.x, trace.y, label=trace.name if trace.name else "Bar Data")
+
+        elif trace.type == "scatter":
+            # Ensure 'mode' exists and is a string before checking its value
+            mode = trace.mode if hasattr(trace, "mode") and isinstance(trace.mode, str) else ""
+
+            if "lines" in mode:
+                ax.plot(trace.x, trace.y, linestyle='-', label=trace.name if trace.name else "Spline Curve")
+            elif "markers" in mode:
+                ax.scatter(trace.x, trace.y, label=trace.name if trace.name else "Scatter Data", alpha=0.7)
+            else:
+                ax.scatter(trace.x, trace.y, label=trace.name if trace.name else "Scatter Data", alpha=0.7)
+
+    ax.legend()
+    ax.set_title("Converted Plotly Figure")
+    ax.set_xlabel("X-Axis")
+    ax.set_ylabel("Y-Axis")
+
+    return fig
+
+# Example usage: Convert and show the Matplotlib figure
+plotly_dict = {
+    "data": [
+        {"type": "scatter", "x": [1, 2, 3], "y": [2, 4, 1], "name": "Scatter Example"},
+        {"type": "scatter", "x": [1, 2, 3], "y": [3, 5, 2], "mode": "lines", "name": "Spline Example"},
+        {"type": "bar", "x": ["A", "B", "C"], "y": [5, 7, 3], "name": "Bar Example"}
+    ]
+}
+
+# matplotlib_fig = convert_plotly_dict_to_matplotlib(plotly_dict)
+# plt.show()
+
+
+matplotlib_fig = convert_plotly_dict_to_matplotlib(Record.record)
+plt.show()

@@ -8,9 +8,9 @@ pip install JSONGrapherRC
 
 Alternatively, you can download the directory directly. This document demonstrates a typical usage scenario.  
 try:  
-    from JSONGRapherRC import JSONRecordCreator  \# Normal usage  
+&nbsp;&nbsp;&nbsp; from JSONGRapherRC import JSONRecordCreator  \# Normal usage  
 except ImportError:  
-    import JSONRecordCreator  \# If the class file is local
+&nbsp;&nbsp;&nbsp; import JSONRecordCreator  \# If the class file is local
 
 ## **1\. Preparing to Create a Record**
 

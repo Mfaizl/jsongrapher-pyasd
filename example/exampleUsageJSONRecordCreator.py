@@ -2,7 +2,7 @@
 #This file will show one typical usage.
 
 try: 
-    from JSONGRapherRC import JSONRecordCreator #normal usage
+    from JSONGrapherRC import JSONRecordCreator #normal usage
 except:
     import JSONRecordCreator #this is if you have the class file locally.
 

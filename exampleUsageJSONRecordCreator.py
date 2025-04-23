@@ -31,12 +31,14 @@ Record.print_to_inspect()
 
 print("\n\n STEP 3: POPULATING SOME FIELDS")
 # The hints have shown us which fields we are expected to populate.
-Record.set_comments("Tree Growth Data collected from ... ... ")
+Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
 Record.set_x_axis_label_including_units(x_label_including_units)
 Record.set_y_axis_label_including_units(y_label_including_units)
 Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights)
 Record.set_graph_title("Pear Tree Growth Versus Time")
+print("line 41 of the runfile")
+Record.update_plot_types()
 
 print("\n\n STEP 4: EXPORTING TO FILE")
 #We now have a JSONGpraher record! 
@@ -49,3 +51,8 @@ print("JSONGrapher Record exported to, " + filename_to_export_to +"\n")
 
 #Let's print the final record:
 Record.print_to_inspect() 
+
+##Some other options that one can try, for editing the above code:
+#Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "scatter_spline")
+#Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "spline")
+#Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "scatter")

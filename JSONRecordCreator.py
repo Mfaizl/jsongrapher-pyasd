@@ -116,8 +116,6 @@ class JSONGrapherRecord:
         }
 
         #Add optional inputs.
-        if len(plot_type) > 0:
-            data_series_dict["type"] = plot_type
         if len(comments) > 0:
             data_series_dict["comments"]: comments
         if len(uid) > 0:
@@ -130,8 +128,12 @@ class JSONGrapherRecord:
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
-        # Finally, add to the class object's data list.
+        #Add to the class object's data list.
         self.record["data"].append(data_series_dict)
+        #update plot_type, since our internal function requires the data series to be added already.
+        if len(plot_type) > 0:
+            newest_record_index = len(self.record["data"]) - 1
+            self.set_plot_type_one_data_series(newest_record_index, plot_type)
 
     #this function returns the current record.
     def get_record(self):
@@ -160,20 +162,49 @@ class JSONGrapherRecord:
         if "layout" in existing_JSONGrapher_record:     self.record["layout"] = existing_JSONGrapher_record["layout"]
 
 
-    def set_plot_type(self, plot_type):
-        """
-        Sets the plot_type field for the record and also any existing data series.
-        """
-        self.record["plot_type"] = plot_type
+    def set_plot_type_one_data_series(self, data_series_index, plot_type):
+        print("line 164", plot_type)
+        fields_dict = plot_type_to_field_values(plot_type)
+        print("line 166", fields_dict)
+        #get the data_series_dict.
+        data_series_dict = self.record['data'][data_series_index]
+        #update the data_series_dict.
+        if fields_dict.get("mode_field"):
+            data_series_dict["mode"] = fields_dict["mode_field"]
+        if fields_dict.get("type_field"):
+            data_series_dict["type"] = fields_dict["type_field"]
+        if fields_dict.get("line_shape_field") != "":
+            data_series_dict.setdefault("line", {"shape": ''})  # Creates the field if it does not already exist.
+            data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
 
-    def update_plot_types(self):
+        #now put the data_series_dict back:
+        self.record['data'][data_series_index] = data_series_dict
+
+    def set_plot_type_all_series(self, plot_type):
+        """
+        Sets the plot_type field for the all data series.
+        options are: scatter, spline, scatter_spline
+        """
+        self.plot_type = plot_type
+        print("line 186", self.plot_type)
+        for data_series_index in range(len(self.record['data'])): #works with array indexing.
+            self.set_plot_type_one_data_series(data_series_index, plot_type)
+     
+       
+    def update_plot_types(self, plot_type=None):
         """
         updates the plot types for any existing data series.
+        
         """        
-        if self.plot_type:
-            for data_series_dict in self.record['data']:
-                data_series_dict["type"] = plot_type
-
+        #If optional argument not provided, take class instance setting.
+        if plot_type == None: 
+            plot_type = self.plot_type
+            print("line 197", plot_type)
+        #If the plot_type is not blank, use it for all series.
+        if plot_type != "":
+            print("line 201", plot_type)
+            self.set_plot_type_all_series(plot_type)
+ 
     def set_datatype(self, datatype):
         """
         Sets the datatype field used as the experiment type or schema identifier.
@@ -193,6 +224,7 @@ class JSONGrapherRecord:
         Updates the title of the graph in the layout dictionary.
         graph_title (str): The new title to set for the graph.
         """
+        print("line 197", self.record)
         self.record['layout']['title'] = graph_title
 
     def set_x_axis_label_including_units(self, x_axis_label_including_units, remove_plural_units=True):
@@ -368,7 +400,7 @@ def validate_JSONGrapher_axis_label(label_string, axis_name="", remove_plural_un
     if units_changed_flag == True:
         warnings_list.append("The units of " + parsing_result["units"] + " appear to be plural. Units should be entered as singular, such as 'year' rather than 'years'.")
         if remove_plural_units==True:
-            label_string = parsing_result["text"] + "(" + units_singularized + ")"
+            label_string = parsing_result["text"] + " (" + units_singularized + ")"
             warnings_list.append("Now removing the 's' to change the units into singular '" + units_singularized + "'.  To avoid this change, use the function you've called with the optional argument of remove_plural_units set to False.")
     else:
         pass
@@ -546,8 +578,38 @@ def parse_units(value):
     
     return parsed_output
 
+def plot_type_to_field_values(plot_type):
+    """
+    Takes in a string that is a plot type, such as "scatter", "scatter_spline", etc.
+    and returns the field values that would have to go into a plotly data object.
 
+    Returns:
+        dict: A dictionary with keys and values for the fields that will be ultimately filled.
 
+    To these fields are used in the function set_plot_type_one_data_series
+
+    """
+
+    fields_dict = {}
+    #initialize some variables.
+    fields_dict["type_field"] = plot_type
+    fields_dict["mode_field"] = None
+    fields_dict["line_shape_field"] = None
+    # Assign the various types. This list of values was determined 'manually'.
+    if plot_type == "scatter":
+        fields_dict["type_field"] = "scatter"
+        fields_dict["mode_field"] = "markers"
+        fields_dict["line_shape_field"] = None
+    elif plot_type == "scatter_spline":
+        fields_dict["type_field"] = "scatter"
+        fields_dict["mode_field"] = None
+        fields_dict["line_shape_field"] = "spline"
+    elif plot_type == "spline":
+        fields_dict["type_field"] = None
+        fields_dict["mode_field"] = 'lines'
+        fields_dict["line_shape_field"] = "spline"
+    print("line 605", fields_dict)
+    return fields_dict
 
 #This function does updating of internal things before validating
 #This is used before printing and returning the JSON record.

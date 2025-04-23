@@ -1,5 +1,5 @@
 {
-    "comments": "Tree Growth Data collected from ... ... ",
+    "comments": "Tree Growth Data collected from the US National Arboretum",
     "datatype": "Tree_Growth_Curve",
     "data": [
         {
@@ -23,7 +23,7 @@
     "layout": {
         "title": "Pear Tree Growth Versus Time",
         "xaxis": {
-            "title": "Time(year)"
+            "title": "Time (year)"
         },
         "yaxis": {
             "title": "Height (m)"

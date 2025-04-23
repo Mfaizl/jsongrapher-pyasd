@@ -1,12 +1,10 @@
 # JSONGrapherRC
  A python package for creating JSON Grapher Records
 
-# **Using JSONGrapherRC**
-
 To use JSONGrapherRC, first install it using pip:  
 pip install JSONGrapherRC
 
-Alternatively, you can download the directory directly. This document demonstrates a typical usage scenario.  
+Alternatively, you can download the directory directly. Below demonstrates a typical usage scenario.  
 
 ## **1\. Preparing to Create a Record**
 
@@ -33,6 +31,34 @@ The add\_hints() feature inserts instructional strings into the record to guide 
 Record.add\_hints()  
 Record.print\_to\_inspect()
 
+<p><strong>Expected Output:</strong></p>
+        <pre>
+Warning: Printing directly will return the raw record without some automatic updates.
+{
+    "comments": "",
+    "datatype": "",
+    "data": [],
+    "layout": {
+        "title": "",
+        "xaxis": { "title": "" },
+        "yaxis": { "title": "" }
+    }
+}
+
+
+After adding hints, Record.print_to_inspect() is expected to give the below output.
+{
+    "comments": "Use Record.set_comments() to populate this field...",
+    "datatype": "Use Record.set_datatype() to populate this field...",
+    "data": [],
+    "layout": {
+        "title": "Use Record.set_graph_title() to populate this field...",
+        "xaxis": { "title": "Use Record.set_x_axis_label() to populate this field..." },
+        "yaxis": { "title": "Use Record.set_y_axis_label() to populate this field..." }
+    }
+}
+        </pre>
+
 ## **3\. Populating Fields**
 
 The hints from the previous step show the fields we need to populate.  
@@ -57,6 +83,29 @@ print(f"JSONGrapher Record exported to, {filename\_to\_export\_to}\\n")
 
 \# Print the final record:  
 Record.print\_to\_inspect()
+
+        <p><strong>Expected Output:</strong></p>
+        <pre>
+JSONGrapher Record exported to, ./ExampleFromTutorial.json
+{
+    "comments": "Tree Growth Data collected from the US National Arboretum",
+    "datatype": "Tree_Growth_Curve",
+    "data": [
+        {
+            "name": "pear tree growth",
+            "x": [0, 1, 2, 3, 4],
+            "y": [0, 0.42, 0.86, 1.19, 1.45],
+            "type": "scatter",
+            "line": { "shape": "spline" }
+        }
+    ],
+    "layout": {
+        "title": "Pear Tree Growth Versus Time",
+        "xaxis": { "title": "Time (year)" },
+        "yaxis": { "title": "Height (m)" }
+    }
+}
+
 
 ## **Data Series Options**
 

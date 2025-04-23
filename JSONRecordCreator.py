@@ -299,6 +299,28 @@ class JSONGrapherRecord:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 
+    def get_matplotlib_fig(self, update_and_validate=True):
+        if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
+            self.update_and_validate_JSONGrapher_record()
+        fig = convert_JSONGrapher_dict_to_matplotlib_fig(self.fig_dict)
+        return fig
+
+    def plot_with_matplotlib(self, update_and_validate=True):
+        import matplotlib.pyplot as plt
+        fig = self.get_matplotlib_fig(update_and_validate=update_and_validate)
+        plt.show()
+        plt.close(fig) #remove fig from memory.
+
+    def export_to_matplotlib_png(self, filename, update_and_validate=True):
+        import matplotlib.pyplot as plt
+        # Ensure filename ends with .png
+        if not filename.lower().endswith(".png"):
+            filename += ".png"
+        fig = self.get_matplotlib_fig(update_and_validate=update_and_validate)       
+        # Save the figure to a file
+        fig.savefig(filename)
+        plt.close(fig) #remove fig from memory.
+
     def add_hints(self):
         """
         Adds hints to fields that are currently empty strings using self.hints_dictionary.
@@ -700,6 +722,158 @@ def validate_JSONGrapher_record(record):
     else:
         return True, []
 
+def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
+    """
+    Applies a rolling polynomial regression with a specified window size and degree.
+
+    Args:
+        x_values (list): List of x coordinates.
+        y_values (list): List of y coordinates.
+        window_size (int): Number of points per rolling fit (default: 3).
+        degree (int): Degree of polynomial to fit (default: 2).
+
+    Returns:
+        tuple: (smoothed_x, smoothed_y) lists for plotting.
+    """
+    import numpy as np
+    smoothed_y = []
+    smoothed_x = x_values  # Keep x values unchanged
+
+    half_window = window_size // 2  # Number of points to take before & after
+
+    for i in range(len(y_values)):
+        # Handle edge cases: First and last points have fewer neighbors
+        left_bound = max(0, i - half_window)
+        right_bound = min(len(y_values), i + half_window + 1)
+
+        # Select the windowed data
+        x_window = np.array(x_values[left_bound:right_bound])
+        y_window = np.array(y_values[left_bound:right_bound])
+
+        # Fit polynomial & evaluate at current point
+        poly_coeffs = np.polyfit(x_window, y_window, deg=degree)
+        smoothed_y.append(np.polyval(poly_coeffs, x_values[i]))
+
+    return smoothed_x, smoothed_y
+
+
+def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
+    """
+    Converts a Plotly figure dictionary into a Matplotlib figure without using pio.from_json.
+
+    Args:
+        fig_dict (dict): A dictionary representing a Plotly figure.
+
+    Returns:
+        matplotlib.figure.Figure: The corresponding Matplotlib figure.
+    """
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+
+    # Extract traces (data series)
+    for trace in fig_dict.get("data", []):
+        trace_type = trace.get("type", None)
+        print("line 84", trace_type)
+        # If type is missing, but mode indicates lines and shape is spline, assume it's a spline
+        if not trace_type and trace.get("mode") == "lines" and trace.get("line", {}).get("shape") == "spline":
+            trace_type = "spline"
+
+        x_values = trace.get("x", [])
+        y_values = trace.get("y", [])
+        trace_name = trace.get("name", "Data")
+        if trace_type == "bar":
+            ax.bar(x_values, y_values, label=trace_name)
+
+        elif trace_type == "scatter":
+            mode = trace.get("mode", "")
+            ax.scatter(x_values, y_values, label=trace_name, alpha=0.7)
+
+            # Attempt to simulate spline behavior if requested
+            if "lines" in mode or trace.get("line", {}).get("shape") == "spline":
+                print("Warning: Rolling polynomial approximation used instead of spline.")
+                x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
+                
+                # Add a label explicitly for the legend
+                ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
+        elif trace_type == "spline":
+            print("Warning: Using rolling polynomial approximation instead of true spline.")
+            x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
+            ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
+
+    # Extract layout details
+    layout = fig_dict.get("layout", {})
+    title = layout.get("title", {})
+    if isinstance(title, dict):
+        ax.set_title(title.get("text", "Converted Plotly Figure"))
+    else:
+        ax.set_title(title if isinstance(title, str) else "Converted Plotly Figure")
+
+    xaxis = layout.get("xaxis", {})
+    xlabel = "X-Axis"  # Default label
+    if isinstance(xaxis, dict):
+        title_obj = xaxis.get("title", {})
+        xlabel = title_obj.get("text", "X-Axis") if isinstance(title_obj, dict) else title_obj
+    elif isinstance(xaxis, str):
+        xlabel = xaxis  # If it's a string, use it directly
+    ax.set_xlabel(xlabel)
+    yaxis = layout.get("yaxis", {})
+    ylabel = "Y-Axis"  # Default label
+    if isinstance(yaxis, dict):
+        title_obj = yaxis.get("title", {})
+        ylabel = title_obj.get("text", "Y-Axis") if isinstance(title_obj, dict) else title_obj
+    elif isinstance(yaxis, str):
+        ylabel = yaxis  # If it's a string, use it directly
+    ax.set_ylabel(ylabel)
+    ax.legend()
+    return fig
+
+#The below function works, but because it depends on the python plotly package, we avoid using it
+#To decrease the number of dependencies. 
+def convert_plotly_dict_to_matplotlib(fig_dict):
+    """
+    Converts a Plotly figure dictionary into a Matplotlib figure.
+
+    Supports: Bar Charts, Scatter Plots, Spline curves using rolling polynomial regression.
+
+    This functiony has a dependency on the plotly python package (pip install plotly)
+
+    Args:
+        fig_dict (dict): A dictionary representing a Plotly figure.
+
+    Returns:
+        matplotlib.figure.Figure: The corresponding Matplotlib figure.
+    """
+    import plotly.io as pio
+
+    # Convert JSON dictionary into a Plotly figure
+    plotly_fig = pio.from_json(json.dumps(fig_dict))
+
+    # Create a Matplotlib figure
+    fig, ax = plt.subplots()
+
+    for trace in plotly_fig.data:
+        if trace.type == "bar":
+            ax.bar(trace.x, trace.y, label=trace.name if trace.name else "Bar Data")
+
+        elif trace.type == "scatter":
+            mode = trace.mode if isinstance(trace.mode, str) else ""
+            line_shape = trace.line["shape"] if hasattr(trace, "line") and "shape" in trace.line else None
+
+            # Plot raw scatter points
+            ax.scatter(trace.x, trace.y, label=trace.name if trace.name else "Scatter Data", alpha=0.7)
+
+            # If spline is requested, apply rolling polynomial smoothing
+            if line_shape == "spline" or "lines" in mode:
+                print("Warning: During the matploglib conversion, a rolling polynomial will be used instead of a spline, whereas JSONGrapher uses a true spline.")
+                x_smooth, y_smooth = rolling_polynomial_fit(trace.x, trace.y, window_size=3, degree=2)
+                ax.plot(x_smooth, y_smooth, linestyle="-", label=trace.name + " Spline" if trace.name else "Spline Curve")
+
+    ax.legend()
+    ax.set_title(plotly_fig.layout.title.text if plotly_fig.layout.title else "Converted Plotly Figure")
+    ax.set_xlabel(plotly_fig.layout.xaxis.title.text if plotly_fig.layout.xaxis.title else "X-Axis")
+    ax.set_ylabel(plotly_fig.layout.yaxis.title.text if plotly_fig.layout.yaxis.title else "Y-Axis")
+
+    return fig
 
 # Example Usage
 if __name__ == "__main__":

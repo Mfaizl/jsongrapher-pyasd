@@ -59,19 +59,21 @@ Record.print_to_inspect()
 
 #We can also export the graph locally:
 
+
 import matplotlib.pyplot as plt
 import plotly.io as pio
 import json
+import numpy as np
 
 def convert_plotly_dict_to_matplotlib(fig_dict):
     """
     Converts a Plotly figure dictionary into a Matplotlib figure.
-    
-    Supports: Bar Charts, Scatter Plots, Splines (lines).
-    
+
+    Supports: Bar Charts, Scatter Plots, Splines (smooth polynomial curves).
+
     Args:
         fig_dict (dict): A dictionary representing a Plotly figure.
-    
+
     Returns:
         matplotlib.figure.Figure: The corresponding Matplotlib figure.
     """
@@ -86,34 +88,58 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
             ax.bar(trace.x, trace.y, label=trace.name if trace.name else "Bar Data")
 
         elif trace.type == "scatter":
-            # Ensure 'mode' exists and is a string before checking its value
-            mode = trace.mode if hasattr(trace, "mode") and isinstance(trace.mode, str) else ""
+            mode = trace.mode if isinstance(trace.mode, str) else ""
+            line_shape = trace.line["shape"] if hasattr(trace, "line") and "shape" in trace.line else None
 
-            if "lines" in mode:
-                ax.plot(trace.x, trace.y, linestyle='-', label=trace.name if trace.name else "Spline Curve")
-            elif "markers" in mode:
-                ax.scatter(trace.x, trace.y, label=trace.name if trace.name else "Scatter Data", alpha=0.7)
-            else:
-                ax.scatter(trace.x, trace.y, label=trace.name if trace.name else "Scatter Data", alpha=0.7)
+            # Plot raw scatter points
+            ax.scatter(trace.x, trace.y, label=trace.name if trace.name else "Scatter Data", alpha=0.7)
+
+            # If spline is requested, approximate using a polynomial curve
+            if line_shape == "spline" or "lines" in mode:
+                print("Warning: During the conversion to a matplotlib object, a polynomial will be used instead of a spline. The JSONGrapher web interface would use an actual spline.")
+                sorted_indices = np.argsort(trace.x)  # Ensure x values are sorted
+                x_sorted = np.array(trace.x)[sorted_indices]
+                y_sorted = np.array(trace.y)[sorted_indices]
+
+                # Fit a polynomial curve (degree=3 for smooth approximation)
+                poly_coeffs = np.polyfit(x_sorted, y_sorted, deg=3)
+                x_fine = np.linspace(min(x_sorted), max(x_sorted), 200)  # Generate smooth x points
+                y_fine = np.polyval(poly_coeffs, x_fine)  # Evaluate polynomial
+
+                ax.plot(x_fine, y_fine, linestyle="-", label=trace.name + " Spline" if trace.name else "Spline Curve")
 
     ax.legend()
-    ax.set_title("Converted Plotly Figure")
-    ax.set_xlabel("X-Axis")
-    ax.set_ylabel("Y-Axis")
+    ax.set_title(plotly_fig.layout.title.text if plotly_fig.layout.title else "Converted Plotly Figure")
+    ax.set_xlabel(plotly_fig.layout.xaxis.title.text if plotly_fig.layout.xaxis.title else "X-Axis")
+    ax.set_ylabel(plotly_fig.layout.yaxis.title.text if plotly_fig.layout.yaxis.title else "Y-Axis")
 
     return fig
 
 # Example usage: Convert and show the Matplotlib figure
 plotly_dict = {
+    "comments": "Tree Growth Data collected from the US National Arboretum",
+    "datatype": "Tree_Growth_Curve",
     "data": [
-        {"type": "scatter", "x": [1, 2, 3], "y": [2, 4, 1], "name": "Scatter Example"},
-        {"type": "scatter", "x": [1, 2, 3], "y": [3, 5, 2], "mode": "lines", "name": "Spline Example"},
-        {"type": "bar", "x": ["A", "B", "C"], "y": [5, 7, 3], "name": "Bar Example"}
-    ]
+        {
+            "name": "pear tree growth",
+            "x": [0, 1, 2, 3, 4],
+            "y": [0, 0.42, 0.86, 1.19, 1.45],
+            "type": "scatter",
+            "line": {
+                "shape": "spline"
+            }
+        }
+    ],
+    "layout": {
+        "title": "Pear Tree Growth Versus Time",
+        "xaxis": {"title": "Time (year)"},
+        "yaxis": {"title": "Height (m)"}
+    }
 }
 
 # matplotlib_fig = convert_plotly_dict_to_matplotlib(plotly_dict)
 # plt.show()
+
 
 
 matplotlib_fig = convert_plotly_dict_to_matplotlib(Record.record)

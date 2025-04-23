@@ -31,45 +31,6 @@ Record = JSONRecordCreator.create_new_JSONGrapherRecord()
 print(Record)
 </pre>
 
-The `add_hints()` feature inserts instructional strings into the record to guide you on which fields to populate. You could also use the `hints=True` argument with `create_new_JSONGrapherRecord()`. However, the `add_hints()` method is recommended because it performs automatic consistency updates and validation checks before printing.
-<pre>
-Record.add_hints()
-Record.print_to_inspect()
-</pre>
-
-<p><strong>Expected Output:</strong></p>
-<pre>
-Warning: Printing directly will return the raw record without some automatic updates.
-</pre>
-<pre>
-{
-    "comments": "",
-    "datatype": "",
-    "data": [],
-    "layout": {
-        "title": "",
-        "xaxis": { "title": "" },
-        "yaxis": { "title": "" }
-    }
-}
-</pre>
-
-<pre>
-After adding hints, Record.print_to_inspect() is expected to give the below output.
-</pre>
-<pre>
-{
-    "comments": "Use Record.set_comments() to populate this field...",
-    "datatype": "Use Record.set_datatype() to populate this field...",
-    "data": [],
-    "layout": {
-        "title": "Use Record.set_graph_title() to populate this field...",
-        "xaxis": { "title": "Use Record.set_x_axis_label() to populate this field..." },
-        "yaxis": { "title": "Use Record.set_y_axis_label() to populate this field..." }
-    }
-}
-</pre>
-
 ## **3\. Populating Fields**
 
 The hints from the previous step show the fields we need to populate.
@@ -80,8 +41,6 @@ Record.set_x_axis_label_including_units(x_label_including_units)
 Record.set_y_axis_label_including_units(y_label_including_units)
 Record.add_data_series(series_name="pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type="scatter_spline")
 Record.set_graph_title("Pear Tree Growth Versus Time")
-
-Record.update_plot_types()
 </pre>
 
 ## **4\. Exporting to File**
@@ -118,15 +77,6 @@ JSONGrapher Record exported to, ./ExampleFromTutorial.json
         "yaxis": { "title": "Height (m)" }
     }
 }
-</pre>
-
-## **Data Series Options**
-
-Here are some alternative `add_data_series` calls you can try:
-<pre>
-# Record.add_data_series(series_name="pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type="scatter_spline")
-# Record.add_data_series(series_name="pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type="spline")
-# Record.add_data_series(series_name="pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type="scatter")
 </pre>
 
 ## **5\. Examining with Matplotlib**

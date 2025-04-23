@@ -65,11 +65,44 @@ import plotly.io as pio
 import json
 import numpy as np
 
+def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
+    """
+    Applies a rolling polynomial regression with a specified window size and degree.
+
+    Args:
+        x_values (list): List of x coordinates.
+        y_values (list): List of y coordinates.
+        window_size (int): Number of points per rolling fit (default: 3).
+        degree (int): Degree of polynomial to fit (default: 2).
+
+    Returns:
+        tuple: (smoothed_x, smoothed_y) lists for plotting.
+    """
+    smoothed_y = []
+    smoothed_x = x_values  # Keep x values unchanged
+
+    half_window = window_size // 2  # Number of points to take before & after
+
+    for i in range(len(y_values)):
+        # Handle edge cases: First and last points have fewer neighbors
+        left_bound = max(0, i - half_window)
+        right_bound = min(len(y_values), i + half_window + 1)
+
+        # Select the windowed data
+        x_window = np.array(x_values[left_bound:right_bound])
+        y_window = np.array(y_values[left_bound:right_bound])
+
+        # Fit polynomial & evaluate at current point
+        poly_coeffs = np.polyfit(x_window, y_window, deg=degree)
+        smoothed_y.append(np.polyval(poly_coeffs, x_values[i]))
+
+    return smoothed_x, smoothed_y
+
 def convert_plotly_dict_to_matplotlib(fig_dict):
     """
     Converts a Plotly figure dictionary into a Matplotlib figure.
 
-    Supports: Bar Charts, Scatter Plots, Splines (smooth polynomial curves).
+    Supports: Bar Charts, Scatter Plots, Spline curves using rolling polynomial regression.
 
     Args:
         fig_dict (dict): A dictionary representing a Plotly figure.
@@ -94,19 +127,11 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
             # Plot raw scatter points
             ax.scatter(trace.x, trace.y, label=trace.name if trace.name else "Scatter Data", alpha=0.7)
 
-            # If spline is requested, approximate using a polynomial curve
+            # If spline is requested, apply rolling polynomial smoothing
             if line_shape == "spline" or "lines" in mode:
-                print("Warning: During the conversion to a matplotlib object, a polynomial will be used instead of a spline. The JSONGrapher web interface would use an actual spline.")
-                sorted_indices = np.argsort(trace.x)  # Ensure x values are sorted
-                x_sorted = np.array(trace.x)[sorted_indices]
-                y_sorted = np.array(trace.y)[sorted_indices]
-
-                # Fit a polynomial curve (degree=3 for smooth approximation)
-                poly_coeffs = np.polyfit(x_sorted, y_sorted, deg=3)
-                x_fine = np.linspace(min(x_sorted), max(x_sorted), 200)  # Generate smooth x points
-                y_fine = np.polyval(poly_coeffs, x_fine)  # Evaluate polynomial
-
-                ax.plot(x_fine, y_fine, linestyle="-", label=trace.name + " Spline" if trace.name else "Spline Curve")
+                print("Warning: During the matploglib conversion, a rolling polynomial will be used instead of a spline, whereas JSONGrapher uses a true spline.")
+                x_smooth, y_smooth = rolling_polynomial_fit(trace.x, trace.y, window_size=3, degree=2)
+                ax.plot(x_smooth, y_smooth, linestyle="-", label=trace.name + " Spline" if trace.name else "Spline Curve")
 
     ax.legend()
     ax.set_title(plotly_fig.layout.title.text if plotly_fig.layout.title else "Converted Plotly Figure")
@@ -137,10 +162,10 @@ plotly_dict = {
     }
 }
 
-# matplotlib_fig = convert_plotly_dict_to_matplotlib(plotly_dict)
-# plt.show()
+matplotlib_fig = convert_plotly_dict_to_matplotlib(plotly_dict)
+plt.show()
 
 
 
-matplotlib_fig = convert_plotly_dict_to_matplotlib(Record.record)
+matplotlib_fig = convert_plotly_dict_to_matplotlib(Record.fig_dict)
 plt.show()

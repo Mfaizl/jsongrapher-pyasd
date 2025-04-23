@@ -55,7 +55,7 @@ class JSONGrapherRecord:
         if y_axis_label_including_units:
             validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=False)
 
-        self.record = {
+        self.fig_dict = {
             "comments": comments,  # Top-level comments
             "datatype": datatype,  # Top-level datatype (datatype)
             "data": data_objects_list if data_objects_list else [],  # Data series list
@@ -68,7 +68,7 @@ class JSONGrapherRecord:
 
         self.plot_type = plot_type #the plot_type is actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
         if plot_type != "":
-            self.record["plot_type"] = plot_type
+            self.fig_dict["plot_type"] = plot_type
 
         # Populate attributes if an existing JSONGrapher record is provided.
         if existing_JSONGrapher_record:
@@ -90,7 +90,7 @@ class JSONGrapherRecord:
         Returns a JSON-formatted string of the record with an indent of 4.
         """
         print("Warning: Printing directly will return the raw record without some automatic updates. Please use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
-        return json.dumps(self.record, indent=4)
+        return json.dumps(self.fig_dict, indent=4)
 
 
     def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, comments="", plot_type="",  uid="", line="", extra_fields=None):
@@ -129,10 +129,10 @@ class JSONGrapherRecord:
         if extra_fields:
             data_series_dict.update(extra_fields)
         #Add to the class object's data list.
-        self.record["data"].append(data_series_dict)
+        self.fig_dict["data"].append(data_series_dict)
         #update plot_type, since our internal function requires the data series to be added already.
         if len(plot_type) > 0:
-            newest_record_index = len(self.record["data"]) - 1
+            newest_record_index = len(self.fig_dict["data"]) - 1
             self.set_plot_type_one_data_series(newest_record_index, plot_type)
 
     #this function returns the current record.
@@ -140,7 +140,7 @@ class JSONGrapherRecord:
         """
         Returns a JSON-dict string of the record
         """
-        return self.record
+        return self.fig_dict
 
     def print_to_inspect(self, update_and_validate=True, validate=True, remove_remaining_hints=False):
         if remove_remaining_hints == True:
@@ -149,17 +149,17 @@ class JSONGrapherRecord:
             self.update_and_validate_JSONGrapher_record()
         elif validate: #this will validate without doing automatic updates.
             self.validate_JSONGrapher_record()
-        print(json.dumps(self.record, indent=4))
+        print(json.dumps(self.fig_dict, indent=4))
 
     def populate_from_existing_record(self, existing_JSONGrapher_record):
         """
         Populates attributes from an existing JSONGrapher record.
         existing_JSONGrapher_record: A dictionary representing an existing JSONGrapher record.
         """
-        if "comments" in existing_JSONGrapher_record:   self.record["comments"] = existing_JSONGrapher_record["comments"]
-        if "datatype" in existing_JSONGrapher_record:      self.record["datatype"] = existing_JSONGrapher_record["datatype"]
-        if "data" in existing_JSONGrapher_record:       self.record["data"] = existing_JSONGrapher_record["data"]
-        if "layout" in existing_JSONGrapher_record:     self.record["layout"] = existing_JSONGrapher_record["layout"]
+        if "comments" in existing_JSONGrapher_record:   self.fig_dict["comments"] = existing_JSONGrapher_record["comments"]
+        if "datatype" in existing_JSONGrapher_record:      self.fig_dict["datatype"] = existing_JSONGrapher_record["datatype"]
+        if "data" in existing_JSONGrapher_record:       self.fig_dict["data"] = existing_JSONGrapher_record["data"]
+        if "layout" in existing_JSONGrapher_record:     self.fig_dict["layout"] = existing_JSONGrapher_record["layout"]
 
 
     def set_plot_type_one_data_series(self, data_series_index, plot_type):
@@ -167,7 +167,7 @@ class JSONGrapherRecord:
         fields_dict = plot_type_to_field_values(plot_type)
         print("line 166", fields_dict)
         #get the data_series_dict.
-        data_series_dict = self.record['data'][data_series_index]
+        data_series_dict = self.fig_dict['data'][data_series_index]
         #update the data_series_dict.
         if fields_dict.get("mode_field"):
             data_series_dict["mode"] = fields_dict["mode_field"]
@@ -178,7 +178,7 @@ class JSONGrapherRecord:
             data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
 
         #now put the data_series_dict back:
-        self.record['data'][data_series_index] = data_series_dict
+        self.fig_dict['data'][data_series_index] = data_series_dict
 
     def set_plot_type_all_series(self, plot_type):
         """
@@ -187,7 +187,7 @@ class JSONGrapherRecord:
         """
         self.plot_type = plot_type
         print("line 186", self.plot_type)
-        for data_series_index in range(len(self.record['data'])): #works with array indexing.
+        for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
             self.set_plot_type_one_data_series(data_series_index, plot_type)
      
        
@@ -210,43 +210,43 @@ class JSONGrapherRecord:
         Sets the datatype field used as the experiment type or schema identifier.
             datatype (str): The new data type to set.
         """
-        self.record['datatype'] = datatype
+        self.fig_dict['datatype'] = datatype
 
     def set_comments(self, comments):
         """
         Updates the comments field for the record.
             str: The updated comments value.
         """
-        self.record['comments'] = comments
+        self.fig_dict['comments'] = comments
 
     def set_graph_title(self, graph_title):
         """
         Updates the title of the graph in the layout dictionary.
         graph_title (str): The new title to set for the graph.
         """
-        print("line 197", self.record)
-        self.record['layout']['title'] = graph_title
+        print("line 197", self.fig_dict)
+        self.fig_dict['layout']['title'] = graph_title
 
     def set_x_axis_label_including_units(self, x_axis_label_including_units, remove_plural_units=True):
         """
         Updates the title of the x-axis in the layout dictionary.
         xaxis_title (str): The new title to set for the x-axis.
         """
-        if "xaxis" not in self.record['layout'] or not isinstance(self.record['layout'].get("xaxis"), dict):
-            self.record['layout']["xaxis"] = {}  # Initialize x-axis as a dictionary if it doesn't exist.
+        if "xaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("xaxis"), dict):
+            self.fig_dict['layout']["xaxis"] = {}  # Initialize x-axis as a dictionary if it doesn't exist.
         validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)
-        self.record['layout']["xaxis"]["title"] = x_axis_label_including_units
+        self.fig_dict['layout']["xaxis"]["title"] = x_axis_label_including_units
 
     def set_y_axis_label_including_units(self, y_axis_label_including_units, remove_plural_units=True):
         """
         Updates the title of the y-axis in the layout dictionary.
         yaxis_title (str): The new title to set for the y-axis.
         """
-        if "yaxis" not in self.record['layout'] or not isinstance(self.record['layout'].get("yaxis"), dict):
-            self.record['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
+        if "yaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("yaxis"), dict):
+            self.fig_dict['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
         
         validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
-        self.record['layout']["yaxis"]["title"] = y_axis_label_including_units
+        self.fig_dict['layout']["yaxis"]["title"] = y_axis_label_including_units
 
     def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
         # comments: General comments about the layout.
@@ -258,7 +258,7 @@ class JSONGrapherRecord:
         
         validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)              
         validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
-        self.record['layout'] = {
+        self.fig_dict['layout'] = {
             "title": graph_title,
             "xaxis": {"title": x_axis_label_including_units},
             "yaxis": {"title": y_axis_label_including_units}
@@ -266,14 +266,14 @@ class JSONGrapherRecord:
 
         #populate any optional fields, if provided:
         if len(comments) > 0:
-            self.record['layout']["comments"] = comments
+            self.fig_dict['layout']["comments"] = comments
         if len(x_axis_comments) > 0:
-            self.record['layout']["xaxis"]["comments"] = x_axis_comments
+            self.fig_dict['layout']["xaxis"]["comments"] = x_axis_comments
         if len(y_axis_comments) > 0:
-            self.record['layout']["yaxis"]["comments"] = y_axis_comments     
+            self.fig_dict['layout']["yaxis"]["comments"] = y_axis_comments     
 
 
-        return self.record['layout']
+        return self.fig_dict['layout']
     
     #TODO: add record validation to this function.
     def export_to_json_file(self, filename, update_and_validate=True, validate=True, remove_remaining_hints=False):
@@ -296,13 +296,13 @@ class JSONGrapherRecord:
                 filename += ".json"
             #Write to file.
             with open(filename, 'w') as f:
-                json.dump(self.record, f, indent=4)
-        return self.record
+                json.dump(self.fig_dict, f, indent=4)
+        return self.fig_dict
 
     def add_hints(self):
         """
         Adds hints to fields that are currently empty strings using self.hints_dictionary.
-        Dynamically parses hint keys (e.g., "['layout']['xaxis']['title']") to access and update fields in self.record.
+        Dynamically parses hint keys (e.g., "['layout']['xaxis']['title']") to access and update fields in self.fig_dict.
         The hints_dictionary is first populated during creation of the class object in __init__.
         """
         for hint_key, hint_text in self.hints_dictionary.items():
@@ -312,7 +312,7 @@ class JSONGrapherRecord:
             record_path_as_list = hint_key.strip("[]").replace("'", "").split("][")
             record_path_length = len(record_path_as_list)
             # Start at the top-level record dictionary.
-            current_field = self.record
+            current_field = self.fig_dict
 
             # Loop over each key in the path.
             # For example, with record_path_as_list = ['layout', 'xaxis', 'title']:
@@ -332,7 +332,7 @@ class JSONGrapherRecord:
     def remove_hints(self):
         """
         Removes hints by converting fields back to empty strings if their value matches the hint text in self.hints_dictionary.
-        Dynamically parses hint keys (e.g., "['layout']['xaxis']['title']") to access and update fields in self.record.
+        Dynamically parses hint keys (e.g., "['layout']['xaxis']['title']") to access and update fields in self.fig_dict.
         The hints_dictionary is first populated during creation of the class object in __init__.
         """
         for hint_key, hint_text in self.hints_dictionary.items():
@@ -342,7 +342,7 @@ class JSONGrapherRecord:
             record_path_as_list = hint_key.strip("[]").replace("'", "").split("][")
             record_path_length = len(record_path_as_list)
             # Start at the top-level record dictionary.
-            current_field = self.record
+            current_field = self.fig_dict
 
             # Loop over each key in the path.
             # For example, with record_path_as_list = ['layout', 'xaxis', 'title']:

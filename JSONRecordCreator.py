@@ -286,7 +286,7 @@ class JSONGrapherRecord:
         # filepath: Optional, filename with path to save the JSON file.       
         if len(filename) > 0: #this means we will be writing to file.
             # Check if the filename has an extension and append `.json` if not
-            if '.' not in filename:
+            if '.json' not in filename.lower():
                 filename += ".json"
             #Write to file.
             with open(filename, 'w') as f:

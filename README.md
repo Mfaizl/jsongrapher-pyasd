@@ -34,6 +34,8 @@ Record.print\_to\_inspect()
 <p><strong>Expected Output:</strong></p>
 <pre>
 Warning: Printing directly will return the raw record without some automatic updates.
+</pre>
+<pre>
 {
     "comments": "",
     "datatype": "",
@@ -44,9 +46,12 @@ Warning: Printing directly will return the raw record without some automatic upd
         "yaxis": { "title": "" }
     }
 }
+</pre>
 
-
+<pre>
 After adding hints, Record.print_to_inspect() is expected to give the below output.
+</pre>
+<pre>
 {
     "comments": "Use Record.set_comments() to populate this field...",
     "datatype": "Use Record.set_datatype() to populate this field...",

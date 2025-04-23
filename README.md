@@ -1,11 +1,13 @@
 # JSONGrapherRC
 A python package for creating JSON Grapher Records
 
-To use JSONGrapherRC, first install it using pip: "pip install JSONGrapherRC". Alternatively, you can download the directory directly. 
-It is easiest to then download and use the example file to learn.
-https://github.com/AdityaSavara/JSONGrapherRC/blob/main/exampleUsageJSONRecordCreator.py
+To use JSONGrapherRC, first install it using pip:
+<pre>
+pip install JSONGrapherRC
+</pre>
 
-Below demonstrates a typical usage scenario based on the example file.
+Alternatively, you can download the directory directly. It is easiest to then follow the example file to learn.
+https://github.com/AdityaSavara/JSONGrapherRC/blob/main/exampleUsageJSONRecordCreator.py
 
 ## **1\. Preparing to Create a Record**
 

@@ -9,10 +9,12 @@ Alternatively, you can download the directory directly. Below demonstrates a typ
 ## **1\. Preparing to Create a Record**
 
 Let's create an example where we plot the height of a pear tree over several years. Assuming a pear tree grows approximately 0.40 meters per year, we'll generate sample data with some variation.  
+<pre>
 x\_label\_including\_units \= "Time (years)"  
 y\_label\_including\_units \= "Height (m)"  
 time\_in\_years \= \[0, 1, 2, 3, 4\]  
 tree\_heights \= \[0, 0.42, 0.86, 1.19, 1.45\]
+</pre>
 
 ## **2\. Creating a New JSONGrapher Record**
 

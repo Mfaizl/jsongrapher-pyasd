@@ -443,9 +443,9 @@ def units_plural_removal(units_to_check):
               - "singularized" (string): The units parsed to be singular, if needed.
     """
     #first check if we have the module we need. If not, return with no change.
-    import units_list
+    
     try:
-        import units_list
+        import JSONGrapher.units_list
     except:
         units_changed_flag = False
         return units_changed_flag, units_to_check #return None if there was no test.

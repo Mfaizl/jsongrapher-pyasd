@@ -76,4 +76,4 @@ Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("ExampleFromTutorial")
 </pre>
 
-[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/ExampleFromTutorial.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/ExampleFromTutorial.png)
+[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial.png)

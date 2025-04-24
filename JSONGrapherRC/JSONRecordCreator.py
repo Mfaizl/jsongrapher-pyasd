@@ -255,11 +255,10 @@ class JSONGrapherRecord:
         
         validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)              
         validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
-        self.fig_dict['layout'] = {
-            "title": graph_title,
-            "xaxis": {"title": x_axis_label_including_units},
-            "yaxis": {"title": y_axis_label_including_units}
-        }
+        self.fig_dict['layout']["title"] = graph_title
+        self.fig_dict['layout']["xaxis"]["title"] = x_axis_label_including_units
+        self.fig_dict['layout']["yaxis"]["title"] = y_axis_label_including_units
+        
 
         #populate any optional fields, if provided:
         if len(comments) > 0:
@@ -869,6 +868,7 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
     ax.set_ylabel(plotly_fig.layout.yaxis.title.text if plotly_fig.layout.yaxis.title else "Y-Axis")
 
     return fig
+
 
 # Example Usage
 if __name__ == "__main__":

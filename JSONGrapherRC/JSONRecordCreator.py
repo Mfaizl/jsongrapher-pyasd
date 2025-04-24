@@ -445,7 +445,7 @@ def units_plural_removal(units_to_check):
     #first check if we have the module we need. If not, return with no change.
     
     try:
-        import JSONGrapher.units_list
+        import JSONGrapherRC.units_list as units_list
     except:
         units_changed_flag = False
         return units_changed_flag, units_to_check #return None if there was no test.

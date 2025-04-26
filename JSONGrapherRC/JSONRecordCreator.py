@@ -530,7 +530,8 @@ def validate_plotly_data_list(data):
         if not isinstance(trace, dict):
             warnings_list.append(f"Trace {i} is not a dictionary.")
             continue
-        
+        if "comments" in trace:
+            warnings_list.append(f"Trace {i} has a comments field within the data. This is allowed by JSONGrapher, but is discouraged by plotly.")
         # Determine the type based on the fields provided
         trace_type = trace.get("type")
         if not trace_type:

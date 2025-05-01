@@ -875,6 +875,41 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
     return fig
     
 
+def apply_journal_style(plotly_json, journal_name):
+    """
+    Apply a predefined style to a Plotly JSON object based on a journal name.
+    
+    :param plotly_json: dict, Plotly JSON object.
+    :param journal_name: str, Name of the journal.
+    :return: dict, Updated Plotly JSON object.
+    """
+    journal_styles = {
+        "Nature": {
+            "layout": {
+                "title": {"font": {"size": 24, "family": "Times New Roman", "color": "black"}},
+                "font": {"size": 18, "family": "Times New Roman"},
+                "paper_bgcolor": "white",
+                "plot_bgcolor": "white",
+
+            }
+        },
+        "Science": {
+            "layout": {
+                "title": {"font": {"size": 22, "family": "Arial", "color": "black"}},
+                "font": {"size": 16, "family": "Arial"},
+                "paper_bgcolor": "white",
+                "plot_bgcolor": "white",
+            }
+        }
+    }
+
+    # Get the style for the specified journal, default to no change if not found
+    style = journal_styles.get(journal_name, {})
+
+    # Apply the style
+    plotly_json["layout"] = {**plotly_json.get("layout", {}), **style.get("layout", {})}
+    
+    return plotly_json
 
 def update_title_field(data, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting

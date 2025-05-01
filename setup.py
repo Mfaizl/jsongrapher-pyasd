@@ -20,7 +20,7 @@ URL = 'https://github.com/AdityaSavara/JSONGrapherRC'
 EMAIL = 'AditySavara2008@u.northwestern.edu'  
 AUTHOR = 'Aditya Savara'
 REQUIRES_PYTHON = '>=3.0.0'
-VERSION = '1.6'
+VERSION = '1.7'
 LICENSE = 'Unlicense'
 
 # What packages are required for this module to be executed?

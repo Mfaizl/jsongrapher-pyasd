@@ -20,8 +20,8 @@ class JSONGrapherRecord:
     One can optionally provide an existing JSONGrapher record during creation to pre-populate the object.
 
     Arguments & Attributes (all are optional):
-        comments (str): General description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
-        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes.
+        comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
+        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name.
         graph_title: Title of the graph or the dataset being represented.
         data_objects_list (list): List of data series dictionaries to pre-populate the record. 
         x_data: Single series x data in a list or array-like structure. 
@@ -63,9 +63,9 @@ class JSONGrapherRecord:
             "datatype": datatype,  # Top-level datatype (datatype)
             "data": data_objects_list if data_objects_list else [],  # Data series list
             "layout": layout if layout else {
-                "title": graph_title,
-                "xaxis": {"title": x_axis_label_including_units},
-                "yaxis": {"title": y_axis_label_including_units}
+                "title": {"text": graph_title},
+                "xaxis": {"title": {"text": x_axis_label_including_units}},
+                "yaxis": {"title": {"text": y_axis_label_including_units}}
             }
         }
 
@@ -80,11 +80,11 @@ class JSONGrapherRecord:
         # Initialize the hints dictionary, for use later, since the actual locations in the JSONRecord can be non-intuitive.
         self.hints_dictionary = {}
         # Adding hints. Here, the keys are the full field locations within the record.
-        self.hints_dictionary["['comments']"] = "Use Record.set_comments() to populate this field. Put in a general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field."
-        self.hints_dictionary["['datatype']"] = "Use Record.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes."
-        self.hints_dictionary["['layout']['title']"] = "Use Record.set_graph_title() to populate this field. This is the title for the graph."
-        self.hints_dictionary["['layout']['xaxis']['title']"] = "Use Record.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."  # x-axis label
-        self.hints_dictionary["['layout']['yaxis']['title']"] = "Use Record.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."
+        self.hints_dictionary["['comments']"] = "Use Record.set_comments() to populate this field. Can be used to put in a general description or metadata related to the entire record. Can include citations and links. Goes into the record's top level comments field."
+        self.hints_dictionary["['datatype']"] = "Use Record.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name."
+        self.hints_dictionary["['layout']['title']['text']"] = "Use Record.set_graph_title() to populate this field. This is the title for the graph."
+        self.hints_dictionary["['layout']['xaxis']['title']['text']"] = "Use Record.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."  # x-axis label
+        self.hints_dictionary["['layout']['yaxis']['title']['text']"] = "Use Record.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."
 
 
     #this function enables printing the current record.
@@ -222,7 +222,7 @@ class JSONGrapherRecord:
         Updates the title of the graph in the layout dictionary.
         graph_title (str): The new title to set for the graph.
         """
-        self.fig_dict['layout']['title'] = graph_title
+        self.fig_dict['layout']['title']['text'] = graph_title
 
     def set_x_axis_label_including_units(self, x_axis_label_including_units, remove_plural_units=True):
         """
@@ -232,7 +232,7 @@ class JSONGrapherRecord:
         if "xaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("xaxis"), dict):
             self.fig_dict['layout']["xaxis"] = {}  # Initialize x-axis as a dictionary if it doesn't exist.
         validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)
-        self.fig_dict['layout']["xaxis"]["title"] = x_axis_label_including_units
+        self.fig_dict['layout']["xaxis"]["title"]['text'] = x_axis_label_including_units
 
     def set_y_axis_label_including_units(self, y_axis_label_including_units, remove_plural_units=True):
         """
@@ -243,21 +243,21 @@ class JSONGrapherRecord:
             self.fig_dict['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
         
         validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
-        self.fig_dict['layout']["yaxis"]["title"] = y_axis_label_including_units
+        self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
 
     def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
-        # comments: General comments about the layout.
+        # comments: General comments about the layout. Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         # graph_title: Title of the graph.
         # xaxis_title: Title of the x-axis, including units.
-        # xaxis_comments: Comments related to the x-axis.
+        # xaxis_comments: Comments related to the x-axis.  Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         # yaxis_title: Title of the y-axis, including units.
-        # yaxis_comments: Comments related to the y-axis.
+        # yaxis_comments: Comments related to the y-axis.  Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         
         validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)              
         validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
-        self.fig_dict['layout']["title"] = graph_title
-        self.fig_dict['layout']["xaxis"]["title"] = x_axis_label_including_units
-        self.fig_dict['layout']["yaxis"]["title"] = y_axis_label_including_units
+        self.fig_dict['layout']["title"]['text'] = graph_title
+        self.fig_dict['layout']["xaxis"]["title"]['text'] = x_axis_label_including_units
+        self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
         
 
         #populate any optional fields, if provided:
@@ -684,8 +684,11 @@ def validate_JSONGrapher_record(record):
         # Validate "title"
         if "title" not in layout:
             warnings_list.append("Missing 'layout.title' field.")
-        elif not isinstance(layout["title"], str):
-            warnings_list.append("'layout.title' should be a string.")
+        # Validate "title.text"
+        elif "text" not in layout["title"]:
+            warnings_list.append("Missing 'layout.title.text' field.")
+        elif not isinstance(layout["title"]["text"], str):
+            warnings_list.append("'layout.title.text' should be a string.")
         
         # Validate "xaxis"
         if "xaxis" not in layout:
@@ -696,8 +699,10 @@ def validate_JSONGrapher_record(record):
             # Validate "xaxis.title"
             if "title" not in layout["xaxis"]:
                 warnings_list.append("Missing 'layout.xaxis.title' field.")
-            elif not isinstance(layout["xaxis"]["title"], str):
-                warnings_list.append("'layout.xaxis.title' should be a string.")
+            elif "text" not in layout["xaxis"]["title"]:
+                warnings_list.append("Missing 'layout.xaxis.title.text' field.")
+            elif not isinstance(layout["xaxis"]["title"]["text"], str):
+                warnings_list.append("'layout.xaxis.title.text' should be a string.")
         
         # Validate "yaxis"
         if "yaxis" not in layout:
@@ -708,8 +713,10 @@ def validate_JSONGrapher_record(record):
             # Validate "yaxis.title"
             if "title" not in layout["yaxis"]:
                 warnings_list.append("Missing 'layout.yaxis.title' field.")
-            elif not isinstance(layout["yaxis"]["title"], str):
-                warnings_list.append("'layout.yaxis.title' should be a string.")
+            elif "text" not in layout["yaxis"]["title"]:
+                warnings_list.append("Missing 'layout.yaxis.title.text' field.")
+            elif not isinstance(layout["yaxis"]["title"]["text"], str):
+                warnings_list.append("'layout.yaxis.title.text' should be a string.")
     
     # Return validation result
     if warnings_list:
@@ -798,14 +805,14 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     # Extract layout details
     layout = fig_dict.get("layout", {})
     title = layout.get("title", {})
-    if isinstance(title, dict):
+    if isinstance(title, dict): #This if statements block is rather not human readable. Perhaps should be changed later.
         ax.set_title(title.get("text", "Converted Plotly Figure"))
     else:
         ax.set_title(title if isinstance(title, str) else "Converted Plotly Figure")
 
     xaxis = layout.get("xaxis", {})
     xlabel = "X-Axis"  # Default label
-    if isinstance(xaxis, dict):
+    if isinstance(xaxis, dict): #This if statements block is rather not human readable. Perhaps should be changed later.
         title_obj = xaxis.get("title", {})
         xlabel = title_obj.get("text", "X-Axis") if isinstance(title_obj, dict) else title_obj
     elif isinstance(xaxis, str):
@@ -813,7 +820,7 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     ax.set_xlabel(xlabel)
     yaxis = layout.get("yaxis", {})
     ylabel = "Y-Axis"  # Default label
-    if isinstance(yaxis, dict):
+    if isinstance(yaxis, dict): #This if statements block is rather not human readable. Perhaps should be changed later.
         title_obj = yaxis.get("title", {})
         ylabel = title_obj.get("text", "Y-Axis") if isinstance(title_obj, dict) else title_obj
     elif isinstance(yaxis, str):

@@ -65,4 +65,14 @@ Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("ExampleFromTutorial_matplotlib_fig")
 
 Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
-Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig")
+Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
+
+
+
+#Now let's try applying a predfined style!
+print("\n\n STEP 6: TRYING PREDIFINED STYLES")
+Record.apply_style("Science")
+Record.plot_with_plotly()
+Record.apply_style("Nature")
+Record.plot_with_plotly()
+#Note: As of April 2025, the styles have not actually been made suitable for journals. However, the feature is here so that such styles can be made.

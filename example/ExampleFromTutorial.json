@@ -25,12 +25,18 @@
         }
     ],
     "layout": {
-        "title": "Pear Tree Growth Versus Time",
+        "title": {
+            "text": "Pear Tree Growth Versus Time"
+        },
         "xaxis": {
-            "title": "Time (year)"
+            "title": {
+                "text": "Time (year)"
+            }
         },
         "yaxis": {
-            "title": "Height (m)"
+            "title": {
+                "text": "Height (m)"
+            }
         }
     }
 }

@@ -668,7 +668,7 @@ def plot_type_to_field_values(plot_type):
 def update_and_validate_JSONGrapher_record(record):
     record.update_plot_types()
     record.validate_JSONGrapher_record()
-    record = clean_json_dict(record)
+    record.fig_dict = clean_json_fig_dict(record.fig_dict)
     return record
 
 #TODO: add the ability for this function to check against the schema.
@@ -1014,10 +1014,10 @@ def remove_nested_comments(data, top_level=True):
 
     return data
 
-def clean_json_dict(json_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
+def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
      and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. """
-    data = json_dict
+    data = json_fig_dict
     #unmodified_data = copy.deepcopy(data)
     if "title_field" in fields_to_update:
         data = update_title_field(data)

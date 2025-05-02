@@ -41,8 +41,6 @@ Record.set_x_axis_label_including_units(x_label_including_units)
 Record.set_y_axis_label_including_units(y_label_including_units)
 Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type="scatter_spline")
 Record.set_graph_title("Pear Tree Growth Versus Time")
-print("line 41 of the runfile")
-Record.update_plot_types()
 
 print("\n\n STEP 4: EXPORTING TO FILE")
 #We now have a JSONGpraher record! 

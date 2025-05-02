@@ -7,7 +7,8 @@ pip install JSONGrapherRC[COMPLETE]
 </pre>
 
 Alternatively, you can download the directory directly.<br> 
-It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapherRC/blob/main/example/exampleUsageJSONRecordCreator.py) to learn.<br>
+
+It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapherRC/blob/main/example/exampleUsageJSONRecordCreator.py) to see how to create records and plots. Record files can then be dragged into www.jsongrapher.com<br>
 
 
 ## **1\. Preparing to Create a Record**

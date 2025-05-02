@@ -4,6 +4,10 @@
 try: 
     from JSONGrapherRC import JSONRecordCreator #normal usage
 except:
+    #add the path.
+    import sys, os 
+    json_grapher_rc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "JSONGrapherRC"))
+    sys.path.append(json_grapher_rc_path)
     import JSONRecordCreator #this is if you have the class file locally.
 
 
@@ -58,6 +62,9 @@ Record.print_to_inspect()
 #Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "scatter")
 
 #We can also plot the data with matplotlib, and can export to file as png. 
-print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB")
+print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB AND PLOTLY-PYTHON-MODULE")
 Record.plot_with_matplotlib()
-Record.export_to_matplotlib_png("ExampleFromTutorial")
+Record.export_to_matplotlib_png("ExampleFromTutorial_matplotlib_fig")
+
+Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
+Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig")

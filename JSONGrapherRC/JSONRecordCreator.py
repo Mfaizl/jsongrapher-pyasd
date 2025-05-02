@@ -2,6 +2,7 @@ import json
 #TODO: put an option to suppress warnings from JSONRecordCreator
 
 
+
 #the function create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
 # intuitive to create class objects that way, this variable is actually just a reference 
 # so that we don't have to map the arguments.
@@ -69,7 +70,7 @@ class JSONGrapherRecord:
             }
         }
 
-        self.plot_type = plot_type #the plot_type is actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
+        self.plot_type = plot_type #the plot_type is normally actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
         if plot_type != "":
             self.fig_dict["plot_type"] = plot_type
 
@@ -92,7 +93,7 @@ class JSONGrapherRecord:
         """
         Returns a JSON-formatted string of the record with an indent of 4.
         """
-        print("Warning: Printing directly will return the raw record without some automatic updates. Please use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
+        print("Warning: Printing directly will return the raw record without some automatic updates. It is recommended to use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
         return json.dumps(self.fig_dict, indent=4)
 
 
@@ -164,20 +165,23 @@ class JSONGrapherRecord:
         if "data" in existing_JSONGrapher_record:       self.fig_dict["data"] = existing_JSONGrapher_record["data"]
         if "layout" in existing_JSONGrapher_record:     self.fig_dict["layout"] = existing_JSONGrapher_record["layout"]
 
+    def import_from_dict(self, fig_dict):
+        self.fig_dict = fig_dict
+    
+    #the json object can be a filename string or can be json object which is actually a dictionary.
+    def import_from_json(self, json_filename_or_object):
+        if type(json_filename_or_object) == type(""): #assume it's a filename and path.
+            # Open the file in read mode
+            with open("json_filename_or_object", 'r') as file:
+                # Read the entire content of the file
+                content = file.read()
+                self.fig_dict = json.loads(content)   
+        else:
+            self.fig_dict = json_filename_or_object
 
     def set_plot_type_one_data_series(self, data_series_index, plot_type):
-        fields_dict = plot_type_to_field_values(plot_type)
-        #get the data_series_dict.
         data_series_dict = self.fig_dict['data'][data_series_index]
-        #update the data_series_dict.
-        if fields_dict.get("mode_field"):
-            data_series_dict["mode"] = fields_dict["mode_field"]
-        if fields_dict.get("type_field"):
-            data_series_dict["type"] = fields_dict["type_field"]
-        if fields_dict.get("line_shape_field") != "":
-            data_series_dict.setdefault("line", {"shape": ''})  # Creates the field if it does not already exist.
-            data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
-
+        data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict, plot_type=plot_type)
         #now put the data_series_dict back:
         self.fig_dict['data'][data_series_index] = data_series_dict
 
@@ -193,7 +197,7 @@ class JSONGrapherRecord:
        
     def update_plot_types(self, plot_type=None):
         """
-        updates the plot types for any existing data series.
+        updates the plot types for every existing data series.
         
         """        
         #If optional argument not provided, take class instance setting.
@@ -202,6 +206,11 @@ class JSONGrapherRecord:
         #If the plot_type is not blank, use it for all series.
         if plot_type != "":
             self.set_plot_type_all_series(plot_type)
+        else: #if the plot_type is blank, then we will go through each data series and update them individually.
+            for data_series_index, data_series_dict in enumerate(self.fig_dict['data']):
+                #This will update the data_series_dict as needed, putting a plot_type if there is not one.
+                data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict)
+                self.fig_dict['data'][data_series_index] = data_series_dict
  
     def set_datatype(self, datatype):
         """
@@ -244,7 +253,13 @@ class JSONGrapherRecord:
         
         validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
         self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
-
+    def set_x_axis_range(self, min, max):
+        self.fig_dict["layout"]["xaxis"][0] = min
+        self.fig_dict["layout"]["xaxis"][1] = max
+    def set_y_axis_range(self, min, max):
+        self.fig_dict["layout"]["yaxis"][0] = min
+        self.fig_dict["layout"]["yaxis"][1] = max
+        
     def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
         # comments: General comments about the layout. Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         # graph_title: Title of the graph.
@@ -271,7 +286,7 @@ class JSONGrapherRecord:
 
         return self.fig_dict['layout']
     
-    #TODO: add record validation to this function.
+    #This function validates the output before exporting, and also has an option of removing hints.
     def export_to_json_file(self, filename, update_and_validate=True, validate=True, remove_remaining_hints=False):
         """
         writes the json to a file
@@ -294,6 +309,45 @@ class JSONGrapherRecord:
             with open(filename, 'w') as f:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
+
+    def get_plotly_fig(self, update_and_validate=True):
+        import plotly.io as pio
+        if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
+            self.update_and_validate_JSONGrapher_record()
+        fig = pio.from_json(json.dumps(self.fig_dict))
+        return fig
+
+    def plot_with_plotly(self, update_and_validate=True):
+        fig = self.get_plotly_fig(update_and_validate=update_and_validate)
+        fig.show()
+        #No need for fig.close() for plotly figures.
+
+
+    def export_to_plotly_png(self, filename, update_and_validate=True, timeout=10):
+        fig = self.get_plotly_fig(update_and_validate=update_and_validate)       
+        # Save the figure to a file, but use the timeout version.
+        self.export_plotly_image_with_timeout(plotly_fig = fig, filename=filename, timeout=timeout)
+
+    def export_plotly_image_with_timeout(self, plotly_fig, filename, timeout=10):
+        # Ensure filename ends with .png
+        if not filename.lower().endswith(".png"):
+            filename += ".png"
+        import plotly.io as pio
+        pio.kaleido.scope.mathjax = None
+        fig = plotly_fig
+        
+        def export():
+            try:
+                fig.write_image(filename, engine="kaleido")
+            except Exception as e:
+                print(f"Export failed: {e}")
+
+        import threading
+        thread = threading.Thread(target=export, daemon=True)  # Daemon ensures cleanup
+        thread.start()
+        thread.join(timeout=timeout)  # Wait up to 10 seconds
+        if thread.is_alive():
+            print("Skipping Plotly png export: Operation timed out. Plotly image export often does not work from Python. Consider using export_to_matplotlib_png.")
 
     def get_matplotlib_fig(self, update_and_validate=True):
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -378,6 +432,8 @@ class JSONGrapherRecord:
                         current_field[current_path_key] = ""
 
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
+    def apply_journal_style(self, journal_name):
+        self.fig_dict = apply_journal_style_to_plotly_dict(self.fig_dict, journal_name=journal_name)
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -531,7 +587,7 @@ def validate_plotly_data_list(data):
             warnings_list.append(f"Trace {i} is not a dictionary.")
             continue
         if "comments" in trace:
-            warnings_list.append(f"Trace {i} has a comments field within the data. This is allowed by JSONGrapher, but is discouraged by plotly.")
+            warnings_list.append(f"Trace {i} has a comments field within the data. This is allowed by JSONGrapher, but is discouraged by plotly. By default, this will be removed when you export your record.")
         # Determine the type based on the fields provided
         trace_type = trace.get("type")
         if not trace_type:
@@ -597,6 +653,32 @@ def parse_units(value):
     
     return parsed_output
 
+
+#This function sets the plot_type of a data_series_dict
+#based on some JSONGrapherRC options.
+#It calls "plot_type_to_field_values" 
+#and then updates the data_series accordingly, as needed.
+def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
+    if plot_type == "":
+        plot_type = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
+    #We need to be careful about one case: in plotly, a "spline" is declared a scatter plot with data.line.shape = spline. 
+    #So we need to check if we have spline set, in which case we make the plot_type scatter_spline when calling plot_type_to_field_values.
+    shape_field = data_series_dict.get('line', {}).get('shape', '') #get will return first argument if there, second if not, so can chain things.
+    if shape_field == 'spline':
+        plot_type = 'scatter_spline'
+    fields_dict = plot_type_to_field_values(plot_type)
+ 
+    
+    #update the data_series_dict.
+    if fields_dict.get("mode_field"):
+        data_series_dict["mode"] = fields_dict["mode_field"]
+    if fields_dict.get("type_field"):
+        data_series_dict["type"] = fields_dict["type_field"]
+    if fields_dict.get("line_shape_field") != "":
+        data_series_dict.setdefault("line", {"shape": ''})  # Creates the field if it does not already exist.
+        data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
+    return data_series_dict
+
 def plot_type_to_field_values(plot_type):
     """
     Takes in a string that is a plot type, such as "scatter", "scatter_spline", etc.
@@ -608,23 +690,22 @@ def plot_type_to_field_values(plot_type):
     To these fields are used in the function set_plot_type_one_data_series
 
     """
-
     fields_dict = {}
     #initialize some variables.
-    fields_dict["type_field"] = plot_type
+    fields_dict["type_field"] = plot_type.lower()
     fields_dict["mode_field"] = None
     fields_dict["line_shape_field"] = None
     # Assign the various types. This list of values was determined 'manually'.
-    if plot_type == "scatter":
+    if plot_type.lower() == "scatter":
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = "markers"
         fields_dict["line_shape_field"] = None
-    elif plot_type == "scatter_spline":
+    elif plot_type.lower() == "scatter_spline":
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = None
         fields_dict["line_shape_field"] = "spline"
-    elif plot_type == "spline":
-        fields_dict["type_field"] = None
+    elif plot_type.lower() == "spline":
+        fields_dict["type_field"] = 'scatter'
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "spline"
     return fields_dict
@@ -634,6 +715,8 @@ def plot_type_to_field_values(plot_type):
 def update_and_validate_JSONGrapher_record(record):
     record.update_plot_types()
     record.validate_JSONGrapher_record()
+    record.fig_dict = clean_json_fig_dict(record.fig_dict)
+    return record
 
 #TODO: add the ability for this function to check against the schema.
 def validate_JSONGrapher_record(record):
@@ -882,7 +965,7 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
     return fig
     
 
-def apply_journal_style(plotly_json, journal_name):
+def apply_journal_style_to_plotly_dict(plotly_json, journal_name):
     """
     Apply a predefined style to a Plotly JSON object based on a journal name.
     
@@ -978,14 +1061,14 @@ def remove_nested_comments(data, top_level=True):
 
     return data
 
-def clean_json_dict(json_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
+def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
      and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. """
-    data = json_dict
+    data = json_fig_dict
     #unmodified_data = copy.deepcopy(data)
     if "title_field" in fields_to_update:
         data = update_title_field(data)
-    if extraInformation in fields_to_update:
+    if "extraInformation" in fields_to_update:
         data = remove_extra_information_field(data)
     if "nested_comments" in fields_to_update:
         data = remove_nested_comments(data)
@@ -997,20 +1080,23 @@ if __name__ == "__main__":
     # Example of creating a record with optional attributes.
     record = JSONGrapherRecord(
         comments="Here is a description.",
-        graph_title="Graph Title",
+        graph_title="Here Is The Graph Title Spot",
         data_objects_list=[
-            {"comments": "Initial data series.", "uid": "123", "line": {"shape": "solid"}, "name": "Series A", "type": "line", "x": [1, 2, 3], "y": [4, 5, 6]}
+            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     )
+    record.export_to_json_file("test.json")
+    print(record)
 
     # Example of creating a record from an existing dictionary.
     existing_JSONGrapher_record = {
         "comments": "Existing record description.",
         "graph_title": "Existing Graph",
         "data": [
-            {"comments": "Data series 1", "uid": "123", "line": {"shape": "solid"}, "name": "Series A", "type": "line", "x": [1, 2, 3], "y": [4, 5, 6]}
+            {"comments": "Data series 1", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     }
     record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=existing_JSONGrapher_record)
-    record.export_to_json_file("test.json")
     print(record)
+    
+    

@@ -20,7 +20,7 @@ URL = 'https://github.com/AdityaSavara/JSONGrapherRC'
 EMAIL = 'AditySavara2008@u.northwestern.edu'  
 AUTHOR = 'Aditya Savara'
 REQUIRES_PYTHON = '>=3.0.0'
-VERSION = '1.7'
+VERSION = '1.8'
 LICENSE = 'Unlicense'
 
 # What packages are required for this module to be executed?
@@ -30,7 +30,7 @@ REQUIRED = [
 ]
 
 EXTRAS = {
-    'COMPLETE': ['matplotlib'] #This is a list.
+    'COMPLETE': ['matplotlib', 'plotly'] #This is a list.
 }
 
 #To make sure the license etc. is included, I added the DATA_FILES object based on https://stackoverflow.com/questions/9977889/how-to-include-license-file-in-setup-py-script

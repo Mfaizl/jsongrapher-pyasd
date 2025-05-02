@@ -92,7 +92,7 @@ class JSONGrapherRecord:
         """
         Returns a JSON-formatted string of the record with an indent of 4.
         """
-        print("Warning: Printing directly will return the raw record without some automatic updates. Please use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
+        print("Warning: Printing directly will return the raw record without some automatic updates. It is recommended to use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
         return json.dumps(self.fig_dict, indent=4)
 
 
@@ -1040,11 +1040,13 @@ if __name__ == "__main__":
     # Example of creating a record with optional attributes.
     record = JSONGrapherRecord(
         comments="Here is a description.",
-        graph_title="Graph Title",
+        graph_title="Here Is The Graph Title Spot",
         data_objects_list=[
             {"comments": "Initial data series.", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 6]}
         ],
     )
+    record.export_to_json_file("test.json")
+    print(record)
 
     # Example of creating a record from an existing dictionary.
     existing_JSONGrapher_record = {
@@ -1055,5 +1057,6 @@ if __name__ == "__main__":
         ],
     }
     record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=existing_JSONGrapher_record)
-    record.export_to_json_file("test.json")
     print(record)
+    
+    

@@ -30,7 +30,7 @@ REQUIRED = [
 ]
 
 EXTRAS = {
-    'COMPLETE': ['matplotlib'] #This is a list.
+    'COMPLETE': ['matplotlib', 'plotly'] #This is a list.
 }
 
 #To make sure the license etc. is included, I added the DATA_FILES object based on https://stackoverflow.com/questions/9977889/how-to-include-license-file-in-setup-py-script

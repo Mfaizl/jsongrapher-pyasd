@@ -69,7 +69,7 @@ class JSONGrapherRecord:
             }
         }
 
-        self.plot_type = plot_type #the plot_type is actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
+        self.plot_type = plot_type #the plot_type is normally actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
         if plot_type != "":
             self.fig_dict["plot_type"] = plot_type
 
@@ -164,6 +164,19 @@ class JSONGrapherRecord:
         if "data" in existing_JSONGrapher_record:       self.fig_dict["data"] = existing_JSONGrapher_record["data"]
         if "layout" in existing_JSONGrapher_record:     self.fig_dict["layout"] = existing_JSONGrapher_record["layout"]
 
+    def import_from_dict(self, fig_dict):
+        self.fig_dict = fig_dict
+    
+    #the json object can be a filename string or can be json object which is actually a dictionary.
+    def import_from_json(self, json_filename_or_object):
+        if type(json_filename_or_object) == type(""): #assume it's a filename and path.
+            # Open the file in read mode
+            with open("json_filename_or_object", 'r') as file:
+                # Read the entire content of the file
+                content = file.read()
+                self.fig_dict = json.loads(content)   
+        else:
+            self.fig_dict = json_filename_or_object
 
     def set_plot_type_one_data_series(self, data_series_index, plot_type):
         fields_dict = plot_type_to_field_values(plot_type)
@@ -244,7 +257,13 @@ class JSONGrapherRecord:
         
         validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
         self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
-
+    def set_x_axis_range(self, min, max):
+        self.fig_dict["layout"]["xaxis"][0] = min
+        self.fig_dict["layout"]["xaxis"][1] = max
+    def set_y_axis_range(self, min, max):
+        self.fig_dict["layout"]["yaxis"][0] = min
+        self.fig_dict["layout"]["yaxis"][1] = max
+        
     def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
         # comments: General comments about the layout. Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         # graph_title: Title of the graph.
@@ -378,6 +397,8 @@ class JSONGrapherRecord:
                         current_field[current_path_key] = ""
 
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
+    def apply_journal_style(self, journal_name):
+        self.fig_dict = apply_journal_style_to_plotly_dict(self.fig_dict, journal_name=journal_name)
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -608,22 +629,21 @@ def plot_type_to_field_values(plot_type):
     To these fields are used in the function set_plot_type_one_data_series
 
     """
-
     fields_dict = {}
     #initialize some variables.
-    fields_dict["type_field"] = plot_type
+    fields_dict["type_field"] = plot_type.lower()
     fields_dict["mode_field"] = None
     fields_dict["line_shape_field"] = None
     # Assign the various types. This list of values was determined 'manually'.
-    if plot_type == "scatter":
+    if plot_type.lower() == "scatter":
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = "markers"
         fields_dict["line_shape_field"] = None
-    elif plot_type == "scatter_spline":
+    elif plot_type.lower() == "scatter_spline":
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = None
         fields_dict["line_shape_field"] = "spline"
-    elif plot_type == "spline":
+    elif plot_type.lower() == "spline":
         fields_dict["type_field"] = None
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "spline"
@@ -882,7 +902,7 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
     return fig
     
 
-def apply_journal_style(plotly_json, journal_name):
+def apply_journal_style_to_plotly_dict(plotly_json, journal_name):
     """
     Apply a predefined style to a Plotly JSON object based on a journal name.
     
@@ -999,7 +1019,7 @@ if __name__ == "__main__":
         comments="Here is a description.",
         graph_title="Graph Title",
         data_objects_list=[
-            {"comments": "Initial data series.", "uid": "123", "line": {"shape": "solid"}, "name": "Series A", "type": "line", "x": [1, 2, 3], "y": [4, 5, 6]}
+            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 6]}
         ],
     )
 
@@ -1008,7 +1028,7 @@ if __name__ == "__main__":
         "comments": "Existing record description.",
         "graph_title": "Existing Graph",
         "data": [
-            {"comments": "Data series 1", "uid": "123", "line": {"shape": "solid"}, "name": "Series A", "type": "line", "x": [1, 2, 3], "y": [4, 5, 6]}
+            {"comments": "Data series 1", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 6]}
         ],
     }
     record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=existing_JSONGrapher_record)

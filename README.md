@@ -23,13 +23,7 @@ tree_heights = [0, 0.42, 0.86, 1.19, 1.45]
 
 ## **2\. Creating and Populating a New JSONGrapher Record**
 
-The easiest way to start is with the `create_new_JSONGrapherRecord()` function. While you *can* instantiate the JSONGrapherRecord class directly, this function is generally more convenient. We'll create a record and inspect its default fields.
 <pre>
-try:
-    from JSONGRapherRC import JSONRecordCreator  # Normal usage
-except ImportError:
-    import JSONRecordCreator  # If the class file is local
-
 Record = JSONRecordCreator.create_new_JSONGrapherRecord()
 Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
@@ -41,7 +35,7 @@ Record.set_graph_title("Pear Tree Growth Versus Time")
 
 ## **3\. Exporting to File**
 
-We now have a JSONGrapher record! We can export it to a file, which can then be used with JSONGrapher. 
+We can export it to a .json file, which can then be used with JSONGrapher. 
 <pre>
 Record.export_to_json_file("ExampleFromTutorial.json")
 Record.print_to_inspect()
@@ -70,6 +64,7 @@ JSONGrapher Record exported to, ./ExampleFromTutorial.json
 }
 </pre>
 
+## **4\. Plotting to Inspect**
 
 We can also plot the data using Matplotlib and export the plot as a PNG file.
 <pre>

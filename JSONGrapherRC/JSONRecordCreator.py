@@ -1038,7 +1038,7 @@ def remove_extra_information_field(data, depth=1, max_depth=10):
 
     # Use a copy of the dictionary keys to safely modify the dictionary during iteration
     for key in list(data.keys()):
-        if key == "extraInformation":
+        if key == ("extraInformation" or "extra_information"):
             del data[key]  # Remove the field
         elif isinstance(data[key], dict):  # Nested dictionary
             data[key] = remove_extra_information_field(data[key], depth + 1, max_depth)

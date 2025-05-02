@@ -285,7 +285,7 @@ class JSONGrapherRecord:
 
         return self.fig_dict['layout']
     
-    #TODO: add record validation to this function.
+    #This function validates the output before exporting, and also has an option of removing hints.
     def export_to_json_file(self, filename, update_and_validate=True, validate=True, remove_remaining_hints=False):
         """
         writes the json to a file
@@ -547,7 +547,7 @@ def validate_plotly_data_list(data):
             warnings_list.append(f"Trace {i} is not a dictionary.")
             continue
         if "comments" in trace:
-            warnings_list.append(f"Trace {i} has a comments field within the data. This is allowed by JSONGrapher, but is discouraged by plotly.")
+            warnings_list.append(f"Trace {i} has a comments field within the data. This is allowed by JSONGrapher, but is discouraged by plotly. By default, this will be removed when you export your record.")
         # Determine the type based on the fields provided
         trace_type = trace.get("type")
         if not trace_type:
@@ -621,7 +621,14 @@ def parse_units(value):
 def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
     if plot_type == "":
         plot_type = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
+    #We need to be careful about one case: in plotly, a "spline" is declared a scatter plot with data.line.shape = spline. 
+    #So we need to check if we have spline set, in which case we make the plot_type scatter_spline when calling plot_type_to_field_values.
+    shape_field = data_series_dict.get('line', {}).get('shape', '') #get will return first argument if there, second if not, so can chain things.
+    if shape_field == 'spline':
+        plot_type = 'scatter_spline'
     fields_dict = plot_type_to_field_values(plot_type)
+ 
+    
     #update the data_series_dict.
     if fields_dict.get("mode_field"):
         data_series_dict["mode"] = fields_dict["mode_field"]
@@ -658,7 +665,7 @@ def plot_type_to_field_values(plot_type):
         fields_dict["mode_field"] = None
         fields_dict["line_shape_field"] = "spline"
     elif plot_type.lower() == "spline":
-        fields_dict["type_field"] = None
+        fields_dict["type_field"] = 'scatter'
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "spline"
     return fields_dict

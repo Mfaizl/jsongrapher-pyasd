@@ -196,7 +196,7 @@ class JSONGrapherRecord:
        
     def update_plot_types(self, plot_type=None):
         """
-        updates the plot types for any existing data series.
+        updates the plot types for every existing data series.
         
         """        
         #If optional argument not provided, take class instance setting.
@@ -205,6 +205,11 @@ class JSONGrapherRecord:
         #If the plot_type is not blank, use it for all series.
         if plot_type != "":
             self.set_plot_type_all_series(plot_type)
+        else: #if the plot_type is blank, then we will go through each data series and update them individually.
+            for data_series_index, data_series_dict in enumerate(self.fig_dict['data']):
+                #This will update the data_series_dict as needed, putting a plot_type if there is not one.
+                data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict)
+                self.fig_dict['data'][data_series_index] = data_series_dict
  
     def set_datatype(self, datatype):
         """
@@ -663,6 +668,8 @@ def plot_type_to_field_values(plot_type):
 def update_and_validate_JSONGrapher_record(record):
     record.update_plot_types()
     record.validate_JSONGrapher_record()
+    record = clean_json_dict(record)
+    return record
 
 #TODO: add the ability for this function to check against the schema.
 def validate_JSONGrapher_record(record):
@@ -1014,7 +1021,7 @@ def clean_json_dict(json_dict, fields_to_update=["title_field", "extraInformatio
     #unmodified_data = copy.deepcopy(data)
     if "title_field" in fields_to_update:
         data = update_title_field(data)
-    if extraInformation in fields_to_update:
+    if "extraInformation" in fields_to_update:
         data = remove_extra_information_field(data)
     if "nested_comments" in fields_to_update:
         data = remove_nested_comments(data)

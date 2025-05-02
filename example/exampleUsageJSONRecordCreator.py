@@ -76,3 +76,21 @@ Record.plot_with_plotly()
 Record.apply_style("Nature")
 Record.plot_with_plotly()
 #Note: As of April 2025, the styles have not actually been made suitable for journals. However, the feature is here so that such styles can be made.
+
+
+
+## The below section is commented out so it will not run by default. 
+## Users may uncomment the code if they want to try running it.
+## Users should be aware that conversions between these plot record formats
+## is imperfect and can result in unexpected formatting.
+
+# print("\n\n STEP 7: GETTING AND CONVERTING BETWEEN MATPLOTLIB AND PLOTLY FIGURE OBJECTS")
+# # One can obtain matplotlib figure objects and plotly figure objects from JSONGrapherRC records.
+# mpl_fig = Record.get_matplotlib_fig()
+# plotly_fig = Record.get_plotly_fig()
+
+# #One can convert matplotlib figs to plotly figs and vice versa
+# #However, there will be imperfections in the conversions.
+# import plotly.tools
+# plotly_fig_from_mpl_fig = plotly.tools.mpl_to_plotly(mpl_fig)
+# plotly_fig_from_mpl_fig.show()

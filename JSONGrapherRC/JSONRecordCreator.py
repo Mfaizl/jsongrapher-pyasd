@@ -657,15 +657,16 @@ def parse_units(value):
 #This function sets the plot_type of a data_series_dict
 #based on some JSONGrapherRC options.
 #It calls "plot_type_to_field_values" 
-#and then updates the data_series accordingly, as needed.
+#and then updates the data_series_dict accordingly, as needed.
 def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
     if plot_type == "":
         plot_type = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
     #We need to be careful about one case: in plotly, a "spline" is declared a scatter plot with data.line.shape = spline. 
     #So we need to check if we have spline set, in which case we make the plot_type scatter_spline when calling plot_type_to_field_values.
     shape_field = data_series_dict.get('line', {}).get('shape', '') #get will return first argument if there, second if not, so can chain things.
+    #TODO: need to distinguish between "spline" and "scatter_spline" by checking for marker instructions.
     if shape_field == 'spline':
-        plot_type = 'scatter_spline'
+        plot_type = 'scatter_spline' 
     fields_dict = plot_type_to_field_values(plot_type)
  
     
@@ -679,6 +680,7 @@ def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
         data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
     return data_series_dict
 
+#This function creates a fields_dict for the function set_data_series_dict_plot_type
 def plot_type_to_field_values(plot_type):
     """
     Takes in a string that is a plot type, such as "scatter", "scatter_spline", etc.
@@ -696,7 +698,7 @@ def plot_type_to_field_values(plot_type):
     fields_dict["mode_field"] = None
     fields_dict["line_shape_field"] = None
     # Assign the various types. This list of values was determined 'manually'.
-    if plot_type.lower() == "scatter":
+    if plot_type.lower() == ("scatter" or "markers"):
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = "markers"
         fields_dict["line_shape_field"] = None

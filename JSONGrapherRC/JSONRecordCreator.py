@@ -432,8 +432,8 @@ class JSONGrapherRecord:
                         current_field[current_path_key] = ""
 
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
-    def apply_journal_style(self, journal_name):
-        self.fig_dict = apply_journal_style_to_plotly_dict(self.fig_dict, journal_name=journal_name)
+    def apply_style(self, style_name):
+        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, style_name=style_name)
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -965,22 +965,21 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
     return fig
     
 
-def apply_journal_style_to_plotly_dict(plotly_json, journal_name):
+def apply_style_to_plotly_dict(plotly_json, style_name):
     """
-    Apply a predefined style to a Plotly JSON object based on a journal name.
+    Apply a predefined style to a Plotly JSON object based on a style name which may be a journal name.
     
     :param plotly_json: dict, Plotly JSON object.
-    :param journal_name: str, Name of the journal.
+    :param style_name: str, Name of the style or journal.
     :return: dict, Updated Plotly JSON object.
     """
-    journal_styles = {
+    styles_available = {
         "Nature": {
             "layout": {
                 "title": {"font": {"size": 24, "family": "Times New Roman", "color": "black"}},
                 "font": {"size": 18, "family": "Times New Roman"},
                 "paper_bgcolor": "white",
                 "plot_bgcolor": "white",
-
             }
         },
         "Science": {
@@ -994,12 +993,22 @@ def apply_journal_style_to_plotly_dict(plotly_json, journal_name):
     }
 
     # Get the style for the specified journal, default to no change if not found
-    style = journal_styles.get(journal_name, {})
-
-    # Apply the style
-    plotly_json["layout"] = {**plotly_json.get("layout", {}), **style.get("layout", {})}
+    style_dict = styles_available.get(style_name, {})
+    
+    # Ensure title field is merged properly to avoid overwriting
+    plotly_json.setdefault("layout", {})
+    plotly_json["layout"].setdefault("title", {})
+    
+    # Merge title settings separately to preserve existing text
+    plotly_json["layout"]["title"] = {**plotly_json["layout"]["title"], **style_dict.get("layout", {}).get("title", {})}
+    
+    # Merge other layout settings
+    for key, value in style_dict.get("layout", {}).items():
+        if key != "title":  # Skip title since it was handled separately
+            plotly_json["layout"][key] = value
     
     return plotly_json
+
 
 def update_title_field(data, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting

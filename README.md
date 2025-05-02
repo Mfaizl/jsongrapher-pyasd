@@ -69,7 +69,7 @@ JSONGrapher Record exported to, ./ExampleFromTutorial.json
 We can also plot the data using Matplotlib and export the plot as a PNG file.
 <pre>
 Record.plot_with_matplotlib()
-Record.export_to_matplotlib_png("ExampleFromTutorial")
+Record.export_to_matplotlib_png("ExampleFromTutorial_matplotlib_fig")
 </pre>
 
 And we can create an interactive graph in a browser with plotly:
@@ -77,4 +77,4 @@ And we can create an interactive graph in a browser with plotly:
 Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
 </pre>
 
-[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial.png)
+[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial_matplotlib_fig.png)

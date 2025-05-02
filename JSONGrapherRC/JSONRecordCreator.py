@@ -179,18 +179,8 @@ class JSONGrapherRecord:
             self.fig_dict = json_filename_or_object
 
     def set_plot_type_one_data_series(self, data_series_index, plot_type):
-        fields_dict = plot_type_to_field_values(plot_type)
-        #get the data_series_dict.
         data_series_dict = self.fig_dict['data'][data_series_index]
-        #update the data_series_dict.
-        if fields_dict.get("mode_field"):
-            data_series_dict["mode"] = fields_dict["mode_field"]
-        if fields_dict.get("type_field"):
-            data_series_dict["type"] = fields_dict["type_field"]
-        if fields_dict.get("line_shape_field") != "":
-            data_series_dict.setdefault("line", {"shape": ''})  # Creates the field if it does not already exist.
-            data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
-
+        data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict, plot_type=plot_type)
         #now put the data_series_dict back:
         self.fig_dict['data'][data_series_index] = data_series_dict
 
@@ -617,6 +607,25 @@ def parse_units(value):
         }
     
     return parsed_output
+
+
+#This function sets the plot_type of a data_series_dict
+#based on some JSONGrapherRC options.
+#It calls "plot_type_to_field_values" 
+#and then updates the data_series accordingly, as needed.
+def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
+    if plot_type == "":
+        plot_type = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
+    fields_dict = plot_type_to_field_values(plot_type)
+    #update the data_series_dict.
+    if fields_dict.get("mode_field"):
+        data_series_dict["mode"] = fields_dict["mode_field"]
+    if fields_dict.get("type_field"):
+        data_series_dict["type"] = fields_dict["type_field"]
+    if fields_dict.get("line_shape_field") != "":
+        data_series_dict.setdefault("line", {"shape": ''})  # Creates the field if it does not already exist.
+        data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
+    return data_series_dict
 
 def plot_type_to_field_values(plot_type):
     """

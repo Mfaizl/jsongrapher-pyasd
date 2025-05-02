@@ -1042,7 +1042,7 @@ if __name__ == "__main__":
         comments="Here is a description.",
         graph_title="Here Is The Graph Title Spot",
         data_objects_list=[
-            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 6]}
+            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     )
     record.export_to_json_file("test.json")
@@ -1053,7 +1053,7 @@ if __name__ == "__main__":
         "comments": "Existing record description.",
         "graph_title": "Existing Graph",
         "data": [
-            {"comments": "Data series 1", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 6]}
+            {"comments": "Data series 1", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     }
     record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=existing_JSONGrapher_record)

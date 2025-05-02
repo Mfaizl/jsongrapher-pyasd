@@ -309,6 +309,18 @@ class JSONGrapherRecord:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 
+    def get_plotly_fig(self, update_and_validate=True):
+        if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
+            self.update_and_validate_JSONGrapher_record()
+        fig = convert_JSONGrapher_dict_to_plotly_fig(self.fig_dict)
+        return fig
+
+    def plot_with_plotly(self, update_and_validate=True):
+        import plotly.io as pio
+        fig = self.get_plotly_fig(update_and_validate=update_and_validate)
+        fig.show()
+        #No need for fig.close() for plotly figures.
+
     def get_matplotlib_fig(self, update_and_validate=True):
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()

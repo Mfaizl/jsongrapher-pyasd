@@ -1,5 +1,5 @@
-# JSONGrapherRC
-A python package for creating JSONGrapher Records
+# JSONGrapherRC (JSONGrapher Record Creator)
+A python package for creating JSONGrapher files which can then be plotted. 
 
 To use JSONGrapherRC, first install it using pip:
 <pre>
@@ -8,7 +8,7 @@ pip install JSONGrapherRC[COMPLETE]
 
 Alternatively, you can download the directory directly.<br> 
 
-It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapherRC/blob/main/example/exampleUsageJSONRecordCreator.py) to see how to create records and plots. Record files can then be dragged into www.jsongrapher.com<br>
+It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapherRC/blob/main/example/exampleUsageJSONRecordCreator.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
 
 
 ## **1\. Preparing to Create a Record**

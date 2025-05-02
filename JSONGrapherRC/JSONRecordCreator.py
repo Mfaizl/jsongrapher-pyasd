@@ -2,6 +2,7 @@ import json
 #TODO: put an option to suppress warnings from JSONRecordCreator
 
 
+
 #the function create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
 # intuitive to create class objects that way, this variable is actually just a reference 
 # so that we don't have to map the arguments.
@@ -310,16 +311,43 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     def get_plotly_fig(self, update_and_validate=True):
+        import plotly.io as pio
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
-        fig = convert_JSONGrapher_dict_to_plotly_fig(self.fig_dict)
+        fig = pio.from_json(json.dumps(self.fig_dict))
         return fig
 
     def plot_with_plotly(self, update_and_validate=True):
-        import plotly.io as pio
         fig = self.get_plotly_fig(update_and_validate=update_and_validate)
         fig.show()
         #No need for fig.close() for plotly figures.
+
+
+    def export_to_plotly_png(self, filename, update_and_validate=True, timeout=10):
+        fig = self.get_plotly_fig(update_and_validate=update_and_validate)       
+        # Save the figure to a file, but use the timeout version.
+        self.export_plotly_image_with_timeout(plotly_fig = fig, filename=filename, timeout=timeout)
+
+    def export_plotly_image_with_timeout(self, plotly_fig, filename, timeout=10):
+        # Ensure filename ends with .png
+        if not filename.lower().endswith(".png"):
+            filename += ".png"
+        import plotly.io as pio
+        pio.kaleido.scope.mathjax = None
+        fig = plotly_fig
+        
+        def export():
+            try:
+                fig.write_image(filename, engine="kaleido")
+            except Exception as e:
+                print(f"Export failed: {e}")
+
+        import threading
+        thread = threading.Thread(target=export, daemon=True)  # Daemon ensures cleanup
+        thread.start()
+        thread.join(timeout=timeout)  # Wait up to 10 seconds
+        if thread.is_alive():
+            print("Skipping Plotly png export: Operation timed out. Plotly image export often does not work from Python. Consider using export_to_matplotlib_png.")
 
     def get_matplotlib_fig(self, update_and_validate=True):
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.

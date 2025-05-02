@@ -72,9 +72,9 @@ Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("ExampleFromTutorial_matplotlib_fig")
 </pre>
 
-And we can create an interactive graph in a browser with plotly:
+And we can create an interactive graph with plotly:
 <pre>
-Record.plot_with_plotly() #Try hovering the mouse over points in the figure that comes out after this command!
+Record.plot_with_plotly() #Try hovering your mouse over points after this command!
 </pre>
 
 [![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial_matplotlib_fig.png)

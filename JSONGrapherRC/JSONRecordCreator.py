@@ -168,6 +168,9 @@ class JSONGrapherRecord:
     def import_from_dict(self, fig_dict):
         self.fig_dict = fig_dict
     
+    def import_from_file(self, json_filename_or_object):
+        self.import_from_json(json_filename_or_object)
+
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
         if type(json_filename_or_object) == type(""): #assume it's a filename and path.

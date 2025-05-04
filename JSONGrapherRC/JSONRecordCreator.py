@@ -15,10 +15,41 @@ def create_new_JSONGrapherRecord(hints=False):
     return new_record
 
 
+#This is a function for merging JSONGrapher records.
+#recordsList is a list of records 
+#Each record can be a JSONGrapherRecord object (a python class object) or a dictionary (meaning, a JSONGrapher JSON as a dictionary)
+#If a record is received that is a string, then the function will attempt to convert that into a dictionary.
+#The units used will be that of the first record encountered
+def merge_JSONGrapherRecords(recordsList):
+    import unitpy
+    recordsAsDictionariesList = []
+    merged_JSONGrapherRecord = create_new_JSONGrapherRecord()
+    #first make a list of all the records as dictionaries.
+    for record in recordsList:
+        if type(record) == type({}):
+            recordsAsDictionariesList.append(record)
+        elif type(record) == type("string"):
+            record = json.loads(record)
+            recordsAsDictionariesList.append(record)
+        else: #this assumpes there is a JSONGrapherRecord type received. 
+            record = record.fig_dict
+            recordsAsDictionariesList.append(record)
+    #next, iterate through the list of dictionaries and merge each data object together.
+    first_record_x_label = recordsAsDictionariesList[0]["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+    first_record_y_label = recordsAsDictionariesList[0]["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+    first_record_x_units = parse_units(first_record_x_label)["units"]
+    first_record_y_units = parse_units(first_record_y_label)["units"]
+    first_data_object 
+
+
+    
+        
+
 class JSONGrapherRecord:
     """
     This class enables making JSONGrapher records. Each instance represents a structured JSON record for a graph.
     One can optionally provide an existing JSONGrapher record during creation to pre-populate the object.
+    One can also manipulate the fig_dict inside, directly, using syntax like Record.fig_dict["comments"] = ...
 
     Arguments & Attributes (all are optional):
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.

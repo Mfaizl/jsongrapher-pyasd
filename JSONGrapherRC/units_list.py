@@ -2,6 +2,8 @@
 '''
     #This units list came from the UUC units list. https://github.com/Lemonexe/UUC/blob/master/app/data.js
     # it has been converted to python and contains all of the program constants, the unit database, and database of prefixes
+    #In the JSONGrapherRC repository, this is used (as of May 2025) simply to remove "plural" units.
+    # In JSONGrapherRC, the unitpy package is what is used for unit conversion.
     # 'en' is for English, 'cz' is for Czech, and "ae" is for American English.
 
     metre → meter

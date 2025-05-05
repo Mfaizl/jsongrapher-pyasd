@@ -157,7 +157,7 @@ class JSONGrapherRecord:
         if plot_type != "":
             self.fig_dict["plot_type"] = plot_type
 
-        # Populate attributes if an existing JSONGrapher record is provided.
+        # Populate attributes if an existing JSONGrapher record is provided, as a dictionary.
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
 
@@ -243,11 +243,48 @@ class JSONGrapherRecord:
         Populates attributes from an existing JSONGrapher record.
         existing_JSONGrapher_record: A dictionary representing an existing JSONGrapher record.
         """
-        if "comments" in existing_JSONGrapher_record:   self.fig_dict["comments"] = existing_JSONGrapher_record["comments"]
-        if "datatype" in existing_JSONGrapher_record:      self.fig_dict["datatype"] = existing_JSONGrapher_record["datatype"]
-        if "data" in existing_JSONGrapher_record:       self.fig_dict["data"] = existing_JSONGrapher_record["data"]
-        if "layout" in existing_JSONGrapher_record:     self.fig_dict["layout"] = existing_JSONGrapher_record["layout"]
+        #While we expect a dictionary, if a JSONGrapher ojbect is provided, we will simply pull the dictionary out of that.
+        if type(existing_JSONGrapher_record) != type({}):
+            existing_JSONGrapher_record = existing_JSONGrapher_record.fig_dict
+        if type(existing_JSONGrapher_record) == type({}):
+            if "comments" in existing_JSONGrapher_record:   self.fig_dict["comments"] = existing_JSONGrapher_record["comments"]
+            if "datatype" in existing_JSONGrapher_record:      self.fig_dict["datatype"] = existing_JSONGrapher_record["datatype"]
+            if "data" in existing_JSONGrapher_record:       self.fig_dict["data"] = existing_JSONGrapher_record["data"]
+            if "layout" in existing_JSONGrapher_record:     self.fig_dict["layout"] = existing_JSONGrapher_record["layout"]
 
+    #the below function takes in existin JSONGrpher record, and merges the data in.
+    #This requires scaling any data as needed, according to units.
+    def merge_in_JSONGrapherRecord(self, fig_dict_to_merge_in):
+        import copy
+        fig_dict_to_merge_in = copy.deepcopy(fig_dict_to_merge_in)
+        if type(fig_dict_to_merge_in) == type({}):
+            pass #this is what we are expecting.
+        elif type(fig_dict_to_merge_in) == type("string"):
+            fig_dict_to_merge_in = json.loads(fig_dict_to_merge_in)
+        else: #this assumpes there is a JSONGrapherRecord type received. 
+            fig_dict_to_merge_in = fig_dict_to_merge_in.fig_dict
+        #Now extract the units of the current record.
+        first_record_x_label = self.fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+        first_record_y_label = self.fig_dict[0]["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
+        first_record_x_units = separate_label_text_from_units(first_record_x_label)["units"]
+        first_record_y_units = separate_label_text_from_units(first_record_y_label)["units"]
+        #Get the units of the new record.
+        this_record_x_label = fig_dict_to_merge_in["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+        this_record_y_label = fig_dict_to_merge_in["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
+        this_record_x_units = separate_label_text_from_units(this_record_x_label)["units"]
+        this_record_y_units = separate_label_text_from_units(this_record_y_label)["units"]
+        #now get the ratio of the units for this record relative to the first record.
+        x_units_ratio = get_units_scaling_ratio(this_record_x_units, first_record_x_units)
+        y_units_ratio = get_units_scaling_ratio(this_record_y_units, first_record_y_units)
+        #A record could have more than one data series, but they will all have the same units.
+        #Thus, we use a function that will scale all of the dataseries at one time.
+        scaled_fig_dict = scale_fig_dict_values(fig_dict_to_merge_in, x_units_ratio, y_units_ratio)
+        #now, add the scaled data objects to the original one.
+        #This is fairly easy using a list extend.
+        self.fig_dict["data"].extend(scaled_fig_dict["data"])
+
+
+    
     def import_from_dict(self, fig_dict):
         self.fig_dict = fig_dict
     

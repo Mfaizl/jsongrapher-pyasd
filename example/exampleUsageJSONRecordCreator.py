@@ -59,6 +59,7 @@ Record.print_to_inspect()
 #Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "spline")
 #Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, plot_type = "scatter")
 
+
 #We can also plot the data with matplotlib, and can export to file as png. 
 print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB AND PLOTLY-PYTHON-MODULE")
 Record.plot_with_matplotlib()
@@ -68,9 +69,28 @@ Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
 Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
 
 
+print("\n\n STEP 6: ADDING SERIES AND MERGING RECORDS")
+#Let's try adding in a second series which has tree heights that are 80% as tall as the first dataset.
+import numpy as np
+tree_heights_second_data_set = np.array(tree_heights)*0.80
+Record.add_data_series(series_name = "pear tree growth 2", x_values=time_in_years, y_values=tree_heights_second_data_set, plot_type="scatter_spline")
+
+#Let's make a 3rd series using a second record, then merge it in.
+import copy
+Record2 = copy.deepcopy(Record)
+#This new copy has two datasets in it. Let's popout the second data set, which is index 1.
+Record2.fig_dict["data"].pop(1)
+#Let's manually overrite the y data inside the first series of this copy. 
+Record2.fig_dict["data"][0]["y"] = np.array(Record.fig_dict["data"][0]["y"])*0.60
+Record2.fig_dict["data"][0]["name"] = "pear tree growth 3"
+#now let's merge in the new record.
+Record.merge_in_JSONGrapherRecord(Record2)
+#Now plot the JSONGrapher object again. This time, there will be 3 series.
+Record.plot_with_plotly()
+
 
 #Now let's try applying a predfined style!
-print("\n\n STEP 6: TRYING PREDIFINED STYLES")
+print("\n\n STEP 7: TRYING PREDIFINED STYLES")
 Record.apply_style("Science")
 Record.plot_with_plotly()
 Record.apply_style("Nature")
@@ -84,7 +104,7 @@ Record.plot_with_plotly()
 ## Users should be aware that conversions between these plot record formats
 ## is imperfect and can result in unexpected formatting.
 
-# print("\n\n STEP 7: GETTING AND CONVERTING BETWEEN MATPLOTLIB AND PLOTLY FIGURE OBJECTS")
+# print("\n\n STEP 8: GETTING AND CONVERTING BETWEEN MATPLOTLIB AND PLOTLY FIGURE OBJECTS")
 # # One can obtain matplotlib figure objects and plotly figure objects from JSONGrapherRC records.
 # mpl_fig = Record.get_matplotlib_fig()
 # plotly_fig = Record.get_plotly_fig()

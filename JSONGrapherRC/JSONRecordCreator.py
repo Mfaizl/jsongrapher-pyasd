@@ -1216,7 +1216,119 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraIn
     if "nested_comments" in fields_to_update:
         data = remove_nested_comments(data)
     return data
+
+
+def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbose = False):
+    """
+    Downloads a JavaScript file using its URL, extracts the filename, appends an export statement,
+    executes it with Node.js, and parses the output.
+
+    Parameters:
+    javascript_simulator_url (str): URL of the raw JavaScript file to download and execute. Must have a function named simulate.
+    simulator_input_json_dict (dict): Input parameters for the JavaScript simulator.
+
+    # Example inputs
+    javascript_simulator_url = "https://github.com/AdityaSavara/JSONGrapherExamples/blob/main/ExampleSimulators/Langmuir_Isotherm.js"
+    simulator_input_json_dict = {
+        "simulate": {
+            "K_eq": None,
+            "sigma_max": "1.0267670459667 (mol/kg)",
+            "k_ads": "200 (1/(bar * s))",
+            "k_des": "100 (1/s)"
+        }
+    }
+
+
+    Returns:
+    dict: Parsed JSON output from the JavaScript simulation, or None if an error occurred.
+    """
+    import requests
+    import subprocess
+    import json
+    import os
+
+    # Convert to raw GitHub URL only if "raw" is not in the original URL
+    # For example, the first link below gets converted to the second one.
+    # https://github.com/AdityaSavara/JSONGrapherExamples/blob/main/ExampleSimulators/Langmuir_Isotherm.js
+    # https://raw.githubusercontent.com/AdityaSavara/JSONGrapherExamples/main/ExampleSimulators/Langmuir_Isotherm.js    
     
+    if "raw" not in javascript_simulator_url:
+        javascript_simulator_url = convert_to_raw_github_url(javascript_simulator_url)
+
+    # Extract filename from URL
+    js_filename = os.path.basename(javascript_simulator_url)
+
+    # Download the JavaScript file
+    response = requests.get(javascript_simulator_url)
+
+    if response.status_code == 200:
+        with open(js_filename, "w") as file:
+            file.write(response.text)
+
+        # Append the export statement to the JavaScript file
+        with open(js_filename, "a") as file:
+            file.write("\nmodule.exports = { simulate };")
+
+        # Convert input dictionary to a JSON string
+        input_json_str = json.dumps(simulator_input_json_dict)
+
+        # Prepare JavaScript command for execution
+        js_command = f"""
+        const simulator = require('./{js_filename}');
+        console.log(JSON.stringify(simulator.simulate({input_json_str})));
+        """
+
+        result = subprocess.run(["node", "-e", js_command], capture_output=True, text=True)
+
+        # Print output and errors if verbose
+        if verbose:
+            print("Raw JavaScript Output:", result.stdout)
+            print("Node.js Errors:", result.stderr)
+
+        # Parse JSON if valid
+        if result.stdout.strip():
+            try:
+                return json.loads(result.stdout) #This is the normal case.
+            except json.JSONDecodeError:
+                print("Error: JavaScript output is not valid JSON.")
+                return None
+    else:
+        print(f"Error: Unable to fetch JavaScript file. Status code {response.status_code}")
+        return None
+
+
+
+
+def convert_to_raw_github_url(url):
+    """
+    Converts a GitHub file URL to its raw content URL if necessary, preserving the filename.
+    This function is really a support function for run_js_simulation
+    """
+    from urllib.parse import urlparse
+    parsed_url = urlparse(url)
+
+    # If the URL is already a raw GitHub link, return it unchanged
+    if "raw.githubusercontent.com" in parsed_url.netloc:
+        return url
+
+    path_parts = parsed_url.path.strip("/").split("/")
+
+    # Ensure it's a valid GitHub file URL
+    if "github.com" in parsed_url.netloc and len(path_parts) >= 4:
+        if path_parts[2] == "blob":  
+            # If the URL contains "blob", adjust extraction
+            user, repo, branch = path_parts[:2] + [path_parts[3]]
+            file_path = "/".join(path_parts[4:])  # Keep full file path including filename
+        else:
+            # Standard GitHub file URL (without "blob")
+            user, repo, branch = path_parts[:3]
+            file_path = "/".join(path_parts[3:])  # Keep full file path including filename
+
+        return f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/{file_path}"
+
+    return url  # Return unchanged if not a GitHub file URL
+
+
 
 # Example Usage
 if __name__ == "__main__":

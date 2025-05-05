@@ -1,8 +1,6 @@
 import json
 #TODO: put an option to suppress warnings from JSONRecordCreator
 
-
-
 #the function create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
 # intuitive to create class objects that way, this variable is actually just a reference 
 # so that we don't have to map the arguments.
@@ -21,7 +19,7 @@ def create_new_JSONGrapherRecord(hints=False):
 #If a record is received that is a string, then the function will attempt to convert that into a dictionary.
 #The units used will be that of the first record encountered
 def merge_JSONGrapherRecords(recordsList):
-    import unitpy
+    import copy
     recordsAsDictionariesList = []
     merged_JSONGrapherRecord = create_new_JSONGrapherRecord()
     #first make a list of all the records as dictionaries.
@@ -35,15 +33,69 @@ def merge_JSONGrapherRecords(recordsList):
             record = record.fig_dict
             recordsAsDictionariesList.append(record)
     #next, iterate through the list of dictionaries and merge each data object together.
-    first_record_x_label = recordsAsDictionariesList[0]["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
-    first_record_y_label = recordsAsDictionariesList[0]["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
-    first_record_x_units = parse_units(first_record_x_label)["units"]
-    first_record_y_units = parse_units(first_record_y_label)["units"]
-    first_data_object 
+    #We'll use the the units of the first dictionary.
+    #We'll put the first record in directly, keeping the units etc. Then will "merge" in the additional data sets.
+    #Iterate across all records received.
+    for dictionary_index, current_fig_dict in enumerate(recordsAsDictionariesList):
+        if dictionary_index == 0: #this is the first record case. We'll use this to start the list and also gather the units.
+            merged_JSONGrapherRecord.fig_dict = copy.deepcopy(recordsAsDictionariesList[0])
+            first_record_x_label = recordsAsDictionariesList[0]["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+            first_record_y_label = recordsAsDictionariesList[0]["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
+            first_record_x_units = separate_label_text_from_units(first_record_x_label)["units"]
+            first_record_y_units = separate_label_text_from_units(first_record_y_label)["units"]
+        else:
+            #first get the units of this particular record.
+            this_record_x_label = recordsAsDictionariesList[dictionary_index]["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+            this_record_y_label = recordsAsDictionariesList[dictionary_index]["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
+            this_record_x_units = separate_label_text_from_units(this_record_x_label)["units"]
+            this_record_y_units = separate_label_text_from_units(this_record_y_label)["units"]
+            #now get the ratio of the units for this record relative to the first record.
+            x_units_ratio = get_units_scaling_ratio(this_record_x_units, first_record_x_units)
+            y_units_ratio = get_units_scaling_ratio(this_record_y_units, first_record_y_units)
+            #A record could have more than one data series, but they will all have the same units.
+            #Thus, we use a function that will scale all of the dataseries at one time.
+            scaled_fig_dict = scale_fig_dict_values(current_fig_dict, x_units_ratio, y_units_ratio)
+            #now, add the scaled data objects to the original one.
+            #This is fairly easy using a list extend.
+            merged_JSONGrapherRecord.fig_dict["data"].extend(scaled_fig_dict["data"])
+    return merged_JSONGrapherRecord
 
 
-    
+#TODO: make get_units_ratio a function inside a separate python file, with import unitpy in the function, then call it from here.
+#TODO: makea  "scale_record_values" function that takes a fig_dict and then has scale_x_values_by = 1 and scale_y_values_by = 1
+
+#The below function takes two units strings, such as
+#    "(((kg)/m))/s" and  "(((g)/m))/s"
+# and then returns the scaling ratio of units_string_1 / units_string_2
+def get_units_scaling_ratio(units_string_1, units_string_2):
+    import unitpy #this function uses unitpy.
+    #First need to make unitpy "U" object and multiply it by 1. 
+    #While it may be possible to find a way using the "Q" objects, this is the way I found so far.
+    units_object_converted = 1*unitpy.U(units_string_1)
+    ratio_with_units_object = units_object_converted.to(units_string_2)
+    ratio_with_units_string = str(ratio_with_units_object)
+    ratio_only = ratio_with_units_string.split(' ')[0] #what comes out may look like 1000 gram/(meter second), so we split and take first part.
+    ratio_only = float(ratio_only)
+    return ratio_only
         
+#the below function takes in a fig_dict, as well as x and/or y scaling values.
+#The function then scales the values in the data of the fig_dict and returns the scaled fig_dict.
+def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
+    import copy
+    import numpy as np
+    scaled_fig_dict = copy.deepcopy(fig_dict)
+    #iterate across the data objects inside, and change them.
+    for data_index, dataseries in enumerate(scaled_fig_dict["data"]):
+        dataseries["x"] = list( np.array(dataseries["x"])*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.
+        dataseries["y"] = list(np.array(dataseries["y"])*num_to_scale_y_values_by) #convert to numpy array for multiplication, then back to list.
+      
+        # Ensure elements are converted to standard Python types. 
+        dataseries["x"] = [float(val) for val in dataseries["x"]] #This line written by copilot.
+        dataseries["y"] = [float(val) for val in dataseries["y"]] #This line written by copilot.
+        scaled_fig_dict[data_index] = dataseries #this line shouldn't be needed due to mutable references, but adding for clarity and to be safe.
+    return scaled_fig_dict
+
+
 
 class JSONGrapherRecord:
     """
@@ -287,13 +339,20 @@ class JSONGrapherRecord:
         
         validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
         self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
+    
+    #function to set the min and max of the x axis in plotly way.
     def set_x_axis_range(self, min, max):
         self.fig_dict["layout"]["xaxis"][0] = min
         self.fig_dict["layout"]["xaxis"][1] = max
+    #function to set the min and max of the y axis in plotly way.
     def set_y_axis_range(self, min, max):
         self.fig_dict["layout"]["yaxis"][0] = min
         self.fig_dict["layout"]["yaxis"][1] = max
-        
+
+    #function to scale the values in the data series by arbitrary amounts.
+    def scale_record(self, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
+        scale_fig_dict_values(self.fig_dict, num_to_scale_x_values_by=num_to_scale_x_values_by, num_to_scale_y_values_by=num_to_scale_y_values_by)
+
     def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
         # comments: General comments about the layout. Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         # graph_title: Title of the graph.
@@ -561,6 +620,7 @@ def units_plural_removal(units_to_check):
 def separate_label_text_from_units(label_with_units):
     """
     Parses a label with text string and units in parentheses after that to return the two parts.
+    This is not meant to separate strings like "Time (s)", it is not meant for strings like "5 (kg)"
 
     Args:
         value (str): A string containing a label and optional units enclosed in parentheses.
@@ -657,6 +717,7 @@ def parse_units(value):
     """
     Parses a numerical value and its associated units from a string. This meant for scientific constants and parameters
     Such as rate constants, gravitational constant, or simiilar.
+    This function is not meant for separating the axis label from its units. For that, use  separate_label_text_from_units
 
     Args:
         value (str): A string containing a numeric value and optional units enclosed in parentheses.
@@ -670,7 +731,7 @@ def parse_units(value):
     # Find the position of the first '(' and the last ')'
     start = value.find('(')
     end = value.rfind(')')
-    
+    print("line 727", value)
     # Ensure both are found and properly ordered
     if start != -1 and end != -1 and end > start:
         number_part = value[:start].strip()  # Everything before '('
@@ -1123,15 +1184,24 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraIn
 # Example Usage
 if __name__ == "__main__":
     # Example of creating a record with optional attributes.
-    record = JSONGrapherRecord(
+    Record = JSONGrapherRecord(
         comments="Here is a description.",
         graph_title="Here Is The Graph Title Spot",
         data_objects_list=[
             {"comments": "Initial data series.", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     )
-    record.export_to_json_file("test.json")
-    print(record)
+    x_label_including_units= "Time (years)" 
+    y_label_including_units = "Height (m)"
+    Record.set_comments("Tree Growth Data collected from the US National Arboretum")
+    Record.set_datatype("Tree_Growth_Curve")
+    Record.set_x_axis_label_including_units(x_label_including_units)
+    Record.set_y_axis_label_including_units(y_label_including_units)
+
+
+    Record.export_to_json_file("test.json")
+
+    print(Record)
 
     # Example of creating a record from an existing dictionary.
     existing_JSONGrapher_record = {
@@ -1141,7 +1211,14 @@ if __name__ == "__main__":
             {"comments": "Data series 1", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     }
-    record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=existing_JSONGrapher_record)
-    print(record)
+    Record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=existing_JSONGrapher_record)
+    x_label_including_units= "Time (years)" 
+    y_label_including_units = "Height (cm)"
+    Record_from_existing.set_comments("Tree Growth Data collected from the US National Arboretum")
+    Record_from_existing.set_datatype("Tree_Growth_Curve")
+    Record_from_existing.set_x_axis_label_including_units(x_label_including_units)
+    Record_from_existing.set_y_axis_label_including_units(y_label_including_units)
+    print(Record_from_existing)
     
-    
+    print("NOW WILL MERGE THE RECORDS, AND USE THE SECOND ONE TWICE (AS A JSONGRAPHER OBJECT THEN JUST THE FIG_DICT)")
+    print(merge_JSONGrapherRecords([Record, Record_from_existing, Record_from_existing.fig_dict]))

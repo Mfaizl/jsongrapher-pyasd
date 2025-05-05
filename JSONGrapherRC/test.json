@@ -1,0 +1,40 @@
+{
+    "comments": "Tree Growth Data collected from the US National Arboretum",
+    "datatype": "Tree_Growth_Curve",
+    "data": [
+        {
+            "uid": "123",
+            "name": "Series A",
+            "type": "scatter",
+            "x": [
+                1,
+                2,
+                3
+            ],
+            "y": [
+                4,
+                5,
+                8
+            ],
+            "mode": "lines",
+            "line": {
+                "shape": "spline"
+            }
+        }
+    ],
+    "layout": {
+        "title": {
+            "text": "Here Is The Graph Title Spot"
+        },
+        "xaxis": {
+            "title": {
+                "text": "Time (year)"
+            }
+        },
+        "yaxis": {
+            "title": {
+                "text": "Height (m)"
+            }
+        }
+    }
+}

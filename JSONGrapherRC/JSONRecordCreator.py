@@ -107,7 +107,8 @@ class JSONGrapherRecord:
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
         datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name.
         graph_title: Title of the graph or the dataset being represented.
-        data_objects_list (list): List of data series dictionaries to pre-populate the record. 
+        data_objects_list (list): List of data series dictionaries to pre-populate the record. These may contain 'simulate' fields in them to call javascript source code for simulating on the fly.
+        simulate_as_added: Boolean. True by default. If true, any data series that are added with a simulation field will have an immediate simulation call attempt.
         x_data: Single series x data in a list or array-like structure. 
         y_data: Single series y data in a list or array-like structure.
         x_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter).
@@ -122,7 +123,7 @@ class JSONGrapherRecord:
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
     
-    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
@@ -153,6 +154,13 @@ class JSONGrapherRecord:
             }
         }
 
+
+        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+            except:
+                pass
+
         self.plot_type = plot_type #the plot_type is normally actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
         if plot_type != "":
             self.fig_dict["plot_type"] = plot_type
@@ -180,7 +188,7 @@ class JSONGrapherRecord:
         return json.dumps(self.fig_dict, indent=4)
 
 
-    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, comments="", plot_type="",  uid="", line="", extra_fields=None):
+    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, simulate_as_added = True, comments="", plot_type="",  uid="", line="", extra_fields=None):
         """
         This is the normal way of adding an x,y data series.
         """
@@ -188,6 +196,7 @@ class JSONGrapherRecord:
         # x: List of x-axis values. Or similar structure.
         # y: List of y-axis values. Or similar structure.
         # simulate: This is an optional field which, if used, is a JSON object with entries for calling external simulation scripts.
+        # simulate_as_added: Boolean for calling simulation scripts immediately.
         # comments: Optional description of the data series.
         # plot_type: Type of the data (e.g., scatter, line).
         # line: Dictionary describing line properties (e.g., shape, width).
@@ -212,6 +221,11 @@ class JSONGrapherRecord:
         #add simulate field if included.
         if simulate:
             data_series_dict["simulate"] = simulate
+        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                data_series_dict = simulate_data_series(data_series_dict)
+            except:
+                pass
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
@@ -229,6 +243,7 @@ class JSONGrapherRecord:
         """
         return self.fig_dict
 
+    #The update_and_validate function will clean for plotly.
     def print_to_inspect(self, update_and_validate=True, validate=True, remove_remaining_hints=False):
         if remove_remaining_hints == True:
             self.remove_hints()
@@ -417,12 +432,22 @@ class JSONGrapherRecord:
         return self.fig_dict['layout']
     
     #This function validates the output before exporting, and also has an option of removing hints.
-    def export_to_json_file(self, filename, update_and_validate=True, validate=True, remove_remaining_hints=False):
+    #The update_and_validate function will clean for plotly.
+    #simulate all series will simulate any series as needed.
+    def export_to_json_file(self, filename, update_and_validate=True, validate=True, simulate_all_series = True, remove_simulate_fields= False, remove_remaining_hints=False):
         """
         writes the json to a file
         returns the json as a dictionary.
+        update_and_validate function will clean for plotly. One can alternatively only validate.
+        optionally simulates all series that have a simulate field (does so by default)
+        optionally removes simulate filed from all series that have a simulate field (does not do so by default)
         optionally removes hints before export and return.
         """
+        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out if requested.
+        if simulate_all_series == True:
+            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        if remove_simulate_fields == True:
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
         if remove_remaining_hints == True:
             self.remove_hints()
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -440,21 +465,27 @@ class JSONGrapherRecord:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 
-    def get_plotly_fig(self, update_and_validate=True):
+    #simulate all series will simulate any series as needed.
+    def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True):
         import plotly.io as pio
+        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
+        if simulate_all_series == True:
+            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
         fig = pio.from_json(json.dumps(self.fig_dict))
         return fig
 
-    def plot_with_plotly(self, update_and_validate=True):
-        fig = self.get_plotly_fig(update_and_validate=update_and_validate)
+    #simulate all series will simulate any series as needed.
+    def plot_with_plotly(self, simulate_all_series = True, update_and_validate=True):
+        fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)
         fig.show()
         #No need for fig.close() for plotly figures.
 
-
-    def export_to_plotly_png(self, filename, update_and_validate=True, timeout=10):
-        fig = self.get_plotly_fig(update_and_validate=update_and_validate)       
+    #simulate all series will simulate any series as needed.
+    def export_to_plotly_png(self, filename, simulate_all_series = True, update_and_validate=True, timeout=10):
+        fig = self.get_plotly_fig(imulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
         # Save the figure to a file, but use the timeout version.
         self.export_plotly_image_with_timeout(plotly_fig = fig, filename=filename, timeout=timeout)
 
@@ -479,24 +510,33 @@ class JSONGrapherRecord:
         if thread.is_alive():
             print("Skipping Plotly png export: Operation timed out. Plotly image export often does not work from Python. Consider using export_to_matplotlib_png.")
 
-    def get_matplotlib_fig(self, update_and_validate=True):
+    #update_and_validate will 'clean' for plotly. 
+    #In the case of creating a matplotlib figure, this really just means removing excess fields.
+    #simulate all series will simulate any series as needed.
+    def get_matplotlib_fig(self, simulate_all_series = True, update_and_validate=True):
+        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
+        if simulate_all_series == True:
+            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
         fig = convert_JSONGrapher_dict_to_matplotlib_fig(self.fig_dict)
         return fig
 
-    def plot_with_matplotlib(self, update_and_validate=True):
+    #simulate all series will simulate any series as needed.
+    def plot_with_matplotlib(self, simulate_all_series = True, update_and_validate=True):
         import matplotlib.pyplot as plt
-        fig = self.get_matplotlib_fig(update_and_validate=update_and_validate)
+        fig = self.get_matplotlib_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)
         plt.show()
         plt.close(fig) #remove fig from memory.
 
-    def export_to_matplotlib_png(self, filename, update_and_validate=True):
+    #simulate all series will simulate any series as needed.
+    def export_to_matplotlib_png(self, filename, simulate_all_series = True, update_and_validate=True):
         import matplotlib.pyplot as plt
         # Ensure filename ends with .png
         if not filename.lower().endswith(".png"):
             filename += ".png"
-        fig = self.get_matplotlib_fig(update_and_validate=update_and_validate)       
+        fig = self.get_matplotlib_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
         # Save the figure to a file
         fig.savefig(filename)
         plt.close(fig) #remove fig from memory.
@@ -846,10 +886,11 @@ def plot_type_to_field_values(plot_type):
 
 #This function does updating of internal things before validating
 #This is used before printing and returning the JSON record.
-def update_and_validate_JSONGrapher_record(record):
+def update_and_validate_JSONGrapher_record(record, clean_for_plotly=True):
     record.update_plot_types()
     record.validate_JSONGrapher_record()
-    record.fig_dict = clean_json_fig_dict(record.fig_dict)
+    if clean_for_plotly == True:
+        record.fig_dict = clean_json_fig_dict(record.fig_dict)
     return record
 
 #TODO: add the ability for this function to check against the schema.
@@ -1144,6 +1185,8 @@ def apply_style_to_plotly_dict(plotly_json, style_name):
     return plotly_json
 
 
+### Start section of code with functions for cleaning fig_dicts for plotly compatibility ###
+
 def update_title_field(data, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting
     which is necessary to do things like change the font, and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
@@ -1188,7 +1231,6 @@ def remove_nested_comments(data, top_level=True):
     """Removes 'comments' fields that are not at the top level of the JSON-dict. Starts with 'top_level = True' when dict is first passed in then becomes false after that. """
     if not isinstance(data, dict):
         return data
-
     # Process nested structures
     for key in list(data.keys()):
         if isinstance(data[key], dict):  # Nested dictionary
@@ -1197,16 +1239,24 @@ def remove_nested_comments(data, top_level=True):
             data[key] = [
                 remove_nested_comments(item, top_level=False) if isinstance(item, dict) else item for item in data[key]
             ]
-
     # Only remove 'comments' if not at the top level
     if not top_level:
         data = {k: v for k, v in data.items() if k != "comments"}
-
     return data
+
+def remove_simulate_field(json_fig_dict):
+    data_dicts_list = json_dict['data']
+    for data_dict in data_dicts_list:
+        data_dict.pop('simulate', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
+    json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
+    return json_fig_dict
 
 def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. """
+     and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. 
+     This function can also remove the 'simulate' field from data series. However, that is not the default behavior
+     because one would not want to do that by mistake before simulation is performed.
+     """
     data = json_fig_dict
     #unmodified_data = copy.deepcopy(data)
     if "title_field" in fields_to_update:
@@ -1215,8 +1265,13 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraIn
         data = remove_extra_information_field(data)
     if "nested_comments" in fields_to_update:
         data = remove_nested_comments(data)
+    if "simulate" in fields_to_update:
+        data = remove_simulate_field(data)
     return data
 
+### End section of code with functions for cleaning fig_dicts for plotly compatibility ###
+
+### Beginning of section of file that has functions for calling external javascript simulators ###
 
 def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbose = False):
     """
@@ -1296,9 +1351,6 @@ def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbo
         print(f"Error: Unable to fetch JavaScript file. Status code {response.status_code}")
         return None
 
-
-
-
 def convert_to_raw_github_url(url):
     """
     Converts a GitHub file URL to its raw content URL if necessary, preserving the filename.
@@ -1328,7 +1380,39 @@ def convert_to_raw_github_url(url):
 
     return url  # Return unchanged if not a GitHub file URL
 
+#This function takes in a data_series_dict object and then
+#calls an external javascript simulation if needed
+#Then fills the data_series dict with the simulated data.
+def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
+    if simulator_link == '':
+        simulator_link = data_series_dict["simulate"]["model"]
+    #need to provide the link and the data_dict
+    simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose = verbose)
+    data_series_dict_filled = simulation_return["data"]
+    return data_series_dict_filled
 
+#Function that goes through a fig_dict data series and simulates each data series as needed.
+def simulate_as_needed_in_fig_dict(fig_dict, simulator_link='', verbose=False):
+    data_dicts_list = fig_dict['data']
+    for data_dict_index, data_dict in enumerate(data_dicts_list):
+        if 'simulate' in data_dict:
+            data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
+            data_dicts_list[data_dict_index] = data_dict_filled
+    fig_dict['data'] = data_dicts_list
+    return fig_dict
+
+#Function that takes fig_dict and dataseries index and simulates if needed.
+def simulate_specific_data_series_by_index(fig_dict, data_series_index, simulator_link='', verbose=False):
+    data_dicts_list = fig_dict['data']
+    data_dict_index = data_series_index
+    data_dict = data_dicts_list[data_dict_index]
+    if 'simulate' in data_dict:
+        data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
+        data_dicts_list[data_dict_index] = data_dict_filled
+    fig_dict['data'] = data_dicts_list
+    return fig_dict
+
+### End of section of file that has functions for calling external javascript simulators ###
 
 # Example Usage
 if __name__ == "__main__":
@@ -1371,3 +1455,20 @@ if __name__ == "__main__":
     
     print("NOW WILL MERGE THE RECORDS, AND USE THE SECOND ONE TWICE (AS A JSONGRAPHER OBJECT THEN JUST THE FIG_DICT)")
     print(merge_JSONGrapherRecords([Record, Record_from_existing, Record_from_existing.fig_dict]))
+
+
+# Load JSON data from a file
+filename = r"C:\Users\Yurik\Documents\GitHub\JSONGrapherExamples\ExampleModelRecords\1-CO2__Adsorption_Isotherms\amino_silane_silica_LangmuirIsothermModel_343_equilibrium.json"
+with open(filename, "r") as file:
+    json_dict = json.load(file)
+
+print("line 1381", json_dict)
+
+
+output = simulate_data_series(json_dict["data"][0])
+print("line 1384", output)
+
+print("line 1407")
+filled_fig_dict = simulate_as_needed_in_fig_dict(json_dict)
+print(filled_fig_dict)
+#TODO: create a function that forces a data  simulation check for particular data series index in the JSONGrapher record, since someone could try to change a variable in there manually and then want to resimulate.

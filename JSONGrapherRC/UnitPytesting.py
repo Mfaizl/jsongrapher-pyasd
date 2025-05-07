@@ -69,6 +69,12 @@ from unitpy.definitions.entry import Entry
 new_entry = Entry("frog", "frog", "frog", 1.0)
 unitpy.ledger.add_unit(new_entry)
 
+def add_custom_unit_to_unitpy(unit_string):
+    import unitpy
+    from unitpy.definitions.entry import Entry
+    new_entry = Entry(label = unit_string, abbr = unit_string, base_unit = unit_string, multiplier= 1.0)
+    unitpy.ledger.add_unit(new_entry) #implied return is here. No return needed.
+
 #TODO: now know one way how to add custom units to unitpy.
 #Cannot put "<>" inside unitpy, but could filter those out, and then put them back. Would need to make a list of unique entries with <> because there could be more than one.
 
@@ -89,3 +95,5 @@ print(string2)
 ratioWithUnits = units1multiplied.to(string2)
 print(ratioWithUnits)
 print(str(ratioWithUnits).split(' '))
+
+

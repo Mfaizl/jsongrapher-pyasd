@@ -66,15 +66,23 @@ from unitpy import U, Unit
 import unitpy
 newunit = unitpy.Unit("meter")
 from unitpy.definitions.entry import Entry
-new_entry = Entry("frog", "frog", "frog", 1.0)
-unitpy.ledger.add_unit(new_entry)
-
+# new_entry = Entry("frog", "frog", "frog", 1.0)
+# unitpy.ledger.add_unit(new_entry)
 def add_custom_unit_to_unitpy(unit_string):
     import unitpy
     from unitpy.definitions.entry import Entry
-    new_entry = Entry(label = unit_string, abbr = unit_string, base_unit = unit_string, multiplier= 1.0)
-    unitpy.ledger.add_unit(new_entry) #implied return is here. No return needed.
+    #need to put an entry into "bases" because the BaseSet class will pull from that dictionary.
+    unitpy.definitions.unit_base.bases[unit_string] = unitpy.definitions.unit_base.BaseUnit(label=unit_string, abbr=unit_string,dimension=unitpy.definitions.dimensions.dimensions["amount_of_substance"])
+    #Then need to make a BaseSet object to put in. Confusingly, we *do not* put a BaseUnit object into the base_unit argument, below. 
+    #We use "mole" to avoid conflicting with any other existing units.
+    base_unit =unitpy.definitions.unit_base.BaseSet(mole = 1)
+    #base_unit = unitpy.definitions.unit_base.BaseUnit(label=unit_string, abbr=unit_string,dimension=unitpy.definitions.dimensions.dimensions["amount_of_substance"])
+    new_entry = Entry(label = unit_string, abbr = unit_string, base_unit = base_unit, multiplier= 1)
+    #only add the entry if it is missing. A duplicate entry would cause crashing later.
+    if not unitpy.ledger.get_entry(new_entry):
+        unitpy.ledger.add_unit(new_entry) #implied return is here. No return needed.
 
+add_custom_unit_to_unitpy("frog")
 #TODO: now know one way how to add custom units to unitpy.
 #Cannot put "<>" inside unitpy, but could filter those out, and then put them back. Would need to make a list of unique entries with <> because there could be more than one.
 
@@ -83,7 +91,20 @@ another_test =  convert_inverse_units(another_test)
 print("line 65", another_test)
 units7 = unitpy.U(another_test)
 print("line 66", units7)
+print("line 86", 1*units7)
+print(unitpy.ledger.get_entry("frog"))
+units_string_1 = 'm*frog'
+print("line 87",  1*unitpy.U(units_string_1))
 
+
+
+
+print("line 94")
+
+units_string_2 = 'm*frog'
+
+units_string_1_multiplied = 1*unitpy.U(units_string_1 )
+units_string_1_multiplied.to(units_string_2)
 
 
 print(units2)

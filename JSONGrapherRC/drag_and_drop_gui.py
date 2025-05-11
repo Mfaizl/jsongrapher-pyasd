@@ -5,8 +5,9 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 
 
 #The below class creates a window for dragging and dropping or browsing and selecting files
-#And each time a file is added the full file list and most recent file will be passed to
+#And each time one or more file is added, the full file list and most recently added files will be passed to
 #The function supplied by the user (function_for_after_file_addition)
+#with the two variables passed being all_selected_file_paths, newly_added_file_paths
 #This class **cannot** be initiated directly, it should initiated using the
 #companion function create_and_launch
 class DragDropApp:
@@ -38,38 +39,37 @@ class DragDropApp:
         self.done_button.pack(pady=5)
 
         # Store selected file paths
-        self.selected_files = []
+        self.all_selected_file_paths = []
 
     def clear_file_list(self):
         """Clears the listbox and resets selected files."""
         self.file_listbox.delete(0, tk.END)  # Clear listbox
-        self.selected_files = []  # Reset file list
-        self.function_for_after_file_addition(filelist=[], newest_file_name_and_path='')
+        self.all_selected_file_paths = []  # Reset file list
+        self.function_for_after_file_addition(all_selected_file_paths=[], newly_added_file_paths=[])
         print("File list cleared!")  # Optional debug message
 
     def open_file_dialog(self):
         """Opens a file dialog to manually select files."""
-        file_paths = self.root.tk.splitlist(tk.filedialog.askopenfilenames(title="Select files"))
-        if file_paths:
-            self.selected_files.extend(file_paths)
-            self.update_file_list()
+        newly_added_file_paths = self.root.tk.splitlist(tk.filedialog.askopenfilenames(title="Select files"))
+        if newly_added_file_paths:
+            self.all_selected_file_paths.extend(newly_added_file_paths)
+            self.update_file_list(newly_added_file_paths)
 
     def drop_files(self, event):
         """Handles dropped files into the window."""
-        file_paths = self.root.tk.splitlist(event.data)
-        if file_paths:
-            self.selected_files.extend(file_paths)
-            self.update_file_list()
+        newly_added_file_paths = self.root.tk.splitlist(event.data)
+        if newly_added_file_paths:
+            self.all_selected_file_paths.extend(newly_added_file_paths)
+            self.update_file_list(newly_added_file_paths)
 
-    def update_file_list(self):
+    def update_file_list(self, newly_added_file_paths):
         """Updates the listbox with selected filenames."""
-        self.file_listbox.delete(0, tk.END) # Clear listbox
-        for filename_and_path in self.selected_files:
-            self.file_listbox.insert(tk.END, os.path.basename(filename_and_path)) # Show filenames only
-        #If the app has a function to call, we'll send the newest file in.
-        if self.function_for_after_file_addition != None:
-            #pass in the selected_files and the most recent filename_and_path
-            self.function_for_after_file_addition(self.selected_files, filename_and_path)
+        self.file_listbox.delete(0, tk.END)  # Clear listbox
+        for filename_and_path in self.all_selected_file_paths:
+            self.file_listbox.insert(tk.END, os.path.basename(filename_and_path))  # Show filenames only
+        # If there is a function_for_after_file_addition, pass full list and newly added files into function_for_after_file_addition
+        if self.function_for_after_file_addition is not None:
+            self.function_for_after_file_addition(self.all_selected_file_paths, newly_added_file_paths)
 
     def finish_selection(self):
         """Closes the window and returns selected files."""
@@ -82,4 +82,4 @@ def create_and_launch(app_name = '', function_for_after_file_addition=None):
     root = TkinterDnD.Tk()
     app = DragDropApp(root, app_name=app_name, function_for_after_file_addition=function_for_after_file_addition)
     root.mainloop() # Runs the Tkinter event loop
-    return app.selected_files # Returns selected files after the window closes
+    return app.all_selected_file_paths # Returns selected files after the window closes

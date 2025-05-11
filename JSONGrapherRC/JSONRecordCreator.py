@@ -8,26 +8,35 @@ global_records_list = [] #This list holds onto records as they are added. Index 
 
 #This is a JSONGrapher specific function
 #That takes filenames and adds new JSONGrapher records to a global_records_list
-#If the filelist and newest_file_name_and_path are [] and '', that means to clear the global_records_list.
-def add_records_to_global_records_list_and_plot(filelist, newest_file_name_and_path, plot_immediately=True):
+#If the all_selected_file_paths and newest_file_name_and_path are [] and [], that means to clear the global_records_list.
+def add_records_to_global_records_list_and_plot(all_selected_file_paths, newly_added_file_paths, plot_immediately=True):
     #First check if we have received a "clear" condition.
-    if (len(filelist) == 0) and (newest_file_name_and_path == ''):
+    if (len(all_selected_file_paths) == 0) and (len(newly_added_file_paths) == 0):
         global_records_list.clear()
         return global_records_list
-    filename_and_path = newest_file_name_and_path
-    if len(global_records_list) == 0:
+    if len(global_records_list) == 0: #this is for the "first time" the function is called, but the newly_added_file_paths could be a list longer than one.
         first_record = create_new_JSONGrapherRecord()
-        first_record.import_from_file(filename_and_path)
+        first_record.import_from_file(newly_added_file_paths[0]) #get first newly added record record.
         #index 0 will be the one we merge into.
         global_records_list.append(first_record)
         #index 1 will be where we store the first record, so we append again.
         global_records_list.append(first_record)
-    else:
-        current_record = create_new_JSONGrapherRecord()
-        current_record.import_from_file(filename_and_path)
-        global_records_list.append(current_record)
-        #now create merged record.
-        global_records_list[0] = merge_JSONGrapherRecords([global_records_list[0], current_record])
+        #Now, check if there are more records.
+        if len(newly_added_file_paths) > 1:
+            for filename_and_path_index, filename_and_path in enumerate(newly_added_file_paths):
+                if filename_and_path_index == 0:
+                    pass #passing because we've already added first file.
+                else:
+                    current_record = create_new_JSONGrapherRecord() #make a new record
+                    current_record.import_from_file(filename_and_path)        
+                    global_records_list.append(current_record) #append it to global records list
+                    global_records_list[0] = merge_JSONGrapherRecords([global_records_list[0], current_record]) #merge into the main record of records list, which is at index 0.
+    else: #For case that global_records_list already exists when funciton is called.
+        for filename_and_path_index, filename_and_path in enumerate(newly_added_file_paths):
+            current_record = create_new_JSONGrapherRecord() #make a new record
+            current_record.import_from_file(filename_and_path)        
+            global_records_list.append(current_record) #append it to global records list
+            global_records_list[0] = merge_JSONGrapherRecords([global_records_list[0], current_record]) #merge into the main record of records list, which is at index 0.
     if plot_immediately:
         #plot the index 0, which is the most up to date merged record.
         global_records_list[0].plot_with_plotly()

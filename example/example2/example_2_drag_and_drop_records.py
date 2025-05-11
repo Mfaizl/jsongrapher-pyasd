@@ -1,18 +1,22 @@
 import tkinter as tk
+from tkinter import filedialog
 from tkinterdnd2 import DND_FILES, TkinterDnD
 import os
+import JSONGrapherRC
+
+global_record = JSONGrapherRC.create_new_JSONGrapherRecord()
 
 class DragDropApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Drag & Drop File Selector")
+        self.root.title("JSONGrapher")
 
         # Enable native drag-and-drop capability
         self.root.drop_target_register(DND_FILES)
         self.root.dnd_bind("<<Drop>>", self.drop_files)
 
         # Create a drop zone
-        self.drop_frame = tk.Label(root, text="Drag and drop files here", bg="lightgray", width=50, height=10)
+        self.drop_frame = tk.Label(root, text="Drag and drop files here \n\n Click End When Finished", bg="lightgray", width=50, height=10)
         self.drop_frame.pack(pady=10)
 
         # Create a listbox to display selected files
@@ -20,10 +24,10 @@ class DragDropApp:
         self.file_listbox.pack(pady=10)
 
         # Buttons for manual selection and finalizing selection
-        self.select_button = tk.Button(root, text="Select Files", command=self.open_file_dialog)
+        self.select_button = tk.Button(root, text="Select Files By Browsing", command=self.open_file_dialog)
         self.select_button.pack(pady=5)
 
-        self.done_button = tk.Button(root, text="Done", command=self.finish_selection)
+        self.done_button = tk.Button(root, text="End", command=self.finish_selection)
         self.done_button.pack(pady=5)
 
         # Store selected file paths

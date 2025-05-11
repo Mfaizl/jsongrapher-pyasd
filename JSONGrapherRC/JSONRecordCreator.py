@@ -163,8 +163,8 @@ def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y
 def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
     import numpy as np
     dataseries = dataseries_dict
-    dataseries["x"] = list(np.array(dataseries["x"])*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.
-    dataseries["y"] = list(np.array(dataseries["y"])*num_to_scale_y_values_by) #convert to numpy array for multiplication, then back to list.
+    dataseries["x"] = list(np.array(dataseries["x"], dtype=float)*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.
+    dataseries["y"] = list(np.array(dataseries["y"], dtype=float)*num_to_scale_y_values_by) #convert to numpy array for multiplication, then back to list.
     
     # Ensure elements are converted to standard Python types. 
     dataseries["x"] = [float(val) for val in dataseries["x"]] #This line written by copilot.

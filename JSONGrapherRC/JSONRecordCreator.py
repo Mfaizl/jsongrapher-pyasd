@@ -552,7 +552,6 @@ class JSONGrapherRecord:
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
-        print(self.fig_dict)
         fig = pio.from_json(json.dumps(self.fig_dict))
         self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig

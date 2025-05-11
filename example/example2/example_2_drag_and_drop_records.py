@@ -27,11 +27,20 @@ class DragDropApp:
         self.select_button = tk.Button(root, text="Select Files By Browsing", command=self.open_file_dialog)
         self.select_button.pack(pady=5)
 
+        self.clear_button = tk.Button(root, text="Clear Files List", command=self.clear_file_list)  # New "Clear" button
+        self.clear_button.pack(pady=5)
+
         self.done_button = tk.Button(root, text="End", command=self.finish_selection)
         self.done_button.pack(pady=5)
 
         # Store selected file paths
         self.selected_files = []
+
+    def clear_file_list(self):
+        """Clears the listbox and resets selected files."""
+        self.file_listbox.delete(0, tk.END)  # Clear listbox
+        self.selected_files = []  # Reset file list
+        print("File list cleared!")  # Optional debug message
 
     def open_file_dialog(self):
         """Opens a file dialog to manually select files."""

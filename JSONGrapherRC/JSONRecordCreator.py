@@ -312,6 +312,9 @@ class JSONGrapherRecord:
             newest_record_index = len(self.fig_dict["data"]) - 1
             self.set_plot_type_one_data_series(newest_record_index, plot_type)
 
+    def change_data_series_name(self, series_index, series_name):
+        self.fig_dict["data"][series_index]["name"] = series_name
+
     #this function forces the re-simulation of a particular dataseries.
     #The simulator link will be extracted from the record, by default.
     def simulate_data_series_by_index(self, data_series_index, simulator_link='', verbose=False):

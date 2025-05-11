@@ -4,10 +4,6 @@ from JSONGrapherRC import JSONRecordCreator
 #Testing#
 import unitpy
 from unitpy.utils.parsing import parse_unit
-# print("line 7")
-# print(parse_unit("kg"))
-# print(parse_unit("1/kg"))
-# print('line 9'); sys.exit()
 
 ### STEP 1: USE A JSON RECORD WITH A SIMULATE FUNCTION ###
 #First, we will load a JSONGrapher record from a file.
@@ -23,8 +19,17 @@ Record_with_simulate_field.print_to_inspect()
 
 #By default, the simulation will get called if we try to make plotly figure or export to json.
 Record_with_simulate_field.plot_with_plotly()
+print("The data has been simulated using a javascript function, with source code called from online.")
 
-# print("line 1407")
-# filled_fig_dict = simulate_as_needed_in_fig_dict(json_dict)
-# print(filled_fig_dict)
-# #TODO: create a function that forces a data  simulation check for particular data series index in the JSONGrapher record, since someone could try to change a variable in there manually and then want to resimulate.
+#One can change the parameters and then update the data object by forcing simulation again. Below is an example.
+#There is only a single data series, so it is index 0. We'll change the rate constant and sigma_max in the simulate field
+Record_with_simulate_field.fig_dict["data"][0]["simulate"]["K_eq"] = "50.3 (1/bar)"
+Record_with_simulate_field.fig_dict["data"][0]["simulate"]["sigma_max"] =  ".4267670459667 (mol/kg)"
+#Now call a function to force re-simulation of the data series at index 0.
+Record_with_simulate_field.simulate_data_series_by_index(data_series_index=0)
+#Now plot again.
+Record_with_simulate_field.plot_with_plotly()
+
+
+
+

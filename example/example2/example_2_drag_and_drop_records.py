@@ -4,7 +4,7 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 import os
 import JSONGrapherRC
 
-global_record = JSONGrapherRC.create_new_JSONGrapherRecord()
+global_records_list = []
 
 class DragDropApp:
     def __init__(self, root):
@@ -50,8 +50,24 @@ class DragDropApp:
     def update_file_list(self):
         """Updates the listbox with selected filenames."""
         self.file_listbox.delete(0, tk.END) # Clear listbox
-        for file in self.selected_files:
-            self.file_listbox.insert(tk.END, os.path.basename(file)) # Show filenames only
+        for filename_and_path in self.selected_files:
+            self.file_listbox.insert(tk.END, os.path.basename(filename_and_path)) # Show filenames only
+        print("line 55", filename_and_path)
+        if len(global_records_list) == 0:
+            first_record = JSONGrapherRC.create_new_JSONGrapherRecord()
+            first_record.import_from_file(filename_and_path)
+            #index 0 will be the one we merge into.
+            global_records_list.append(first_record)
+            #index 1 will be where we store the first record, so we append again.
+            global_records_list.append(first_record)
+        else:
+            current_record = JSONGrapherRC.create_new_JSONGrapherRecord()
+            current_record.import_from_file(filename_and_path)
+            global_records_list.append(current_record)
+            #now create merged record.
+            global_records_list[0] = JSONGrapherRC.merge_JSONGrapherRecords([global_records_list[0], current_record])
+        #plot the index 0, which is the most up to date merged record.
+        global_records_list[0].plot_with_plotly()
 
     def finish_selection(self):
         """Closes the window and returns selected files."""

@@ -397,7 +397,7 @@ class JSONGrapherRecord:
     def import_from_json(self, json_filename_or_object):
         if type(json_filename_or_object) == type(""): #assume it's a filename and path.
             # Open the file in read mode
-            with open("json_filename_or_object", 'r') as file:
+            with open(json_filename_or_object, 'r') as file:
                 # Read the entire content of the file
                 content = file.read()
                 self.fig_dict = json.loads(content)   

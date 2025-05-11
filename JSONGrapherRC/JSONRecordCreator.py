@@ -1,6 +1,57 @@
 import json
 #TODO: put an option to suppress warnings from JSONRecordCreator
 
+
+#Start of the portion of the code for the GUI##
+global_records_list = [] #This list holds onto records as they are added. Index 0 is the merged record. Each other index corresponds to record number (like 1 is first record, 2 is second record, etc)
+
+
+#This is a JSONGrapher specific function
+#That takes filenames and adds new JSONGrapher records to a global_records_list
+#If the filelist and newest_file_name_and_path are [] and '', that means to clear the global_records_list.
+def add_records_to_global_records_list_and_plot(filelist, newest_file_name_and_path, plot_immediately=True):
+    #First check if we have received a "clear" condition.
+    if (len(filelist) == 0) and (newest_file_name_and_path == ''):
+        global_records_list.clear()
+        return global_records_list
+    filename_and_path = newest_file_name_and_path
+    if len(global_records_list) == 0:
+        first_record = create_new_JSONGrapherRecord()
+        first_record.import_from_file(filename_and_path)
+        #index 0 will be the one we merge into.
+        global_records_list.append(first_record)
+        #index 1 will be where we store the first record, so we append again.
+        global_records_list.append(first_record)
+    else:
+        current_record = create_new_JSONGrapherRecord()
+        current_record.import_from_file(filename_and_path)
+        global_records_list.append(current_record)
+        #now create merged record.
+        global_records_list[0] = merge_JSONGrapherRecords([global_records_list[0], current_record])
+    if plot_immediately:
+        #plot the index 0, which is the most up to date merged record.
+        global_records_list[0].plot_with_plotly()
+    return global_records_list
+
+
+
+#This ia JSONGrapher specific wrapper function to drag_and_drop_gui create_and_launch.
+#This launches the python based JSONGrapher GUI.
+def launch():
+    #Check if we have the module we need. First try with package, then locally.
+    try:
+        import JSONGrapherRC.drag_and_drop_gui as drag_and_drop_gui
+    except:
+        #if the package is not present, or does not have it, try getting the module locally.
+        import drag_and_drop_gui
+      
+    selected_files = drag_and_drop_gui.create_and_launch(app_name = "JSONGRapher", function_for_after_file_addition=add_records_to_global_records_list_and_plot)
+    #We will not return the selected_files, and instead will return the global_records_list.
+    return global_records_list
+
+## End of the portion of the code for the GUI##
+
+
 #the function create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
 # intuitive to create class objects that way, this variable is actually just a reference 
 # so that we don't have to map the arguments.

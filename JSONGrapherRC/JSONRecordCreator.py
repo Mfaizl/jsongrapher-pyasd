@@ -312,6 +312,14 @@ class JSONGrapherRecord:
             newest_record_index = len(self.fig_dict["data"]) - 1
             self.set_plot_type_one_data_series(newest_record_index, plot_type)
 
+    #this function forces the re-simulation of a particular dataseries.
+    #The simulator link will be extracted from the record, by default.
+    def simulate_data_series_by_index(self, data_series_index, simulator_link='', verbose=False):
+        data_series_dict = self.fig_dict["data"][data_series_index]
+        data_series_dict = simulate_data_series(data_series_dict, simulator_link=simulator_link, verbose=verbose)
+        self.fig_dict["data"][data_series_index] = data_series_dict #implied return
+        return data_series_dict #Extra regular return
+
     #this function returns the current record.
     def get_record(self):
         """
@@ -690,6 +698,7 @@ class JSONGrapherRecord:
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
         update_and_validate_JSONGrapher_record(self)
+
 
 # helper function to validate x axis and y axis labels.
 # label string will be the full label including units. Axis_name is typically "x" or "y"

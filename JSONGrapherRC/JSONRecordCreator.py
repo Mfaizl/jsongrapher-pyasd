@@ -61,41 +61,117 @@ def merge_JSONGrapherRecords(recordsList):
     return merged_JSONGrapherRecord
 
 
-#TODO: make get_units_ratio a function inside a separate python file, with import unitpy in the function, then call it from here.
-#TODO: makea  "scale_record_values" function that takes a fig_dict and then has scale_x_values_by = 1 and scale_y_values_by = 1
-
+### Start of portion of the file that has functions for scaling data to the same units ###
 #The below function takes two units strings, such as
 #    "(((kg)/m))/s" and  "(((g)/m))/s"
 # and then returns the scaling ratio of units_string_1 / units_string_2
+# So in the above example, would return 1000.
+#Could add "tag_characters"='<>' as an optional argument to this and other functions
+#to make the option of other characters for custom units.
 def get_units_scaling_ratio(units_string_1, units_string_2):
     import unitpy #this function uses unitpy.
-    #First need to make unitpy "U" object and multiply it by 1. 
-    #While it may be possible to find a way using the "Q" objects, this is the way I found so far.
-    units_object_converted = 1*unitpy.U(units_string_1)
-    ratio_with_units_object = units_object_converted.to(units_string_2)
+    #first need to extract custom units and add them to unitpy
+    custom_units_1 = extract_tagged_strings(units_string_1)
+    custom_units_2 = extract_tagged_strings(units_string_2)
+    for custom_unit in custom_units_1:
+        add_custom_unit_to_unitpy(custom_unit)
+    for custom_unit in custom_units_2:
+        add_custom_unit_to_unitpy(custom_unit)
+    #Now, remove the "<" and ">" and will put them back later if needed.
+    units_string_1 = units_string_1.replace('<','').replace('>','')
+    units_string_2 = units_string_2.replace('<','').replace('>','')
+    try:
+        #First need to make unitpy "U" object and multiply it by 1. 
+        #While it may be possible to find a way using the "Q" objects directly, this is the way I found so far, which converts the U object into a Q object.
+        units_object_converted = 1*unitpy.U(units_string_1)
+        ratio_with_units_object = units_object_converted.to(units_string_2)
+    except: #the above can fail if there are reciprocal units like 1/bar rather than (bar)**(-1), so we have an except statement that tries "that" fix if there is a failure.
+        units_string_1 = convert_inverse_units(units_string_1)
+        units_string_2 = convert_inverse_units(units_string_2)
+        units_object_converted = 1*unitpy.U(units_string_1)
+        ratio_with_units_object = units_object_converted.to(units_string_2)
     ratio_with_units_string = str(ratio_with_units_object)
     ratio_only = ratio_with_units_string.split(' ')[0] #what comes out may look like 1000 gram/(meter second), so we split and take first part.
     ratio_only = float(ratio_only)
     return ratio_only
+
+def return_custom_units_markup(units_string, custom_units_list):
+    """puts markup around custom units with '<' and '>' """
+    sorted_custom_units_list = sorted(custom_units_list, key=len, reverse=True)
+    #the units should be sorted from longest to shortest if not already sorted that way.
+    for custom_unit in sorted_custom_units_list:
+        units_string.replace(custom_unit, '<'+custom_unit+'>')
+    return units_string
+
+def add_custom_unit_to_unitpy(unit_string):
+    import unitpy
+    from unitpy.definitions.entry import Entry
+    #need to put an entry into "bases" because the BaseSet class will pull from that dictionary.
+    unitpy.definitions.unit_base.bases[unit_string] = unitpy.definitions.unit_base.BaseUnit(label=unit_string, abbr=unit_string,dimension=unitpy.definitions.dimensions.dimensions["amount_of_substance"])
+    #Then need to make a BaseSet object to put in. Confusingly, we *do not* put a BaseUnit object into the base_unit argument, below. 
+    #We use "mole" to avoid conflicting with any other existing units.
+    base_unit =unitpy.definitions.unit_base.BaseSet(mole = 1)
+    #base_unit = unitpy.definitions.unit_base.BaseUnit(label=unit_string, abbr=unit_string,dimension=unitpy.definitions.dimensions.dimensions["amount_of_substance"])
+    new_entry = Entry(label = unit_string, abbr = unit_string, base_unit = base_unit, multiplier= 1)
+    #only add the entry if it is missing. A duplicate entry would cause crashing later.
+    #We can't use the "unitpy.ledger.get_entry" function because the entries have custom == comparisons
+    # and for the new entry, it will also return a special NoneType that we can't easy check.
+    # the structer unitpy.ledger.units is a list, but unitpy.ledger._lookup is a dictionary we can use
+    # to check if the key for the new unit is added or not.
+    if unit_string not in unitpy.ledger._lookup:
+        unitpy.ledger.add_unit(new_entry) #implied return is here. No return needed.
+
+def extract_tagged_strings(text):
+    """Extracts tags surrounded by <> from a given string. Used for custom units.
+       returns them as a list sorted from longest to shortest"""
+    import re
+    list_of_tags = re.findall(r'<(.*?)>', text)
+    set_of_tags = set(list_of_tags)
+    sorted_tags = sorted(set_of_tags, key=len, reverse=True)
+    return sorted_tags
+
+#This function is to convert things like (1/bar) to (bar)**(-1)
+#It was written by copilot and refined by further prompting of copilot by testing.
+#The depth is because the function works iteratively and then stops when finished.
+def convert_inverse_units(expression, depth=100):
+    import re
+    # Patterns to match valid reciprocals while ignoring multiplied units, so (1/bar)*bar should be  handled correctly.
+    patterns = [r"1/\((1/.*?)\)", r"1/([a-zA-Z]+)"]
+    for _ in range(depth):
+        new_expression = expression
+        for pattern in patterns:
+            new_expression = re.sub(pattern, r"(\1)**(-1)", new_expression)
         
+        # Stop early if no more changes are made
+        if new_expression == expression:
+            break
+        expression = new_expression
+    return expression
+
 #the below function takes in a fig_dict, as well as x and/or y scaling values.
 #The function then scales the values in the data of the fig_dict and returns the scaled fig_dict.
 def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
     import copy
-    import numpy as np
     scaled_fig_dict = copy.deepcopy(fig_dict)
     #iterate across the data objects inside, and change them.
     for data_index, dataseries in enumerate(scaled_fig_dict["data"]):
-        dataseries["x"] = list( np.array(dataseries["x"])*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.
-        dataseries["y"] = list(np.array(dataseries["y"])*num_to_scale_y_values_by) #convert to numpy array for multiplication, then back to list.
-      
-        # Ensure elements are converted to standard Python types. 
-        dataseries["x"] = [float(val) for val in dataseries["x"]] #This line written by copilot.
-        dataseries["y"] = [float(val) for val in dataseries["y"]] #This line written by copilot.
+        dataseries = scale_dataseries_dict(dataseries, num_to_scale_x_values_by=num_to_scale_x_values_by, num_to_scale_y_values_by=num_to_scale_y_values_by)
         scaled_fig_dict[data_index] = dataseries #this line shouldn't be needed due to mutable references, but adding for clarity and to be safe.
     return scaled_fig_dict
 
 
+def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
+    import numpy as np
+    dataseries = dataseries_dict
+    dataseries["x"] = list(np.array(dataseries["x"])*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.
+    dataseries["y"] = list(np.array(dataseries["y"])*num_to_scale_y_values_by) #convert to numpy array for multiplication, then back to list.
+    
+    # Ensure elements are converted to standard Python types. 
+    dataseries["x"] = [float(val) for val in dataseries["x"]] #This line written by copilot.
+    dataseries["y"] = [float(val) for val in dataseries["y"]] #This line written by copilot.
+    return dataseries_dict
+
+### End of portion of the file that has functions for scaling data to the same units ###
 
 class JSONGrapherRecord:
     """
@@ -107,7 +183,8 @@ class JSONGrapherRecord:
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
         datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name.
         graph_title: Title of the graph or the dataset being represented.
-        data_objects_list (list): List of data series dictionaries to pre-populate the record. 
+        data_objects_list (list): List of data series dictionaries to pre-populate the record. These may contain 'simulate' fields in them to call javascript source code for simulating on the fly.
+        simulate_as_added: Boolean. True by default. If true, any data series that are added with a simulation field will have an immediate simulation call attempt.
         x_data: Single series x data in a list or array-like structure. 
         y_data: Single series y data in a list or array-like structure.
         x_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter).
@@ -122,7 +199,7 @@ class JSONGrapherRecord:
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
     
-    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
@@ -153,6 +230,13 @@ class JSONGrapherRecord:
             }
         }
 
+
+        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+            except:
+                pass
+
         self.plot_type = plot_type #the plot_type is normally actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
         if plot_type != "":
             self.fig_dict["plot_type"] = plot_type
@@ -180,7 +264,7 @@ class JSONGrapherRecord:
         return json.dumps(self.fig_dict, indent=4)
 
 
-    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, comments="", plot_type="",  uid="", line="", extra_fields=None):
+    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, simulate_as_added = True, comments="", plot_type="",  uid="", line="", extra_fields=None):
         """
         This is the normal way of adding an x,y data series.
         """
@@ -188,6 +272,7 @@ class JSONGrapherRecord:
         # x: List of x-axis values. Or similar structure.
         # y: List of y-axis values. Or similar structure.
         # simulate: This is an optional field which, if used, is a JSON object with entries for calling external simulation scripts.
+        # simulate_as_added: Boolean for calling simulation scripts immediately.
         # comments: Optional description of the data series.
         # plot_type: Type of the data (e.g., scatter, line).
         # line: Dictionary describing line properties (e.g., shape, width).
@@ -212,6 +297,11 @@ class JSONGrapherRecord:
         #add simulate field if included.
         if simulate:
             data_series_dict["simulate"] = simulate
+        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                data_series_dict = simulate_data_series(data_series_dict)
+            except:
+                pass
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
@@ -229,6 +319,7 @@ class JSONGrapherRecord:
         """
         return self.fig_dict
 
+    #The update_and_validate function will clean for plotly.
     def print_to_inspect(self, update_and_validate=True, validate=True, remove_remaining_hints=False):
         if remove_remaining_hints == True:
             self.remove_hints()
@@ -265,7 +356,7 @@ class JSONGrapherRecord:
             fig_dict_to_merge_in = fig_dict_to_merge_in.fig_dict
         #Now extract the units of the current record.
         first_record_x_label = self.fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
-        first_record_y_label = self.fig_dict[0]["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
+        first_record_y_label = self.fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
         first_record_x_units = separate_label_text_from_units(first_record_x_label)["units"]
         first_record_y_units = separate_label_text_from_units(first_record_y_label)["units"]
         #Get the units of the new record.
@@ -417,12 +508,22 @@ class JSONGrapherRecord:
         return self.fig_dict['layout']
     
     #This function validates the output before exporting, and also has an option of removing hints.
-    def export_to_json_file(self, filename, update_and_validate=True, validate=True, remove_remaining_hints=False):
+    #The update_and_validate function will clean for plotly.
+    #simulate all series will simulate any series as needed.
+    def export_to_json_file(self, filename, update_and_validate=True, validate=True, simulate_all_series = True, remove_simulate_fields= False, remove_remaining_hints=False):
         """
         writes the json to a file
         returns the json as a dictionary.
+        update_and_validate function will clean for plotly. One can alternatively only validate.
+        optionally simulates all series that have a simulate field (does so by default)
+        optionally removes simulate filed from all series that have a simulate field (does not do so by default)
         optionally removes hints before export and return.
         """
+        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out if requested.
+        if simulate_all_series == True:
+            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        if remove_simulate_fields == True:
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
         if remove_remaining_hints == True:
             self.remove_hints()
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -440,21 +541,31 @@ class JSONGrapherRecord:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 
-    def get_plotly_fig(self, update_and_validate=True):
+    #simulate all series will simulate any series as needed.
+    def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True):
         import plotly.io as pio
+        import copy
+        if simulate_all_series == True:
+            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.
+        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
+        print(self.fig_dict)
         fig = pio.from_json(json.dumps(self.fig_dict))
+        self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig
 
-    def plot_with_plotly(self, update_and_validate=True):
-        fig = self.get_plotly_fig(update_and_validate=update_and_validate)
+    #simulate all series will simulate any series as needed.
+    def plot_with_plotly(self, simulate_all_series = True, update_and_validate=True):
+        fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)
         fig.show()
         #No need for fig.close() for plotly figures.
 
-
-    def export_to_plotly_png(self, filename, update_and_validate=True, timeout=10):
-        fig = self.get_plotly_fig(update_and_validate=update_and_validate)       
+    #simulate all series will simulate any series as needed.
+    def export_to_plotly_png(self, filename, simulate_all_series = True, update_and_validate=True, timeout=10):
+        fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
         # Save the figure to a file, but use the timeout version.
         self.export_plotly_image_with_timeout(plotly_fig = fig, filename=filename, timeout=timeout)
 
@@ -479,24 +590,36 @@ class JSONGrapherRecord:
         if thread.is_alive():
             print("Skipping Plotly png export: Operation timed out. Plotly image export often does not work from Python. Consider using export_to_matplotlib_png.")
 
-    def get_matplotlib_fig(self, update_and_validate=True):
+    #update_and_validate will 'clean' for plotly. 
+    #In the case of creating a matplotlib figure, this really just means removing excess fields.
+    #simulate all series will simulate any series as needed.
+    def get_matplotlib_fig(self, simulate_all_series = True, update_and_validate=True):
+        import copy
+        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
+        if simulate_all_series == True:
+            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
         fig = convert_JSONGrapher_dict_to_matplotlib_fig(self.fig_dict)
+        self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig
 
-    def plot_with_matplotlib(self, update_and_validate=True):
+    #simulate all series will simulate any series as needed.
+    def plot_with_matplotlib(self, simulate_all_series = True, update_and_validate=True):
         import matplotlib.pyplot as plt
-        fig = self.get_matplotlib_fig(update_and_validate=update_and_validate)
+        fig = self.get_matplotlib_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)
         plt.show()
         plt.close(fig) #remove fig from memory.
 
-    def export_to_matplotlib_png(self, filename, update_and_validate=True):
+    #simulate all series will simulate any series as needed.
+    def export_to_matplotlib_png(self, filename, simulate_all_series = True, update_and_validate=True):
         import matplotlib.pyplot as plt
         # Ensure filename ends with .png
         if not filename.lower().endswith(".png"):
             filename += ".png"
-        fig = self.get_matplotlib_fig(update_and_validate=update_and_validate)       
+        fig = self.get_matplotlib_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
         # Save the figure to a file
         fig.savefig(filename)
         plt.close(fig) #remove fig from memory.
@@ -584,7 +707,6 @@ def validate_JSONGrapher_axis_label(label_string, axis_name="", remove_plural_un
         None: Prints warnings if any validation issues are found.
     """
     warnings_list = []
-    
     #First check if the label is empty.
     if label_string == '':
         warnings_list.append(f"Your {axis_name} axis label is an empty string. JSONGrapher records should not have empty strings for axis labels.")
@@ -627,15 +749,18 @@ def units_plural_removal(units_to_check):
               - "changed" (Boolean): True, or False, where True means the string was changed to remove an "s" at the end.
               - "singularized" (string): The units parsed to be singular, if needed.
     """
-    #first check if we have the module we need. If not, return with no change.
-    
+    #Check if we have the module we need. If not, return with no change.
     try:
         import JSONGrapherRC.units_list as units_list
     except:
-        units_changed_flag = False
-        return units_changed_flag, units_to_check #return None if there was no test.
-    #First try to check if units are blank or ends with "s" is in the units list. 
+        #if JSONGrapherRC is not present, try getting the units_list file locally.
+        try:
+            import units_list
+        except:#if still not present, give up and avoid crashing.
+            units_changed_flag = False
+            return units_changed_flag, units_to_check #return None if there was no test.
 
+    #First try to check if units are blank or ends with "s" is in the units list. 
     if (units_to_check == "") or (units_to_check[-1] != "s"):
         units_changed_flag = False
         units_singularized = units_to_check #return if string is blank or does not end with s.
@@ -846,10 +971,11 @@ def plot_type_to_field_values(plot_type):
 
 #This function does updating of internal things before validating
 #This is used before printing and returning the JSON record.
-def update_and_validate_JSONGrapher_record(record):
+def update_and_validate_JSONGrapher_record(record, clean_for_plotly=True):
     record.update_plot_types()
     record.validate_JSONGrapher_record()
-    record.fig_dict = clean_json_fig_dict(record.fig_dict)
+    if clean_for_plotly == True:
+        record.fig_dict = clean_json_fig_dict(record.fig_dict)
     return record
 
 #TODO: add the ability for this function to check against the schema.
@@ -1144,6 +1270,8 @@ def apply_style_to_plotly_dict(plotly_json, style_name):
     return plotly_json
 
 
+### Start section of code with functions for cleaning fig_dicts for plotly compatibility ###
+
 def update_title_field(data, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting
     which is necessary to do things like change the font, and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
@@ -1188,7 +1316,6 @@ def remove_nested_comments(data, top_level=True):
     """Removes 'comments' fields that are not at the top level of the JSON-dict. Starts with 'top_level = True' when dict is first passed in then becomes false after that. """
     if not isinstance(data, dict):
         return data
-
     # Process nested structures
     for key in list(data.keys()):
         if isinstance(data[key], dict):  # Nested dictionary
@@ -1197,16 +1324,24 @@ def remove_nested_comments(data, top_level=True):
             data[key] = [
                 remove_nested_comments(item, top_level=False) if isinstance(item, dict) else item for item in data[key]
             ]
-
     # Only remove 'comments' if not at the top level
     if not top_level:
         data = {k: v for k, v in data.items() if k != "comments"}
-
     return data
+
+def remove_simulate_field(json_fig_dict):
+    data_dicts_list = json_fig_dict['data']
+    for data_dict in data_dicts_list:
+        data_dict.pop('simulate', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
+    json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
+    return json_fig_dict
 
 def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. """
+     and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. 
+     This function can also remove the 'simulate' field from data series. However, that is not the default behavior
+     because one would not want to do that by mistake before simulation is performed.
+     """
     data = json_fig_dict
     #unmodified_data = copy.deepcopy(data)
     if "title_field" in fields_to_update:
@@ -1215,8 +1350,13 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraIn
         data = remove_extra_information_field(data)
     if "nested_comments" in fields_to_update:
         data = remove_nested_comments(data)
+    if "simulate" in fields_to_update:
+        data = remove_simulate_field(data)
     return data
 
+### End section of code with functions for cleaning fig_dicts for plotly compatibility ###
+
+### Beginning of section of file that has functions for calling external javascript simulators ###
 
 def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbose = False):
     """
@@ -1288,16 +1428,14 @@ def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbo
         # Parse JSON if valid
         if result.stdout.strip():
             try:
-                return json.loads(result.stdout) #This is the normal case.
+                data_dict_with_simulation = json.loads(result.stdout) #This is the normal case.
+                return data_dict_with_simulation
             except json.JSONDecodeError:
                 print("Error: JavaScript output is not valid JSON.")
                 return None
     else:
         print(f"Error: Unable to fetch JavaScript file. Status code {response.status_code}")
         return None
-
-
-
 
 def convert_to_raw_github_url(url):
     """
@@ -1328,7 +1466,58 @@ def convert_to_raw_github_url(url):
 
     return url  # Return unchanged if not a GitHub file URL
 
+#This function takes in a data_series_dict object and then
+#calls an external javascript simulation if needed
+#Then fills the data_series dict with the simulated data.
+def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
+    if simulator_link == '':
+        simulator_link = data_series_dict["simulate"]["model"]
+    #need to provide the link and the data_dict
+    simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose = verbose)
+    data_series_dict_filled = simulation_return["data"]
+    return data_series_dict_filled
 
+#Function that goes through a fig_dict data series and simulates each data series as needed.
+#could probably change this into a loop that calls simulate_specific_data_series_by_index
+#If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.
+def simulate_as_needed_in_fig_dict(fig_dict, simulator_link='', verbose=False):
+    data_dicts_list = fig_dict['data']
+    for data_dict_index, data_dict in enumerate(data_dicts_list):
+        if 'simulate' in data_dict:
+            data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
+            #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
+            if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)):
+                #first, get the units that are in the layout of fig_dict so we know what to convert to.
+                existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+                existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
+                existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]
+                existing_record_y_units = separate_label_text_from_units(existing_record_y_label)["units"]
+                #now, get the units from the simulation output.
+                simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled['x_label'])["units"]
+                simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled['y_label'])["units"]
+                x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units)
+                y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units)
+                #We scale the dataseries, which really should be a function.
+                scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by = x_units_ratio, num_to_scale_y_values_by = y_units_ratio)
+                #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
+                data_dict_filled.pop("x_label", None)
+                data_dict_filled.pop("y_label", None)
+            data_dicts_list[data_dict_index] = data_dict_filled
+    fig_dict['data'] = data_dicts_list
+    return fig_dict
+
+#Function that takes fig_dict and dataseries index and simulates if needed.
+def simulate_specific_data_series_by_index(fig_dict, data_series_index, simulator_link='', verbose=False):
+    data_dicts_list = fig_dict['data']
+    data_dict_index = data_series_index
+    data_dict = data_dicts_list[data_dict_index]
+    if 'simulate' in data_dict:
+        data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
+        data_dicts_list[data_dict_index] = data_dict_filled
+    fig_dict['data'] = data_dicts_list
+    return fig_dict
+
+### End of section of file that has functions for calling external javascript simulators ###
 
 # Example Usage
 if __name__ == "__main__":
@@ -1371,3 +1560,5 @@ if __name__ == "__main__":
     
     print("NOW WILL MERGE THE RECORDS, AND USE THE SECOND ONE TWICE (AS A JSONGRAPHER OBJECT THEN JUST THE FIG_DICT)")
     print(merge_JSONGrapherRecords([Record, Record_from_existing, Record_from_existing.fig_dict]))
+
+

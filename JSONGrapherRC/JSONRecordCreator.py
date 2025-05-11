@@ -66,12 +66,23 @@ def merge_JSONGrapherRecords(recordsList):
 #    "(((kg)/m))/s" and  "(((g)/m))/s"
 # and then returns the scaling ratio of units_string_1 / units_string_2
 # So in the above example, would return 1000.
+#Could add "tag_characters"='<>' as an optional argument to this and other functions
+#to make the option of other characters for custom units.
 def get_units_scaling_ratio(units_string_1, units_string_2):
     import unitpy #this function uses unitpy.
-    #TODO: need to put in the <> support here.
+    #first need to extract custom units and add them to unitpy
+    custom_units_1 = extract_tagged_strings(units_string_1)
+    custom_units_2 = extract_tagged_strings(units_string_2)
+    for custom_unit in custom_units_1:
+        add_custom_unit_to_unitpy(custom_unit)
+    for custom_unit in custom_units_2:
+        add_custom_unit_to_unitpy(custom_unit)
+    #Now, remove the "<" and ">" and will put them back later if needed.
+    units_string_1 = units_string_1.replace('<','').replace('>','')
+    units_string_2 = units_string_2.replace('<','').replace('>','')
     try:
         #First need to make unitpy "U" object and multiply it by 1. 
-        #While it may be possible to find a way using the "Q" objects, this is the way I found so far.
+        #While it may be possible to find a way using the "Q" objects directly, this is the way I found so far, which converts the U object into a Q object.
         units_object_converted = 1*unitpy.U(units_string_1)
         ratio_with_units_object = units_object_converted.to(units_string_2)
     except: #the above can fail if there are reciprocal units like 1/bar rather than (bar)**(-1), so we have an except statement that tries "that" fix if there is a failure.
@@ -84,6 +95,40 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
     ratio_only = float(ratio_only)
     return ratio_only
 
+def return_custom_units_markup(units_string, custom_units_list):
+    """puts markup around custom units with '<' and '>' """
+    sorted_custom_units_list = sorted(custom_units_list, key=len, reverse=True)
+    #the units should be sorted from longest to shortest if not already sorted that way.
+    for custom_unit in sorted_custom_units_list:
+        units_string.replace(custom_unit, '<'+custom_unit+'>')
+    return units_string
+
+def add_custom_unit_to_unitpy(unit_string):
+    import unitpy
+    from unitpy.definitions.entry import Entry
+    #need to put an entry into "bases" because the BaseSet class will pull from that dictionary.
+    unitpy.definitions.unit_base.bases[unit_string] = unitpy.definitions.unit_base.BaseUnit(label=unit_string, abbr=unit_string,dimension=unitpy.definitions.dimensions.dimensions["amount_of_substance"])
+    #Then need to make a BaseSet object to put in. Confusingly, we *do not* put a BaseUnit object into the base_unit argument, below. 
+    #We use "mole" to avoid conflicting with any other existing units.
+    base_unit =unitpy.definitions.unit_base.BaseSet(mole = 1)
+    #base_unit = unitpy.definitions.unit_base.BaseUnit(label=unit_string, abbr=unit_string,dimension=unitpy.definitions.dimensions.dimensions["amount_of_substance"])
+    new_entry = Entry(label = unit_string, abbr = unit_string, base_unit = base_unit, multiplier= 1)
+    #only add the entry if it is missing. A duplicate entry would cause crashing later.
+    #We can't use the "unitpy.ledger.get_entry" function because the entries have custom == comparisons
+    # and for the new entry, it will also return a special NoneType that we can't easy check.
+    # the structer unitpy.ledger.units is a list, but unitpy.ledger._lookup is a dictionary we can use
+    # to check if the key for the new unit is added or not.
+    if unit_string not in unitpy.ledger._lookup:
+        unitpy.ledger.add_unit(new_entry) #implied return is here. No return needed.
+
+def extract_tagged_strings(text):
+    """Extracts tags surrounded by <> from a given string. Used for custom units.
+       returns them as a list sorted from longest to shortest"""
+    import re
+    list_of_tags = re.findall(r'<(.*?)>', text)
+    set_of_tags = set(list_of_tags)
+    sorted_tags = sorted(set_of_tags, key=len, reverse=True)
+    return sorted_tags
 
 #This function is to convert things like (1/bar) to (bar)**(-1)
 #It was written by copilot and refined by further prompting of copilot by testing.
@@ -507,7 +552,6 @@ class JSONGrapherRecord:
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
-        print("line 479")
         print(self.fig_dict)
         fig = pio.from_json(json.dumps(self.fig_dict))
         self.fig_dict = original_fig_dict #restore the original fig_dict.
@@ -663,7 +707,6 @@ def validate_JSONGrapher_axis_label(label_string, axis_name="", remove_plural_un
         None: Prints warnings if any validation issues are found.
     """
     warnings_list = []
-    
     #First check if the label is empty.
     if label_string == '':
         warnings_list.append(f"Your {axis_name} axis label is an empty string. JSONGrapher records should not have empty strings for axis labels.")
@@ -706,15 +749,18 @@ def units_plural_removal(units_to_check):
               - "changed" (Boolean): True, or False, where True means the string was changed to remove an "s" at the end.
               - "singularized" (string): The units parsed to be singular, if needed.
     """
-    #first check if we have the module we need. If not, return with no change.
-    
+    #Check if we have the module we need. If not, return with no change.
     try:
         import JSONGrapherRC.units_list as units_list
     except:
-        units_changed_flag = False
-        return units_changed_flag, units_to_check #return None if there was no test.
-    #First try to check if units are blank or ends with "s" is in the units list. 
+        #if JSONGrapherRC is not present, try getting the units_list file locally.
+        try:
+            import units_list
+        except:#if still not present, give up and avoid crashing.
+            units_changed_flag = False
+            return units_changed_flag, units_to_check #return None if there was no test.
 
+    #First try to check if units are blank or ends with "s" is in the units list. 
     if (units_to_check == "") or (units_to_check[-1] != "s"):
         units_changed_flag = False
         units_singularized = units_to_check #return if string is blank or does not end with s.

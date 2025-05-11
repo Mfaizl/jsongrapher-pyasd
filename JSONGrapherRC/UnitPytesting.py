@@ -118,3 +118,8 @@ print(ratioWithUnits)
 print(str(ratioWithUnits).split(' '))
 
 
+#micrometer symbol, "μ" will result in error, also typing out "microm" will result in error, but "micrometer" works
+units1 = unitpy.U("(((kg)/mm))/s")
+#units2 = unitpy.U("(((g)/μm))/s")
+#units2 = unitpy.U("(((g)/microm))/s")
+units2 = unitpy.U("(((g)/micrometer))/s")

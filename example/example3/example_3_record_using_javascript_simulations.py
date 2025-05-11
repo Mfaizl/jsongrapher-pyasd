@@ -1,10 +1,6 @@
 import json
 from JSONGrapherRC import JSONRecordCreator
 
-#Testing#
-import unitpy
-from unitpy.utils.parsing import parse_unit
-
 ### STEP 1: USE A JSON RECORD WITH A SIMULATE FUNCTION ###
 #First, we will load a JSONGrapher record from a file.
 filename = r"./amino_silane_silica_LangmuirIsothermModel_343_equilibrium.json"

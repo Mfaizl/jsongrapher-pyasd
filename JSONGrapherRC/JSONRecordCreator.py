@@ -1,6 +1,66 @@
 import json
 #TODO: put an option to suppress warnings from JSONRecordCreator
 
+
+#Start of the portion of the code for the GUI##
+global_records_list = [] #This list holds onto records as they are added. Index 0 is the merged record. Each other index corresponds to record number (like 1 is first record, 2 is second record, etc)
+
+
+#This is a JSONGrapher specific function
+#That takes filenames and adds new JSONGrapher records to a global_records_list
+#If the all_selected_file_paths and newest_file_name_and_path are [] and [], that means to clear the global_records_list.
+def add_records_to_global_records_list_and_plot(all_selected_file_paths, newly_added_file_paths, plot_immediately=True):
+    #First check if we have received a "clear" condition.
+    if (len(all_selected_file_paths) == 0) and (len(newly_added_file_paths) == 0):
+        global_records_list.clear()
+        return global_records_list
+    if len(global_records_list) == 0: #this is for the "first time" the function is called, but the newly_added_file_paths could be a list longer than one.
+        first_record = create_new_JSONGrapherRecord()
+        first_record.import_from_file(newly_added_file_paths[0]) #get first newly added record record.
+        #index 0 will be the one we merge into.
+        global_records_list.append(first_record)
+        #index 1 will be where we store the first record, so we append again.
+        global_records_list.append(first_record)
+        #Now, check if there are more records.
+        if len(newly_added_file_paths) > 1:
+            for filename_and_path_index, filename_and_path in enumerate(newly_added_file_paths):
+                if filename_and_path_index == 0:
+                    pass #passing because we've already added first file.
+                else:
+                    current_record = create_new_JSONGrapherRecord() #make a new record
+                    current_record.import_from_file(filename_and_path)        
+                    global_records_list.append(current_record) #append it to global records list
+                    global_records_list[0] = merge_JSONGrapherRecords([global_records_list[0], current_record]) #merge into the main record of records list, which is at index 0.
+    else: #For case that global_records_list already exists when funciton is called.
+        for filename_and_path_index, filename_and_path in enumerate(newly_added_file_paths):
+            current_record = create_new_JSONGrapherRecord() #make a new record
+            current_record.import_from_file(filename_and_path)        
+            global_records_list.append(current_record) #append it to global records list
+            global_records_list[0] = merge_JSONGrapherRecords([global_records_list[0], current_record]) #merge into the main record of records list, which is at index 0.
+    if plot_immediately:
+        #plot the index 0, which is the most up to date merged record.
+        global_records_list[0].plot_with_plotly()
+    return global_records_list
+
+
+
+#This ia JSONGrapher specific wrapper function to drag_and_drop_gui create_and_launch.
+#This launches the python based JSONGrapher GUI.
+def launch():
+    #Check if we have the module we need. First try with package, then locally.
+    try:
+        import JSONGrapherRC.drag_and_drop_gui as drag_and_drop_gui
+    except:
+        #if the package is not present, or does not have it, try getting the module locally.
+        import drag_and_drop_gui
+      
+    selected_files = drag_and_drop_gui.create_and_launch(app_name = "JSONGRapher", function_for_after_file_addition=add_records_to_global_records_list_and_plot)
+    #We will not return the selected_files, and instead will return the global_records_list.
+    return global_records_list
+
+## End of the portion of the code for the GUI##
+
+
 #the function create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
 # intuitive to create class objects that way, this variable is actually just a reference 
 # so that we don't have to map the arguments.
@@ -163,8 +223,8 @@ def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y
 def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
     import numpy as np
     dataseries = dataseries_dict
-    dataseries["x"] = list(np.array(dataseries["x"])*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.
-    dataseries["y"] = list(np.array(dataseries["y"])*num_to_scale_y_values_by) #convert to numpy array for multiplication, then back to list.
+    dataseries["x"] = list(np.array(dataseries["x"], dtype=float)*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.
+    dataseries["y"] = list(np.array(dataseries["y"], dtype=float)*num_to_scale_y_values_by) #convert to numpy array for multiplication, then back to list.
     
     # Ensure elements are converted to standard Python types. 
     dataseries["x"] = [float(val) for val in dataseries["x"]] #This line written by copilot.
@@ -397,7 +457,7 @@ class JSONGrapherRecord:
     def import_from_json(self, json_filename_or_object):
         if type(json_filename_or_object) == type(""): #assume it's a filename and path.
             # Open the file in read mode
-            with open("json_filename_or_object", 'r') as file:
+            with open(json_filename_or_object, 'r') as file:
                 # Read the entire content of the file
                 content = file.read()
                 self.fig_dict = json.loads(content)   

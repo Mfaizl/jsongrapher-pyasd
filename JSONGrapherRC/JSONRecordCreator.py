@@ -40,7 +40,8 @@ def add_records_to_global_records_list_and_plot(all_selected_file_paths, newly_a
     if plot_immediately:
         #plot the index 0, which is the most up to date merged record.
         global_records_list[0].plot_with_plotly()
-    return global_records_list
+    json_string_for_download = json.dumps(global_records_list[0].fig_dict, indent=4)
+    return [json_string_for_download] #For the GUI, this function should return a list with something convertable to string to save to file, in index 0.
 
 
 
@@ -53,7 +54,6 @@ def launch():
     except:
         #if the package is not present, or does not have it, try getting the module locally.
         import drag_and_drop_gui
-      
     selected_files = drag_and_drop_gui.create_and_launch(app_name = "JSONGRapher", function_for_after_file_addition=add_records_to_global_records_list_and_plot)
     #We will not return the selected_files, and instead will return the global_records_list.
     return global_records_list

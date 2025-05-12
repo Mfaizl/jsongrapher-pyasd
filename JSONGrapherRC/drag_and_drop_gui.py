@@ -32,12 +32,16 @@ class DragDropApp:
         self.select_button = tk.Button(root, text="Select Files By Browsing", command=self.open_file_dialog)
         self.select_button.pack(pady=5)
 
-        self.clear_button = tk.Button(root, text="Clear Files List", command=self.clear_file_list)  # New "Clear" button
-        self.clear_button.pack(pady=5)
+        # Create a frame for the middle buttons
+        button_frame_middle = tk.Frame(root)
+        button_frame_middle.pack(pady=5)
+
+        self.clear_button = tk.Button(button_frame_middle, text="Clear Files List", command=self.clear_file_list)  # New "Clear" button
+        self.clear_button.pack(side = tk.LEFT, pady=5)
 
         # "Download Output" button
-        self.download_button = tk.Button(root, text="Download Output", command=self.download_output)
-        self.download_button.pack(pady=5)
+        self.download_button = tk.Button(button_frame_middle, text="Download Output", command=self.download_output)
+        self.download_button.pack(side = tk.RIGHT, pady=5)
 
         self.done_button = tk.Button(root, text="End", command=self.finish_selection)
         self.done_button.pack(pady=5)

@@ -679,7 +679,7 @@ class JSONGrapherRecord:
         #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons'])
         fig = pio.from_json(json.dumps(self.fig_dict))
         self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig
@@ -728,7 +728,7 @@ class JSONGrapherRecord:
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate']['custom_units_chevrons'])
         fig = convert_JSONGrapher_dict_to_matplotlib_fig(self.fig_dict)
         self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig
@@ -1470,23 +1470,32 @@ def remove_simulate_field(json_fig_dict):
     json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
     return json_fig_dict
 
+def remove_custom_units_chevrons(json_fig_dict):
+    json_fig_dict['layout']['xaxis']['title']['text'] = json_fig_dict['layout']['xaxis']['title']['text'].replace('<','').replace('>','')
+    json_fig_dict['layout']['yaxis']['title']['text'] = json_fig_dict['layout']['yaxis']['title']['text'].replace('<','').replace('>','')
+    return json_fig_dict
+
+
 def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
      and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. 
      This function can also remove the 'simulate' field from data series. However, that is not the default behavior
      because one would not want to do that by mistake before simulation is performed.
      """
-    data = json_fig_dict
+    fig_dict = json_fig_dict
     #unmodified_data = copy.deepcopy(data)
     if "title_field" in fields_to_update:
-        data = update_title_field(data)
+        fig_dict = update_title_field(fig_dict)
     if "extraInformation" in fields_to_update:
-        data = remove_extra_information_field(data)
+        fig_dict = remove_extra_information_field(fig_dict)
     if "nested_comments" in fields_to_update:
-        data = remove_nested_comments(data)
+        fig_dict = remove_nested_comments(fig_dict)
     if "simulate" in fields_to_update:
-        data = remove_simulate_field(data)
-    return data
+        fig_dict = remove_simulate_field(fig_dict)
+    if "custom_units_chevrons" in fields_to_update:
+        fig_dict = remove_custom_units_chevrons(fig_dict)
+
+    return fig_dict
 
 ### End section of code with functions for cleaning fig_dicts for plotly compatibility ###
 

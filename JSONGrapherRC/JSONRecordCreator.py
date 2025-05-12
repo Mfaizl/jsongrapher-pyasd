@@ -143,7 +143,14 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
     if units_string_1 == units_string_2:
         return 1
     import unitpy #this function uses unitpy.
-    #first need to extract custom units and add them to unitpy
+    #Replace "^" with "**" for unit conversion purposes.
+    #We won't need to replace back because this function only returns the ratio in the end.
+    units_string_1 = units_string_1.replace("^", "**")
+    units_string_2 = units_string_2.replace("^", "**")
+    #For now, we need to tag µ symbol units as if they are custom units. Because unitpy doesn't support that symbol yet (May 2025)
+    units_string_1 = tag_micro_units(units_string_1)
+    units_string_2 = tag_micro_units(units_string_2)
+    #Next, need to extract custom units and add them to unitpy
     custom_units_1 = extract_tagged_strings(units_string_1)
     custom_units_2 = extract_tagged_strings(units_string_2)
     for custom_unit in custom_units_1:
@@ -166,7 +173,7 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
     ratio_with_units_string = str(ratio_with_units_object)
     ratio_only = ratio_with_units_string.split(' ')[0] #what comes out may look like 1000 gram/(meter second), so we split and take first part.
     ratio_only = float(ratio_only)
-    return ratio_only
+    return ratio_only #function returns ratio only. If function is later changed to return more, then units_strings may need further replacements.
 
 def return_custom_units_markup(units_string, custom_units_list):
     """puts markup around custom units with '<' and '>' """
@@ -175,6 +182,40 @@ def return_custom_units_markup(units_string, custom_units_list):
     for custom_unit in sorted_custom_units_list:
         units_string.replace(custom_unit, '<'+custom_unit+'>')
     return units_string
+
+    #This function tags microunits.
+    #However, because unitpy gives unexpected behavior with the microsymbol,
+    #We are actually going to change them from "µm" to "<microfrogm>"
+def tag_micro_units(units_string):
+    # Unicode representations of micro symbols:
+    # U+00B5 → µ (Micro Sign)
+    # U+03BC → μ (Greek Small Letter Mu)
+    # U+1D6C2 → 𝜇 (Mathematical Greek Small Letter Mu)
+    # U+1D6C1 → 𝝁 (Mathematical Bold Greek Small Letter Mu)
+    micro_symbols = ["µ", "μ", "𝜇", "𝝁"]
+    # Check if any micro symbol is in the string
+    if not any(symbol in units_string for symbol in micro_symbols):
+        return units_string  # If none are found, return the original string unchanged
+    import re
+    # Construct a regex pattern to detect any micro symbol followed by letters
+    pattern = r"[" + "".join(micro_symbols) + r"][a-zA-Z]+"
+    # Extract matches and sort them by length (longest first)
+    matches = sorted(re.findall(pattern, units_string), key=len, reverse=True)
+    # Replace matches with custom unit notation <X>
+    for match in matches:
+        frogified_match = f"<microfrog{match[1:]}>"
+        units_string = units_string.replace(match, frogified_match)
+    return units_string
+
+    #We are actually going to change them back to "µm" from "<microfrogm>"
+def untag_micro_units(units_string):
+    if "<microfrog" not in units_string:  # Check if any frogified unit exists
+        return units_string
+    import re
+    # Pattern to detect the frogified micro-units
+    pattern = r"<microfrog([a-zA-Z]+)>"
+    # Replace frogified units with µ + the original unit suffix
+    return re.sub(pattern, r"µ\1", units_string)
 
 def add_custom_unit_to_unitpy(unit_string):
     import unitpy

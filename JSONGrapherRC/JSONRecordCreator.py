@@ -110,11 +110,21 @@ def merge_JSONGrapherRecords(recordsList):
             this_record_x_units = separate_label_text_from_units(this_record_x_label)["units"]
             this_record_y_units = separate_label_text_from_units(this_record_y_label)["units"]
             #now get the ratio of the units for this record relative to the first record.
-            x_units_ratio = get_units_scaling_ratio(this_record_x_units, first_record_x_units)
-            y_units_ratio = get_units_scaling_ratio(this_record_y_units, first_record_y_units)
+            #if the units are identical, then just make the ratio 1.
+            if this_record_x_units == first_record_x_units:
+                x_units_ratio = 1
+            else:
+                x_units_ratio = get_units_scaling_ratio(this_record_x_units, first_record_x_units)
+            if this_record_y_units == first_record_y_units:
+                y_units_ratio = 1
+            else:
+                y_units_ratio = get_units_scaling_ratio(this_record_y_units, first_record_y_units)
             #A record could have more than one data series, but they will all have the same units.
             #Thus, we use a function that will scale all of the dataseries at one time.
-            scaled_fig_dict = scale_fig_dict_values(current_fig_dict, x_units_ratio, y_units_ratio)
+            if (x_units_ratio == 1) and (y_units_ratio == 1): #skip scaling if it's not necessary.
+                scaled_fig_dict = current_fig_dict
+            else:
+                scaled_fig_dict = scale_fig_dict_values(current_fig_dict, x_units_ratio, y_units_ratio)
             #now, add the scaled data objects to the original one.
             #This is fairly easy using a list extend.
             merged_JSONGrapherRecord.fig_dict["data"].extend(scaled_fig_dict["data"])
@@ -129,8 +139,21 @@ def merge_JSONGrapherRecords(recordsList):
 #Could add "tag_characters"='<>' as an optional argument to this and other functions
 #to make the option of other characters for custom units.
 def get_units_scaling_ratio(units_string_1, units_string_2):
+    # Ensure both strings are properly encoded in UTF-8
+    units_string_1 = units_string_1.encode("utf-8").decode("utf-8")
+    units_string_2 = units_string_2.encode("utf-8").decode("utf-8")
+    #If the unit strings are identical, there is no need to go further.
+    if units_string_1 == units_string_2:
+        return 1
     import unitpy #this function uses unitpy.
-    #first need to extract custom units and add them to unitpy
+    #Replace "^" with "**" for unit conversion purposes.
+    #We won't need to replace back because this function only returns the ratio in the end.
+    units_string_1 = units_string_1.replace("^", "**")
+    units_string_2 = units_string_2.replace("^", "**")
+    #For now, we need to tag µ symbol units as if they are custom units. Because unitpy doesn't support that symbol yet (May 2025)
+    units_string_1 = tag_micro_units(units_string_1)
+    units_string_2 = tag_micro_units(units_string_2)
+    #Next, need to extract custom units and add them to unitpy
     custom_units_1 = extract_tagged_strings(units_string_1)
     custom_units_2 = extract_tagged_strings(units_string_2)
     for custom_unit in custom_units_1:
@@ -153,7 +176,7 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
     ratio_with_units_string = str(ratio_with_units_object)
     ratio_only = ratio_with_units_string.split(' ')[0] #what comes out may look like 1000 gram/(meter second), so we split and take first part.
     ratio_only = float(ratio_only)
-    return ratio_only
+    return ratio_only #function returns ratio only. If function is later changed to return more, then units_strings may need further replacements.
 
 def return_custom_units_markup(units_string, custom_units_list):
     """puts markup around custom units with '<' and '>' """
@@ -162,6 +185,40 @@ def return_custom_units_markup(units_string, custom_units_list):
     for custom_unit in sorted_custom_units_list:
         units_string.replace(custom_unit, '<'+custom_unit+'>')
     return units_string
+
+    #This function tags microunits.
+    #However, because unitpy gives unexpected behavior with the microsymbol,
+    #We are actually going to change them from "µm" to "<microfrogm>"
+def tag_micro_units(units_string):
+    # Unicode representations of micro symbols:
+    # U+00B5 → µ (Micro Sign)
+    # U+03BC → μ (Greek Small Letter Mu)
+    # U+1D6C2 → 𝜇 (Mathematical Greek Small Letter Mu)
+    # U+1D6C1 → 𝝁 (Mathematical Bold Greek Small Letter Mu)
+    micro_symbols = ["µ", "μ", "𝜇", "𝝁"]
+    # Check if any micro symbol is in the string
+    if not any(symbol in units_string for symbol in micro_symbols):
+        return units_string  # If none are found, return the original string unchanged
+    import re
+    # Construct a regex pattern to detect any micro symbol followed by letters
+    pattern = r"[" + "".join(micro_symbols) + r"][a-zA-Z]+"
+    # Extract matches and sort them by length (longest first)
+    matches = sorted(re.findall(pattern, units_string), key=len, reverse=True)
+    # Replace matches with custom unit notation <X>
+    for match in matches:
+        frogified_match = f"<microfrog{match[1:]}>"
+        units_string = units_string.replace(match, frogified_match)
+    return units_string
+
+    #We are actually going to change them back to "µm" from "<microfrogm>"
+def untag_micro_units(units_string):
+    if "<microfrog" not in units_string:  # Check if any frogified unit exists
+        return units_string
+    import re
+    # Pattern to detect the frogified micro-units
+    pattern = r"<microfrog([a-zA-Z]+)>"
+    # Replace frogified units with µ + the original unit suffix
+    return re.sub(pattern, r"µ\1", units_string)
 
 def add_custom_unit_to_unitpy(unit_string):
     import unitpy
@@ -456,8 +513,8 @@ class JSONGrapherRecord:
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
         if type(json_filename_or_object) == type(""): #assume it's a filename and path.
-            # Open the file in read mode
-            with open(json_filename_or_object, 'r') as file:
+            # Open the file in read mode with UTF-8 encoding
+            with open(json_filename_or_object, 'r', encoding='utf-8') as file:
                 # Read the entire content of the file
                 content = file.read()
                 self.fig_dict = json.loads(content)   
@@ -607,8 +664,8 @@ class JSONGrapherRecord:
             # Check if the filename has an extension and append `.json` if not
             if '.json' not in filename.lower():
                 filename += ".json"
-            #Write to file.
-            with open(filename, 'w') as f:
+            #Write to file using UTF-8 encoding.
+            with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 
@@ -995,6 +1052,8 @@ def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
     #TODO: need to distinguish between "spline" and "scatter_spline" by checking for marker instructions.
     if shape_field == 'spline':
         plot_type = 'scatter_spline' 
+    if shape_field == 'linear':
+        plot_type = 'scatter_line' 
     fields_dict = plot_type_to_field_values(plot_type)
  
     
@@ -1038,6 +1097,10 @@ def plot_type_to_field_values(plot_type):
         fields_dict["type_field"] = 'scatter'
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "spline"
+    elif plot_type.lower() == "scatter_line":
+        fields_dict["type_field"] = 'scatter'
+        fields_dict["mode_field"] = 'lines'
+        fields_dict["line_shape_field"] = "linear"
     return fields_dict
 
 #This function does updating of internal things before validating

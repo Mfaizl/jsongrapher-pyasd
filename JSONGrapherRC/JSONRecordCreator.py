@@ -664,8 +664,8 @@ class JSONGrapherRecord:
             # Check if the filename has an extension and append `.json` if not
             if '.json' not in filename.lower():
                 filename += ".json"
-            #Write to file.
-            with open(filename, 'w') as f:
+            #Write to file using UTF-8 encoding.
+            with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 

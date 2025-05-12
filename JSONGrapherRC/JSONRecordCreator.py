@@ -110,11 +110,21 @@ def merge_JSONGrapherRecords(recordsList):
             this_record_x_units = separate_label_text_from_units(this_record_x_label)["units"]
             this_record_y_units = separate_label_text_from_units(this_record_y_label)["units"]
             #now get the ratio of the units for this record relative to the first record.
-            x_units_ratio = get_units_scaling_ratio(this_record_x_units, first_record_x_units)
-            y_units_ratio = get_units_scaling_ratio(this_record_y_units, first_record_y_units)
+            #if the units are identical, then just make the ratio 1.
+            if this_record_x_units == first_record_x_units:
+                x_units_ratio = 1
+            else:
+                x_units_ratio = get_units_scaling_ratio(this_record_x_units, first_record_x_units)
+            if this_record_y_units == first_record_y_units:
+                y_units_ratio = 1
+            else:
+                y_units_ratio = get_units_scaling_ratio(this_record_y_units, first_record_y_units)
             #A record could have more than one data series, but they will all have the same units.
             #Thus, we use a function that will scale all of the dataseries at one time.
-            scaled_fig_dict = scale_fig_dict_values(current_fig_dict, x_units_ratio, y_units_ratio)
+            if (x_units_ratio == 1) and (y_units_ratio == 1): #skip scaling if it's not necessary.
+                scaled_fig_dict = current_fig_dict
+            else:
+                scaled_fig_dict = scale_fig_dict_values(current_fig_dict, x_units_ratio, y_units_ratio)
             #now, add the scaled data objects to the original one.
             #This is fairly easy using a list extend.
             merged_JSONGrapherRecord.fig_dict["data"].extend(scaled_fig_dict["data"])
@@ -129,6 +139,9 @@ def merge_JSONGrapherRecords(recordsList):
 #Could add "tag_characters"='<>' as an optional argument to this and other functions
 #to make the option of other characters for custom units.
 def get_units_scaling_ratio(units_string_1, units_string_2):
+    #If the unit strings are identical, there is no need to go further.
+    if units_string_1 == units_string_2:
+        return 1
     import unitpy #this function uses unitpy.
     #first need to extract custom units and add them to unitpy
     custom_units_1 = extract_tagged_strings(units_string_1)

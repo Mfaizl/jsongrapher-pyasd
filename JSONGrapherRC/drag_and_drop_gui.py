@@ -32,8 +32,16 @@ class DragDropApp:
         self.select_button = tk.Button(root, text="Select Files By Browsing", command=self.open_file_dialog)
         self.select_button.pack(pady=5)
 
-        self.clear_button = tk.Button(root, text="Clear Files List", command=self.clear_file_list)  # New "Clear" button
-        self.clear_button.pack(pady=5)
+        # Create a frame for the middle buttons
+        button_frame_middle = tk.Frame(root)
+        button_frame_middle.pack(pady=5)
+
+        self.clear_button = tk.Button(button_frame_middle, text="Clear Files List", command=self.clear_file_list)  # New "Clear" button
+        self.clear_button.pack(side = tk.LEFT, pady=5)
+
+        # "Download Output" button
+        self.download_button = tk.Button(button_frame_middle, text="Download Output", command=self.download_output)
+        self.download_button.pack(side = tk.RIGHT, pady=5)
 
         self.done_button = tk.Button(root, text="End", command=self.finish_selection)
         self.done_button.pack(pady=5)
@@ -69,7 +77,22 @@ class DragDropApp:
             self.file_listbox.insert(tk.END, os.path.basename(filename_and_path))  # Show filenames only
         # If there is a function_for_after_file_addition, pass full list and newly added files into function_for_after_file_addition
         if self.function_for_after_file_addition is not None:
-            self.function_for_after_file_addition(self.all_selected_file_paths, newly_added_file_paths)
+            output = self.function_for_after_file_addition(self.all_selected_file_paths, newly_added_file_paths)
+            self.output_for_download = output[0] #store the first part of the output for download.
+
+    def download_output(self):
+        """Allows user to choose where to save the output."""
+        if hasattr(self, "output_for_download"):
+            file_path = filedialog.asksaveasfilename(filetypes=[("*.*", "*.txt")], title="Save Output As")
+            if file_path:  # If a valid path is chosen
+                with open(file_path, "w") as file:
+                    file.write(str(self.output_for_download))
+                print(f"Output saved as '{file_path}'!")
+            else:
+                print("File save operation canceled.")
+        else:
+            print("No output available to download.")
+
 
     def finish_selection(self):
         """Closes the window and returns selected files."""
@@ -77,6 +100,7 @@ class DragDropApp:
 
 # This function is a companion function to
 # The class DragDropApp for creating a file selection and function call app
+# The function_for_after_file_addition should return a list where the first item is something that can be downloaded.
 def create_and_launch(app_name = '', function_for_after_file_addition=None):
     """Starts the GUI and returns selected files."""
     root = TkinterDnD.Tk()

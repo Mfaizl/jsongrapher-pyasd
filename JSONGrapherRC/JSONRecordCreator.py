@@ -139,6 +139,9 @@ def merge_JSONGrapherRecords(recordsList):
 #Could add "tag_characters"='<>' as an optional argument to this and other functions
 #to make the option of other characters for custom units.
 def get_units_scaling_ratio(units_string_1, units_string_2):
+    # Ensure both strings are properly encoded in UTF-8
+    units_string_1 = units_string_1.encode("utf-8").decode("utf-8")
+    units_string_2 = units_string_2.encode("utf-8").decode("utf-8")
     #If the unit strings are identical, there is no need to go further.
     if units_string_1 == units_string_2:
         return 1
@@ -510,8 +513,8 @@ class JSONGrapherRecord:
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
         if type(json_filename_or_object) == type(""): #assume it's a filename and path.
-            # Open the file in read mode
-            with open(json_filename_or_object, 'r') as file:
+            # Open the file in read mode with UTF-8 encoding
+            with open(json_filename_or_object, 'r', encoding='utf-8') as file:
                 # Read the entire content of the file
                 content = file.read()
                 self.fig_dict = json.loads(content)   

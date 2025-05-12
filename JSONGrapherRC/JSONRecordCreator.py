@@ -1052,6 +1052,8 @@ def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
     #TODO: need to distinguish between "spline" and "scatter_spline" by checking for marker instructions.
     if shape_field == 'spline':
         plot_type = 'scatter_spline' 
+    if shape_field == 'linear':
+        plot_type = 'scatter_line' 
     fields_dict = plot_type_to_field_values(plot_type)
  
     
@@ -1095,6 +1097,10 @@ def plot_type_to_field_values(plot_type):
         fields_dict["type_field"] = 'scatter'
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "spline"
+    elif plot_type.lower() == "scatter_line":
+        fields_dict["type_field"] = 'scatter'
+        fields_dict["mode_field"] = 'lines'
+        fields_dict["line_shape_field"] = "linear"
     return fields_dict
 
 #This function does updating of internal things before validating

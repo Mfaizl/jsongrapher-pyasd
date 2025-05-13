@@ -8,7 +8,7 @@ pip install JSONGrapher[COMPLETE]
 
 Alternatively, you can download the directory directly.<br> 
 
-It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/example/exampleUsageJSONRecordCreator.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
+It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/examples/example_2/example_2_json_record_tutorial.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
 
 ## **0\. Plotting a JSON Record**
 It's as simple as one line! Then drag a json record into the window

@@ -5,15 +5,15 @@
 '''
 
 
-#To use JSONGrapherRC, first use pip install JSONGrapherRC or download the directory.
+#To use JSONGrapher, first use pip install JSONGrapher or download the directory.
 #This file will show one typical usage.
 
 try: 
-    from JSONGrapherRC import JSONRecordCreator #normal usage
+    from JSONGrapher import JSONRecordCreator #normal usage
 except:
     #add the path.
     import sys, os 
-    json_grapher_rc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "JSONGrapherRC"))
+    json_grapher_rc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "JSONGrapher"))
     sys.path.append(json_grapher_rc_path)
     import JSONRecordCreator #this is if you have the class file locally.
 

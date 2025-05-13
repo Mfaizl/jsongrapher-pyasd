@@ -1,14 +1,21 @@
-# JSONGrapherRC (JSONGrapher Record Creator)
-A python package for creating JSONGrapher files which can then be plotted. 
+# JSONGrapher (python)
+This is the python version of JSONGrapher with JSONRecordCreator. This package is for plotting JSON records with drag and drop and has tools for creating the JSON records.
 
-To use JSONGrapherRC, first install it using pip:
+To use python JSONGrapher, first install it using pip:
 <pre>
-pip install JSONGrapherRC[COMPLETE]
+pip install JSONGrapher[COMPLETE]
 </pre>
 
 Alternatively, you can download the directory directly.<br> 
 
-It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapherRC/blob/main/example/exampleUsageJSONRecordCreator.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
+It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/examples/example_2/example_2_json_record_tutorial.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
+
+## **0\. Plotting a JSON Record**
+It's as simple as one line! Then drag a json record into the window
+<pre>
+import JSONGrapher 
+JSONGrapher.launch()
+</pre>
 
 
 ## **1\. Preparing to Create a Record**
@@ -69,7 +76,7 @@ JSONGrapher Record exported to, ./ExampleFromTutorial.json
 We can also plot the data using Matplotlib and export the plot as a PNG file.
 <pre>
 Record.plot_with_matplotlib()
-Record.export_to_matplotlib_png("ExampleFromTutorial_matplotlib_fig")
+Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")
 </pre>
 
 And we can create an interactive graph with plotly:
@@ -77,4 +84,4 @@ And we can create an interactive graph with plotly:
 Record.plot_with_plotly() #Try hovering your mouse over points after this command!
 </pre>
 
-[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial_matplotlib_fig.png)
+[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2/image_from_tutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2/image_from_tutorial_matplotlib_fig.png)

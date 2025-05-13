@@ -1,9 +1,9 @@
-import JSONGrapherRC 
+import JSONGrapher 
 
 
 ## STEP 1: To launch JSONGrapher, simply use the launch function ##.
 #Once the window is launched, you can drag in sets of JSONGrapher records!
-final_plots_record_list = JSONGrapherRC.launch()
+final_plots_record_list = JSONGrapher.launch()
 
 ##STEP 2: Try dragging in UAN_DTA_8.json and UAN_DTA_6.json to see two graphs plotted together.
 

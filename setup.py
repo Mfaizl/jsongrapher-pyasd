@@ -14,18 +14,18 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'JSONGrapherRC'
-DESCRIPTION = 'A python package for creating JSONGrapher Records.'
-URL = 'https://github.com/AdityaSavara/JSONGrapherRC'
+NAME = 'JSONGrapher'
+DESCRIPTION = 'The python version of JSONGrapher with tools for creating JSONGrapher Records.'
+URL = 'https://github.com/AdityaSavara/jsongrapher-py'
 EMAIL = 'AditySavara2008@u.northwestern.edu'  
 AUTHOR = 'Aditya Savara'
 REQUIRES_PYTHON = '>=3.0.0'
-VERSION = '2.6'
+VERSION = '2.8'
 LICENSE = 'Unlicense'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'numpy' 
+    'numpy'
     # 'requests', 'maya', 'records', #numpy...
 ]
 

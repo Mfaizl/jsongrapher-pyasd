@@ -17,7 +17,7 @@ import JSONGrapher
 JSONGrapher.launch()
 </pre>
 
-[![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)
+[![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png) [![JSONGRapher plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/UAN_DTA_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/UAN_DTA_image.png)
 
 ## **1\. Preparing to Create a Record**
 

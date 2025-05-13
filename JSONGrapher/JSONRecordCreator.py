@@ -54,7 +54,7 @@ def launch():
     except:
         #if the package is not present, or does not have it, try getting the module locally.
         import drag_and_drop_gui
-    selected_files = drag_and_drop_gui.create_and_launch(app_name = "JSONGRapher", function_for_after_file_addition=add_records_to_global_records_list_and_plot)
+    selected_files = drag_and_drop_gui.create_and_launch(app_name = "JSONGrapher", function_for_after_file_addition=add_records_to_global_records_list_and_plot)
     #We will not return the selected_files, and instead will return the global_records_list.
     return global_records_list
 
@@ -1425,7 +1425,7 @@ def update_title_field(data, depth=1, max_depth=10):
 
 def remove_extra_information_field(data, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. """
+     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
     """Recursively checks for 'extraInformation' fields and removes them."""
     if depth > max_depth or not isinstance(data, dict):
         return data
@@ -1446,7 +1446,7 @@ def remove_extra_information_field(data, depth=1, max_depth=10):
 
 def remove_nested_comments(data, top_level=True):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. """
+     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
     """Removes 'comments' fields that are not at the top level of the JSON-dict. Starts with 'top_level = True' when dict is first passed in then becomes false after that. """
     if not isinstance(data, dict):
         return data
@@ -1478,7 +1478,7 @@ def remove_custom_units_chevrons(json_fig_dict):
 
 def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGRapher json_dict to python plotly figure objects. 
+     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. 
      This function can also remove the 'simulate' field from data series. However, that is not the default behavior
      because one would not want to do that by mistake before simulation is performed.
      """
@@ -1701,7 +1701,7 @@ if __name__ == "__main__":
     Record_from_existing.set_y_axis_label_including_units(y_label_including_units)
     print(Record_from_existing)
     
-    print("NOW WILL MERGE THE RECORDS, AND USE THE SECOND ONE TWICE (AS A JSONGRAPHER OBJECT THEN JUST THE FIG_DICT)")
+    print("NOW WILL MERGE THE RECORDS, AND USE THE SECOND ONE TWICE (AS A JSONGrapher OBJECT THEN JUST THE FIG_DICT)")
     print(merge_JSONGrapherRecords([Record, Record_from_existing, Record_from_existing.fig_dict]))
 
 

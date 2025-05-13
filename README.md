@@ -8,8 +8,6 @@ pip install JSONGrapher[COMPLETE]
 
 Alternatively, you can download the directory directly.<br> 
 
-It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/examples/example_2/example_2_json_record_tutorial.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
-
 ## **0\. Plotting a JSON Record**
 It's as simple as one line! Then drag a json record into the window to plot.
 <pre>
@@ -20,6 +18,8 @@ JSONGrapher.launch()
 [![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png) [![JSONGRapher plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/UAN_DTA_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/UAN_DTA_image.png)
 
 ## **1\. Preparing to Create a Record**
+
+The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/examples/example_2/example_2_json_record_tutorial.py) which shows how to create graphable .json records and to plot them. The .json files can then be dragged into the python JSONgrapher or into www.jsongrapher.com<br>
 
 Let's create an example where we plot the height of a pear tree over several years. Assuming a pear tree grows approximately 0.40 meters per year, we'll generate sample data with some variation.
 <pre>

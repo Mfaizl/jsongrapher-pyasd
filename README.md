@@ -10,6 +10,13 @@ Alternatively, you can download the directory directly.<br>
 
 It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/example/exampleUsageJSONRecordCreator.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
 
+## **0\. Plotting a JSON Record**
+It's as simple as one line! Then drag a json record into the window
+<pre>
+import JSONGrapher 
+JSONGrapher.launch()
+</pre>
+
 
 ## **1\. Preparing to Create a Record**
 
@@ -77,4 +84,4 @@ And we can create an interactive graph with plotly:
 Record.plot_with_plotly() #Try hovering your mouse over points after this command!
 </pre>
 
-[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher/main/example/ExampleFromTutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher/main/example/ExampleFromTutorial_matplotlib_fig.png)
+[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/example/ExampleFromTutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/example/ExampleFromTutorial_matplotlib_fig.png)

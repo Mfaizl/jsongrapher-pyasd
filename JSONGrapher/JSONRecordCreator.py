@@ -728,7 +728,7 @@ class JSONGrapherRecord:
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate']['custom_units_chevrons'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons'])
         fig = convert_JSONGrapher_dict_to_matplotlib_fig(self.fig_dict)
         self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig

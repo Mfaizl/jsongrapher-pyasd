@@ -11,12 +11,13 @@ Alternatively, you can download the directory directly.<br>
 It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/examples/example_2/example_2_json_record_tutorial.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
 
 ## **0\. Plotting a JSON Record**
-It's as simple as one line! Then drag a json record into the window
+It's as simple as one line! Then drag a json record into the window to plot.
 <pre>
 import JSONGrapher 
 JSONGrapher.launch()
 </pre>
 
+[![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)
 
 ## **1\. Preparing to Create a Record**
 

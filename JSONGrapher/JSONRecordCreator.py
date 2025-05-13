@@ -50,7 +50,7 @@ def add_records_to_global_records_list_and_plot(all_selected_file_paths, newly_a
 def launch():
     #Check if we have the module we need. First try with package, then locally.
     try:
-        import JSONGrapherRC.drag_and_drop_gui as drag_and_drop_gui
+        import JSONGrapher.drag_and_drop_gui as drag_and_drop_gui
     except:
         #if the package is not present, or does not have it, try getting the module locally.
         import drag_and_drop_gui
@@ -879,9 +879,9 @@ def units_plural_removal(units_to_check):
     """
     #Check if we have the module we need. If not, return with no change.
     try:
-        import JSONGrapherRC.units_list as units_list
+        import JSONGrapher.units_list as units_list
     except:
-        #if JSONGrapherRC is not present, try getting the units_list file locally.
+        #if JSONGrapher is not present, try getting the units_list file locally.
         try:
             import units_list
         except:#if still not present, give up and avoid crashing.
@@ -1040,7 +1040,7 @@ def parse_units(value):
 
 
 #This function sets the plot_type of a data_series_dict
-#based on some JSONGrapherRC options.
+#based on some JSONGrapher options.
 #It calls "plot_type_to_field_values" 
 #and then updates the data_series_dict accordingly, as needed.
 def set_data_series_dict_plot_type(data_series_dict, plot_type=""):

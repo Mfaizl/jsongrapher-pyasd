@@ -1,5 +1,5 @@
 import json
-from JSONGrapherRC import JSONRecordCreator
+from JSONGrapher import JSONRecordCreator
 
 ### STEP 1: USE A JSON RECORD WITH A SIMULATE FUNCTION ###
 #First, we will load a JSONGrapher record from a file.
@@ -33,8 +33,8 @@ adjusted_Record_with_simulate_field.simulate_data_series_by_index(data_series_in
 adjusted_Record_with_simulate_field.plot_with_plotly()
 
 #Now let's plot both records together by merging them.
-import JSONGrapherRC
-merged_record = JSONGrapherRC.merge_JSONGrapherRecords([Record_with_simulate_field, adjusted_Record_with_simulate_field])
+import JSONGrapher
+merged_record = JSONGrapher.merge_JSONGrapherRecords([Record_with_simulate_field, adjusted_Record_with_simulate_field])
 #plotting with plotly.
 merged_record.plot_with_plotly()
 #plotting with matplotlib.

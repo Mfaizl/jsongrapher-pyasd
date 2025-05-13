@@ -1,14 +1,14 @@
-# JSONGrapherRC (JSONGrapher Record Creator)
-A python package for creating JSONGrapher files which can then be plotted. 
+# JSONGrapher (the Python version, with the JSONRecordCreator)
+A python package for plotting JSON records with drag and drop, with tools for creating the JSON records.
 
-To use JSONGrapherRC, first install it using pip:
+To use JSONGrapher, first install it using pip:
 <pre>
-pip install JSONGrapherRC[COMPLETE]
+pip install JSONGrapher[COMPLETE]
 </pre>
 
 Alternatively, you can download the directory directly.<br> 
 
-It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapherRC/blob/main/example/exampleUsageJSONRecordCreator.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
+It is easiest to then follow the [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/example/exampleUsageJSONRecordCreator.py) to see how to create graphable .json records and to plot them. The .json files can then be dragged into www.jsongrapher.com<br>
 
 
 ## **1\. Preparing to Create a Record**
@@ -77,4 +77,4 @@ And we can create an interactive graph with plotly:
 Record.plot_with_plotly() #Try hovering your mouse over points after this command!
 </pre>
 
-[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapherRC/main/example/ExampleFromTutorial_matplotlib_fig.png)
+[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher/main/example/ExampleFromTutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher/main/example/ExampleFromTutorial_matplotlib_fig.png)

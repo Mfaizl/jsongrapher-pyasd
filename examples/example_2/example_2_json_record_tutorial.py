@@ -47,7 +47,7 @@ print("\n\n STEP 4: EXPORTING TO FILE")
 #We can export it to file, and then can drag it into JSONGrapher.
 #For convenience, we can remove any hints before export.
 Record.remove_hints()
-filename_to_export_to = "./ExampleFromTutorial.json" #the path can also be included, if desired.
+filename_to_export_to = "./record_from_tutorial.json" #the path can also be included, if desired.
 Record.export_to_json_file(filename_to_export_to) 
 print("JSONGrapher Record exported to, " + filename_to_export_to +"\n")
 
@@ -63,7 +63,7 @@ Record.print_to_inspect()
 #We can also plot the data with matplotlib, and can export to file as png. 
 print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB AND PLOTLY-PYTHON-MODULE")
 Record.plot_with_matplotlib()
-Record.export_to_matplotlib_png("ExampleFromTutorial_matplotlib_fig")
+Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")
 
 Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
 Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)

@@ -19,9 +19,9 @@ JSONGrapher.launch()
 
 ## **1\. Preparing to Create a Record**
 
-The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/examples/example_2/example_2_json_record_tutorial.py) which shows how to create graphable .json records and to plot them. The .json files can then be dragged into the python JSONgrapher or into www.jsongrapher.com<br>
+The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/JSONGrapher/blob/main/examples/example_2/example_2_json_record_tutorial.py) which shows how to create graphable .json records. The records can then be plotted with python JSONGrapher or with jsongrapher.com<br>
 
-Let's create an example where we plot the height of a pear tree over several years. Assuming a pear tree grows approximately 0.40 meters per year, we'll generate sample data with some variation.
+Let's create an example where we plot the height of a pear tree over several years. 
 <pre>
 x_label_including_units = "Time (years)"
 y_label_including_units = "Height (m)"

@@ -1,5 +1,5 @@
 # JSONGrapher (python)
-This is the python version of JSONGrapher (with JSONRecordCreator), for plotting JSON records with drag and drop, with tools for creating the JSON records.
+This is the python version of JSONGrapher with JSONRecordCreator. This package is for plotting JSON records with drag and drop and has tools for creating the JSON records.
 
 To use python JSONGrapher, first install it using pip:
 <pre>

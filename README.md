@@ -43,7 +43,7 @@ Record.set_graph_title("Pear Tree Growth Versus Time")
 
 ## **3\. Exporting to File**
 
-We can export it to a .json file, which can then be used with JSONGrapher. 
+We can export a record to a .json file, which can then be used with JSONGrapher. 
 <pre>
 Record.export_to_json_file("ExampleFromTutorial.json")
 Record.print_to_inspect()
@@ -74,15 +74,17 @@ JSONGrapher Record exported to, ./ExampleFromTutorial.json
 
 ## **4\. Plotting to Inspect**
 
-We can also plot the data using Matplotlib and export the plot as a PNG file.
+We can plot the data using Matplotlib and export the plot as a PNG file.
 <pre>
 Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")
 </pre>
 
-And we can create an interactive graph with plotly:
+We can create an interactive graph with python plotly:
 <pre>
 Record.plot_with_plotly() #Try hovering your mouse over points after this command!
 </pre>
 
 [![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2/image_from_tutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2/image_from_tutorial_matplotlib_fig.png)
+
+You can also see more examples: https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples

@@ -9,7 +9,7 @@ or
 Alternatively, you can download the directory directly.<br> 
 
 ## **0\. Plotting a JSON Record**
-It's as simple as one line! Then drag a json record into the window to plot.
+It's as simple as one line! Then drag an example JSONGrapher record into the window to plot!
 <pre>
 import JSONGrapher 
 JSONGrapher.launch()

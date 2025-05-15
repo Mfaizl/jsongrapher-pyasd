@@ -25,7 +25,7 @@ LICENSE = 'Unlicense'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'numpy'
+    'numpy >= 1.26'
     # 'requests', 'maya', 'records', #numpy...
 ]
 

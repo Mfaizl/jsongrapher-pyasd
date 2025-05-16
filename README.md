@@ -6,7 +6,7 @@ To use python JSONGrapher, first install it using conda or pip:<br>
 Alternatively, you can download the directory directly.<br> 
 
 ## **0\. Plotting a JSON Record**
-It's as simple as one line! Then drag an example JSONGrapher record into the window to plot!
+It's as simple as one line! Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1) JSONGrapher record into the window to plot!
 <pre>
 import JSONGrapher 
 JSONGrapher.launch()

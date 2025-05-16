@@ -2,8 +2,7 @@
 This is the python version of JSONGrapher with JSONRecordCreator. This package is for plotting JSON records with drag and drop and has tools for creating the JSON records.
 
 To use python JSONGrapher, first install it using conda or pip:<br>
-`pip install JSONGrapher[COMPLETE]` or `conda install conda-forge::jsongrapher`
-
+`pip install JSONGrapher[COMPLETE]` or `conda install conda-forge::jsongrapher` <br>
 Alternatively, you can download the directory directly.<br> 
 
 ## **0\. Plotting a JSON Record**

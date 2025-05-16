@@ -85,3 +85,6 @@ Record.plot_with_plotly() #Try hovering your mouse over points after this comman
 [![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2/image_from_tutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2/image_from_tutorial_matplotlib_fig.png)
 
 You can also see more examples: https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples
+
+Additionally, json records you send to others can be plotted by them at www.jsongrapher.com
+This 'see the plot using a browser' capability is intended to facilitate including JSONGrapher records in supporting information of scientific publications.

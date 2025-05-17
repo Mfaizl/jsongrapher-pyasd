@@ -183,7 +183,7 @@ def return_custom_units_markup(units_string, custom_units_list):
     sorted_custom_units_list = sorted(custom_units_list, key=len, reverse=True)
     #the units should be sorted from longest to shortest if not already sorted that way.
     for custom_unit in sorted_custom_units_list:
-        units_string.replace(custom_unit, '<'+custom_unit+'>')
+        units_string = units_string.replace(custom_unit, '<'+custom_unit+'>')
     return units_string
 
     #This function tags microunits.

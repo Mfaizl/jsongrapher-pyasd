@@ -1405,42 +1405,42 @@ def apply_style_to_plotly_dict(plotly_json, style_name):
 
 ### Start section of code with functions for cleaning fig_dicts for plotly compatibility ###
 
-def update_title_field(data, depth=1, max_depth=10):
+def update_title_field(fig_dict, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting
     which is necessary to do things like change the font, and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
     """ Recursively checks for 'title' fields and converts them to dictionary format. """
-    if depth > max_depth or not isinstance(data, dict):
-        return data
+    if depth > max_depth or not isinstance(fig_dict, dict):
+        return fig_dict
     
-    for key, value in data.items():
+    for key, value in fig_dict.items():
         if key == "title" and isinstance(value, str):
-            data[key] = {"text": value}
+            fig_dict[key] = {"text": value}
         elif isinstance(value, dict):  # Nested dictionary
-            data[key] = update_title_field(value, depth + 1, max_depth)
+            fig_dict[key] = update_title_field(value, depth + 1, max_depth)
         elif isinstance(value, list):  # Lists can contain nested dictionaries
-            data[key] = [update_title_field(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
+            fig_dict[key] = [update_title_field(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
     
-    return data
+    return fig_dict
 
-def remove_extra_information_field(data, depth=1, max_depth=10):
+def remove_extra_information_field(fig_dict, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
      and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
     """Recursively checks for 'extraInformation' fields and removes them."""
-    if depth > max_depth or not isinstance(data, dict):
-        return data
+    if depth > max_depth or not isinstance(fig_dict, dict):
+        return fig_dict
 
     # Use a copy of the dictionary keys to safely modify the dictionary during iteration
-    for key in list(data.keys()):
+    for key in list(fig_dict.keys()):
         if key == ("extraInformation" or "extra_information"):
-            del data[key]  # Remove the field
-        elif isinstance(data[key], dict):  # Nested dictionary
-            data[key] = remove_extra_information_field(data[key], depth + 1, max_depth)
-        elif isinstance(data[key], list):  # Lists can contain nested dictionaries
-            data[key] = [
-                remove_extra_information_field(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in data[key]
+            del fig_dict[key]  # Remove the field
+        elif isinstance(fig_dict[key], dict):  # Nested dictionary
+            fig_dict[key] = remove_extra_information_field(fig_dict[key], depth + 1, max_depth)
+        elif isinstance(fig_dict[key], list):  # Lists can contain nested dictionaries
+            fig_dict[key] = [
+                remove_extra_information_field(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in fig_dict[key]
             ]
     
-    return data
+    return fig_dict
     
 
 def remove_nested_comments(data, top_level=True):

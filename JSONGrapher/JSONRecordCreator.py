@@ -1021,7 +1021,6 @@ def parse_units(value):
     # Find the position of the first '(' and the last ')'
     start = value.find('(')
     end = value.rfind(')')
-    print("line 727", value)
     # Ensure both are found and properly ordered
     if start != -1 and end != -1 and end > start:
         number_part = value[:start].strip()  # Everything before '('

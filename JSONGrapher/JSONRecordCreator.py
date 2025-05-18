@@ -742,36 +742,17 @@ class JSONGrapherRecord:
         import plotly.io as pio
         import copy
 
-        ##Start of block of code for implicit_data_series##
-        if adjust_implicit_data_ranges: #in this case, we first will get the data_series ranges from the other data series (those that are not equations and not simulations).
-            fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(self.fig_dict, skip_equations=True, skip_simulations=True)
-            #Now, when we perform simulations or evaluate equations, we'll overwrite the default ranges with the fig_dict_ranges obtained.
-            adjusted_implicit_ranges_fig_dict = update_implicit_data_series_x_ranges(self.fig_dict, fig_dict_ranges)
-            fig_dict_for_implicit = adjusted_implicit_ranges_fig_dict
-        else:
-            fig_dict_for_implicit = copy.deepcopy(self.fig_dict)
-        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
-        if simulate_all_series == True:         
-            fig_dict_for_implicit = simulate_as_needed_in_fig_dict(fig_dict_for_implicit)
-            #Now, because the fig_dict for implicit may have had its ranges adjusted, we will use a function to copy the data back into the self.fig_dict withotu copying the ranges.
-            self.fig_dict = update_implicit_data_series_data(self.fig_dict, fig_dict_for_implicit)
-        if evaluate_all_equations == True:
-            fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
-            #Now, because the fig_dict for implicit may have had its ranges adjusted, we will use a function to copy the data back into the self.fig_dict withotu copying the ranges.
-            self.fig_dict = update_implicit_data_series_data(self.fig_dict, fig_dict_for_implicit)            
-        ##End of block of code for implicit_data_series##
 
-        ##Start of block of code for implicit_data_series##
+        #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
                                                                 evaluate_all_equations=evaluate_all_equations, 
                                                                 adjust_implicit_data_ranges=adjust_implicit_data_ranges)
-        ##End of block of code for implicit_data_series##
-
-        original_fig_dict = copy.deepcopy(self.fig_dict) #Regardless of implicit data series, we will get a copy, because otherwise the original fig_dict will be forced to be overwritten during cleaning.
+        #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the plotly fig object.
+        original_fig_dict = copy.deepcopy(self.fig_dict) 
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
-            self.update_and_validate_JSONGrapher_record()
+            self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation'])
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.

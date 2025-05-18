@@ -726,20 +726,49 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True, evaluate_all_equations = True):
+    def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+        """
+        Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
+
+        Args:
+            simulate_all_series (bool): If True, performs simulations for applicable series.
+            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
+            evaluate_all_equations (bool): If True, evaluates all equation-based series.
+            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+
+        Returns:
+            plotly Figure: A validated Plotly figure object based on fig_dict.
+        """
         import plotly.io as pio
         import copy
-        if simulate_all_series == True:
-            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
-        if evaluate_all_equations == True:
-            self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
-        original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.
+
+        ##Start of block of code for implicit_data_series##
+        if adjust_implicit_data_ranges: #in this case, we first will get the data_series ranges from the other data series (those that are not equations and not simulations).
+            fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(self.fig_dict, skip_equations=True, skip_simulations=True)
+            #Now, when we perform simulations or evaluate equations, we'll overwrite the default ranges with the fig_dict_ranges obtained.
+            adjusted_implicit_ranges_fig_dict = update_implicit_data_series_x_ranges(self.fig_dict, fig_dict_ranges)
+            fig_dict_for_implicit = adjusted_implicit_ranges_fig_dict
+        else:
+            fig_dict_for_implicit = copy.deepcopy(self.fig_dict)
         #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
+        if simulate_all_series == True:         
+            fig_dict_for_implicit = simulate_as_needed_in_fig_dict(fig_dict_for_implicit)
+            #Now, because the fig_dict for implicit may have had its ranges adjusted, we will use a function to copy the data back into the self.fig_dict withotu copying the ranges.
+            self.fig_dict = update_implicit_data_series_data(self.fig_dict, fig_dict_for_implicit)
+        if evaluate_all_equations == True:
+            fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
+            #Now, because the fig_dict for implicit may have had its ranges adjusted, we will use a function to copy the data back into the self.fig_dict withotu copying the ranges.
+            self.fig_dict = update_implicit_data_series_data(self.fig_dict, fig_dict_for_implicit)            
+        ##End of block of code for implicit_data_series##
+
+        original_fig_dict = copy.deepcopy(self.fig_dict) #Regardless of implicit data series, we will get a copy, because otherwise the original fig_dict will be forced to be overwritten during cleaning.
+        #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation'])
         fig = pio.from_json(json.dumps(self.fig_dict))
-        self.fig_dict = original_fig_dict #restore the original fig_dict.
+        #restore the original fig_dict.
+        self.fig_dict = original_fig_dict 
         return fig
 
     #simulate all series will simulate any series as needed.
@@ -1737,7 +1766,7 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraIn
 
 ### End section of code with functions for cleaning fig_dicts for plotly compatibility ###
 
-### Beginning of section of file that has functions for calling external javascript simulators ###
+### Beginning of section of file that has functions for "simulate" and "equation" fields, to evaluate equations and call external javascript simulators, as well as support functions ###
 
 def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbose = False):
     """
@@ -1950,7 +1979,122 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
     fig_dict['data'] = data_dicts_list
     return fig_dict
 
-### End of section of file that has functions for calling external javascript simulators ###
+
+def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_structure=True, modify_target_directly = False):
+    """
+    Updates the x and y values of implicit data series (equation/simulate) in target_fig_dict 
+    using values from the corresponding series in source_fig_dict.
+
+    Args:
+        target_fig_dict (dict): The figure dictionary that needs updated data.
+        source_fig_dict (dict): The figure dictionary that provides x and y values.
+        parallel_structure (bool, optional): If True, assumes both data lists are the same 
+                                             length and updates using zip(). If False, 
+                                             matches by name instead. Default is True.
+
+    Returns:
+        dict: A new figure dictionary with updated x and y values for implicit data series.
+
+    Notes:
+        - If parallel_structure=True and both lists have the same length, updates use zip().
+        - If parallel_structure=False, matching is done by the "name" field.
+        - Only updates data series that contain "simulate" or "equation".
+        - Ensures deep copying to avoid modifying the original structures.
+    """
+    if modify_target_directly == False:
+        import copy  # Import inside function to limit scope   
+        updated_fig_dict =  copy.deepcopy(target_fig_dict)  # Deep copy to avoid modifying original
+    if modify_target_directly == True:
+        updated_fig_dict = target_fig_dict
+
+    target_data_series = updated_fig_dict.get("data", [])
+    source_data_series = source_fig_dict.get("data", [])
+
+    if parallel_structure and len(target_data_series) == len(source_data_series):
+        # Use zip() when parallel_structure=True and lengths match
+        for target_series, source_series in zip(target_data_series, source_data_series):
+            if ("equation" in target_series) or ("simulate" in target_series):
+                target_series["x"] = source_series.get("x", [])  # Extract and apply "x" values
+                target_series["y"] = source_series.get("y", [])  # Extract and apply "y" values
+    else:
+        # Match by name when parallel_structure=False or lengths differ
+        source_data_dict = {series["name"]: series for series in source_data_series if "name" in series}
+
+        for target_series in target_data_series:
+            if ("equation" in target_series) or ("simulate" in target_series):
+                target_name = target_series.get("name")
+                
+                if target_name in source_data_dict:
+                    source_series = source_data_dict[target_name]
+                    target_series["x"] = source_series.get("x", [])  # Extract and apply "x" values
+                    target_series["y"] = source_series.get("y", [])  # Extract and apply "y" values
+
+    return updated_fig_dict
+
+
+def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    """
+    This function is designed to be called during creation of a plotly or matplotlib figure creation.
+    Processes implicit data series (equation/simulate), adjusting ranges, performing simulations,
+    and evaluating equations as needed.
+
+    The important thing is that this function creates a "fresh" fig_dict, does some manipulation, then then gets the data from that
+    and adds it to the original fig_dict.
+    That way the original fig_dict is not changed other than getting the simulated/evaluated data.
+
+    The reason the function works this way is that the x_range_default of the implicit data series (equations and simulations)
+    are adjusted to match the data in the fig_dict, but we don't want to change the x_range_default of our main record.
+    That's why we make a copy for creating simulated/evaluated data from those adjusted ranges, and then put the simulated/evaluated data
+    back into the original dict.
+
+    
+
+    Args:
+        fig_dict (dict): The figure dictionary containing data series.
+        simulate_all_series (bool): If True, performs simulations for applicable series.
+        evaluate_all_equations (bool): If True, evaluates all equation-based series.
+        adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+
+    Returns:
+        dict: Updated figure dictionary with processed implicit data series.
+
+    Notes:
+        - If adjust_implicit_data_ranges=True, retrieves min/max values from regular data series 
+          (those that are not equations and not simulations) and applies them to implicit data.
+        - If simulate_all_series=True, executes simulations for all series that require them 
+          and transfers the computed data back to fig_dict without copying ranges.
+        - If evaluate_all_equations=True, solves equations as needed and transfers results 
+          back to fig_dict without copying ranges.
+        - Uses deepcopy to avoid modifying the original input dictionary.
+    """
+    import copy  # Import inside function for modularity
+
+    if adjust_implicit_data_ranges:
+        # Retrieve ranges from data series that are not equation-based or simulation-based.
+        fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(fig_dict, skip_equations=True, skip_simulations=True)
+        # Apply the extracted ranges to implicit data series before simulation or equation evaluation.
+        fig_dict = update_implicit_data_series_x_ranges(fig_dict, fig_dict_ranges)
+
+    # Create a copy for processing implicit series separately
+    fig_dict_for_implicit = copy.deepcopy(fig_dict)
+
+    if simulate_all_series:
+        # Perform simulations for applicable series
+        fig_dict_for_implicit = simulate_as_needed_in_fig_dict(fig_dict_for_implicit)
+        # Copy data back to fig_dict, ensuring ranges remain unchanged
+        fig_dict = update_implicit_data_series_data(fig_dict, fig_dict_for_implicit, modify_target_directly=True)
+
+    if evaluate_all_equations:
+        # Evaluate equations that require computation
+        fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
+        # Copy results back without overwriting the ranges
+        fig_dict = update_implicit_data_series_data(fig_dict, fig_dict_for_implicit, modify_target_directly=True)
+
+    return fig_dict
+
+
+
+### End of section of file that has functions for "simulate" and "equation" fields, to evaluate equations and call external javascript simulators, as well as support functions###
 
 # Example Usage
 if __name__ == "__main__":

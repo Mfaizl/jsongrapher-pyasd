@@ -729,14 +729,11 @@ class JSONGrapherRecord:
     def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True, evaluate_all_equations = True):
         import plotly.io as pio
         import copy
-        #print("line 732", self.fig_dict)
         if simulate_all_series == True:
             self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
-        print("line 733", self.fig_dict)
         if evaluate_all_equations == True:
             self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.
-        print("line 737", self.fig_dict)
         #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
@@ -1770,7 +1767,6 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
                 #now, get the units from the evaluated equation output.
                 simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled['x_label'])["units"]
                 simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled['y_label'])["units"]
-                print("line 1766", simulated_data_series_x_units, existing_record_x_units)
                 x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units)
                 y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units)
                 #We scale the dataseries, which really should be a function.

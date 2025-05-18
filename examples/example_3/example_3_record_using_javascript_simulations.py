@@ -3,12 +3,8 @@ from JSONGrapher import JSONRecordCreator
 
 ### STEP 1: USE A JSON RECORD WITH A SIMULATE FUNCTION ###
 #First, we will load a JSONGrapher record from a file.
-filename = r"./amino_silane_silica_LangmuirIsothermModel_343_equilibrium.json"
-with open(filename, "r") as file:
-    json_dict = json.load(file)
-
 Record_with_simulate_field = JSONRecordCreator.create_new_JSONGrapherRecord()
-Record_with_simulate_field.import_from_json(json_dict)
+Record_with_simulate_field.import_from_json(r"./amino_silane_silica_LangmuirIsothermModel_343_equilibrium.json")
 
 #If we print this record, we will see that there is no x,y data, but there is a simulate field with values.
 Record_with_simulate_field.print_to_inspect()

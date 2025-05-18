@@ -2090,13 +2090,14 @@ def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, 
         # Perform simulations for applicable series
         fig_dict_for_implicit = simulate_as_needed_in_fig_dict(fig_dict_for_implicit)
         # Copy data back to fig_dict, ensuring ranges remain unchanged
-        fig_dict = update_implicit_data_series_data(fig_dict, fig_dict_for_implicit, modify_target_directly=True)
+        fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
 
     if evaluate_all_equations:
         # Evaluate equations that require computation
         fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
         # Copy results back without overwriting the ranges
-        fig_dict = update_implicit_data_series_data(fig_dict, fig_dict_for_implicit, modify_target_directly=True)
+        fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
+
     return fig_dict
 
 

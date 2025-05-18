@@ -741,14 +741,12 @@ class JSONGrapherRecord:
         """
         import plotly.io as pio
         import copy
-
-
         #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
                                                                 evaluate_all_equations=evaluate_all_equations, 
                                                                 adjust_implicit_data_ranges=adjust_implicit_data_ranges)
-        #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the plotly fig object.
+        #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) 
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -795,11 +793,26 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, simulate_all_series = True, update_and_validate=True):
+    def get_matplotlib_fig(self, simulate_all_series = True, update_and_validate=True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+        """
+        Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
+
+        Args:
+            simulate_all_series (bool): If True, performs simulations for applicable series.
+            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
+            evaluate_all_equations (bool): If True, evaluates all equation-based series.
+            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+
+        Returns:
+            plotly Figure: A validated matplotlib figure object based on fig_dict.
+        """
         import copy
-        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
-        if simulate_all_series == True:
-            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
+        self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
+                                                                simulate_all_series=simulate_all_series, 
+                                                                evaluate_all_equations=evaluate_all_equations, 
+                                                                adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+        #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()

@@ -140,18 +140,19 @@ class Equation:
     
     def evaluate_equation(self, remove_equation_fields= False):
         evaluated_dict = evaluate_equation_dict(self.equation_dict) #this function is from the evaluator module
-        self.equation_dict["x_points"] = evaluated_dict["x_points"]
-        self.equation_dict["y_points"] = evaluated_dict["y_points"]
         self.equation_dict["x_units"] = evaluated_dict["x_units"]
         self.equation_dict["y_units"] = evaluated_dict["y_units"]
+        self.equation_dict["x_points"] = evaluated_dict["x_points"]
+        self.equation_dict["y_points"] = evaluated_dict["y_points"]
+
         
         if remove_equation_fields == True:
             #we'll just make a fresh dictionary for simplicity, in this case.
             equation_dict = {}
-            equation_dict["x_points"] = self.equation_dict["x_points"] 
-            equation_dict["y_points"] = self.equation_dict["y_points"] 
             equation_dict["x_units"] = self.equation_dict["x_units"] 
             equation_dict["y_units"] = self.equation_dict["y_units"]
+            equation_dict["x_points"] = self.equation_dict["x_points"] 
+            equation_dict["y_points"] = self.equation_dict["y_points"] 
             self.equation_dict = equation_dict
         return self.equation_dict
 
@@ -163,15 +164,14 @@ class Equation:
             equation_dict = evaluated_dict
         if remove_equation_fields == True:
             equation_dict = {}
-            equation_dict["x_points"] = self.equation_dict["x_points"] 
-            equation_dict["y_points"] = self.equation_dict["y_points"] 
             equation_dict["x_units"] = self.equation_dict["x_units"] 
             equation_dict["y_units"] = self.equation_dict["y_units"]
+            equation_dict["x_points"] = self.equation_dict["x_points"] 
+            equation_dict["y_points"] = self.equation_dict["y_points"] 
         if pretty_print == False:
             print(equation_dict)
         if pretty_print == True:
             equation_json_string = json.dumps(equation_dict, indent=4)
-            sys.stdout.flush()
             print(equation_json_string)
 
     def export_to_json_file(self, filename, evaluate_equation = True, remove_equation_fields= False):
@@ -190,11 +190,10 @@ class Equation:
             equation_dict = evaluated_dict
         if remove_equation_fields == True:
             equation_dict = {}
-            equation_dict["x_points"] = self.equation_dict["x_points"] 
-            equation_dict["y_points"] = self.equation_dict["y_points"] 
             equation_dict["x_units"] = self.equation_dict["x_units"] 
             equation_dict["y_units"] = self.equation_dict["y_units"]
-
+            equation_dict["x_points"] = self.equation_dict["x_points"] 
+            equation_dict["y_points"] = self.equation_dict["y_points"] 
         # filepath: Optional, filename with path to save the JSON file.       
         if len(filename) > 0: #this means we will be writing to file.
             # Check if the filename has an extension and append `.json` if not

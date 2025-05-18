@@ -726,7 +726,7 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_plotly_fig(self, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
 
@@ -758,10 +758,14 @@ class JSONGrapherRecord:
         return fig
 
     #simulate all series will simulate any series as needed.
-    def plot_with_plotly(self, simulate_all_series = True, update_and_validate=True):
-        fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)
+    def plot_with_plotly(self, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        fig = self.get_plotly_fig(simulate_all_series=simulate_all_series, 
+                                  update_and_validate=update_and_validate, 
+                                  evaluate_all_equations=evaluate_all_equations, 
+                                  adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         fig.show()
         #No need for fig.close() for plotly figures.
+
 
     #simulate all series will simulate any series as needed.
     def export_to_plotly_png(self, filename, simulate_all_series = True, update_and_validate=True, timeout=10):
@@ -793,7 +797,7 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, simulate_all_series = True, update_and_validate=True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_matplotlib_fig(self, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
 
@@ -822,9 +826,12 @@ class JSONGrapherRecord:
         return fig
 
     #simulate all series will simulate any series as needed.
-    def plot_with_matplotlib(self, simulate_all_series = True, update_and_validate=True):
+    def plot_with_matplotlib(self, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         import matplotlib.pyplot as plt
-        fig = self.get_matplotlib_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)
+        fig = self.get_matplotlib_fig(simulate_all_series=simulate_all_series, 
+                                      update_and_validate=update_and_validate, 
+                                      evaluate_all_equations=evaluate_all_equations, 
+                                      adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         plt.show()
         plt.close(fig) #remove fig from memory.
 

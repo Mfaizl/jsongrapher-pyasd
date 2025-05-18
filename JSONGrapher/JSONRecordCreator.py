@@ -311,12 +311,13 @@ class JSONGrapherRecord:
     
     Methods:
         add_data_series: Adds a new data series to the record.
+        add_data_series_as_equation: Adds a new equation to plot, which will be evaluated on the fly.
         set_layout: Updates the layout configuration for the graph.
         export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
     
-    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
@@ -351,6 +352,12 @@ class JSONGrapherRecord:
         if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
             try:
                 self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+            except:
+                pass
+
+        if evaluate_equations_as_added:#will try to evaluate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                self.fig_dict = evaluate_equations_in_fig_dict(self.fig_dict)
             except:
                 pass
 
@@ -428,6 +435,55 @@ class JSONGrapherRecord:
         if len(plot_type) > 0:
             newest_record_index = len(self.fig_dict["data"]) - 1
             self.set_plot_type_one_data_series(newest_record_index, plot_type)
+
+
+    def add_data_series_as_equation(self, series_name, x_values=[], y_values=[], equation_dict={}, evaluate_equations_as_added = True, comments="", plot_type="",  uid="", line="", extra_fields=None):
+        """
+        This is a way to add an equation that would be used to fill an x,y data series.
+        The equation will be a equation_dict of the json_equationer type
+        """
+        # series_name: Name of the data series.
+        # x: List of x-axis values. Or similar structure.
+        # y: List of y-axis values. Or similar structure.
+        # equation_dict: This is the field for the equation_dict of json_equationer type
+        # evaluate_equations_as_added: Boolean for evaluating equations immediately.
+        # comments: Optional description of the data series.
+        # plot_type: Type of the data (e.g., scatter, line).
+        # line: Dictionary describing line properties (e.g., shape, width).
+        # uid: Optional unique identifier for the series (e.g., a DOI).
+        # extra_fields: Dictionary containing additional fields to add to the series.
+        x_values = list(x_values)
+        y_values = list(y_values)
+
+        data_series_dict = {
+            "name": series_name,
+            "x": x_values, 
+            "y": y_values,
+        }
+
+        #Add optional inputs.
+        if len(comments) > 0:
+            data_series_dict["comments"]: comments
+        if len(uid) > 0:
+            data_series_dict["uid"]: uid
+        if len(line) > 0:
+            data_series_dict["line"]: line
+        #add equation field if included.
+        if equation_dict:
+            data_series_dict["equation"] = equation_dict
+        # Add extra fields if provided, they will be added.
+        if extra_fields:
+            data_series_dict.update(extra_fields)
+        #Add to the class object's data list.
+        self.fig_dict["data"].append(data_series_dict)
+        new_data_series_index = len(self.fig_dict["data"])-1 
+        if evaluate_equations_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, new_data_series_index)
+            except:
+                pass
+        ## Should consider adding "set_plot_type" for whole fig_dict, similar to what is in add_data_series
+
 
     def change_data_series_name(self, series_index, series_name):
         self.fig_dict["data"][series_index]["name"] = series_name
@@ -670,16 +726,21 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True):
+    def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True, evaluate_all_equations = True):
         import plotly.io as pio
         import copy
+        #print("line 732", self.fig_dict)
         if simulate_all_series == True:
             self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        print("line 733", self.fig_dict)
+        if evaluate_all_equations == True:
+            self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.
+        print("line 737", self.fig_dict)
         #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation'])
         fig = pio.from_json(json.dumps(self.fig_dict))
         self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig
@@ -1469,17 +1530,25 @@ def remove_simulate_field(json_fig_dict):
     json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
     return json_fig_dict
 
+def remove_equation_field(json_fig_dict):
+    data_dicts_list = json_fig_dict['data']
+    for data_dict in data_dicts_list:
+        data_dict.pop('equation', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
+    json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
+    return json_fig_dict
+
 def remove_custom_units_chevrons(json_fig_dict):
     json_fig_dict['layout']['xaxis']['title']['text'] = json_fig_dict['layout']['xaxis']['title']['text'].replace('<','').replace('>','')
     json_fig_dict['layout']['yaxis']['title']['text'] = json_fig_dict['layout']['yaxis']['title']['text'].replace('<','').replace('>','')
     return json_fig_dict
-
 
 def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
      and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. 
      This function can also remove the 'simulate' field from data series. However, that is not the default behavior
      because one would not want to do that by mistake before simulation is performed.
+     This function can also remove the 'equation' field from data series. However, that is not the default behavior
+     because one would not want to do that by mistake before the equation is evaluated.
      """
     fig_dict = json_fig_dict
     #unmodified_data = copy.deepcopy(data)
@@ -1491,6 +1560,8 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraIn
         fig_dict = remove_nested_comments(fig_dict)
     if "simulate" in fields_to_update:
         fig_dict = remove_simulate_field(fig_dict)
+    if "equation" in fields_to_update:
+        fig_dict = remove_equation_field(fig_dict)
     if "custom_units_chevrons" in fields_to_update:
         fig_dict = remove_custom_units_chevrons(fig_dict)
 
@@ -1620,7 +1691,7 @@ def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
     return data_series_dict_filled
 
 #Function that goes through a fig_dict data series and simulates each data series as needed.
-#could probably change this into a loop that calls simulate_specific_data_series_by_index
+#TODO: could probably change this into a loop that calls simulate_specific_data_series_by_index, though this one seems more up to date 5/17/25
 #If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.
 def simulate_as_needed_in_fig_dict(fig_dict, simulator_link='', verbose=False):
     data_dicts_list = fig_dict['data']
@@ -1649,6 +1720,7 @@ def simulate_as_needed_in_fig_dict(fig_dict, simulator_link='', verbose=False):
     return fig_dict
 
 #Function that takes fig_dict and dataseries index and simulates if needed.
+#TODO combine this function and above function. This function seems out of date. 5/17/25
 def simulate_specific_data_series_by_index(fig_dict, data_series_index, simulator_link='', verbose=False):
     data_dicts_list = fig_dict['data']
     data_dict_index = data_series_index
@@ -1656,6 +1728,58 @@ def simulate_specific_data_series_by_index(fig_dict, data_series_index, simulato
     if 'simulate' in data_dict:
         data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
         data_dicts_list[data_dict_index] = data_dict_filled
+    fig_dict['data'] = data_dicts_list
+    return fig_dict
+
+def evaluate_equations_as_needed_in_fig_dict(fig_dict):
+    data_dicts_list = fig_dict['data']
+    for data_dict_index, data_dict in enumerate(data_dicts_list):
+        if 'equation' in data_dict:
+            fig_dict = evaluate_equation_for_data_series_by_index(fig_dict, data_dict_index)
+    return fig_dict
+
+def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose=False):   
+    try:
+        import json_equationer.equation_evaluator as equation_evaluator
+        import json_equationer.equation_creator  as equation_creator
+    except:
+        from . import equation_evaluator
+        from . import equation_creator
+    import copy
+    data_dicts_list = fig_dict['data']
+    data_dict = data_dicts_list[data_series_index]
+    if 'equation' in data_dict:
+        equation_object = equation_creator.Equation(data_dict['equation'])
+        equation_dict_evaluated = equation_object.evaluate_equation()
+        data_dict_filled = copy.deepcopy(data_dict)
+        data_dict_filled['equation'] = equation_dict_evaluated
+        data_dict_filled['x_label'] = data_dict_filled['equation']['x_variable'] 
+        data_dict_filled['y_label'] = data_dict_filled['equation']['y_variable'] 
+        data_dict_filled['x'] = equation_dict_evaluated['x_points']
+        data_dict_filled['y'] = equation_dict_evaluated['y_points']
+        #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
+        if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)):
+            #first, get the units that are in the layout of fig_dict so we know what to convert to.
+            existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+            existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
+            existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]
+            existing_record_y_units = separate_label_text_from_units(existing_record_y_label)["units"]
+            if (existing_record_x_units == '') and (existing_record_y_units == ''): #skip scaling if there are no units.
+                pass
+            else: #If we will be scaling...
+                #now, get the units from the evaluated equation output.
+                simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled['x_label'])["units"]
+                simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled['y_label'])["units"]
+                print("line 1766", simulated_data_series_x_units, existing_record_x_units)
+                x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units)
+                y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units)
+                #We scale the dataseries, which really should be a function.
+                scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by = x_units_ratio, num_to_scale_y_values_by = y_units_ratio)
+            #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
+            data_dict_filled.pop("x_label", None)
+            data_dict_filled.pop("y_label", None)
+        data_dict_filled['type'] = 'spline'
+        data_dicts_list[data_series_index] = data_dict_filled
     fig_dict['data'] = data_dicts_list
     return fig_dict
 

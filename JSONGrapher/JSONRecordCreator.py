@@ -357,7 +357,7 @@ class JSONGrapherRecord:
 
         if evaluate_equations_as_added:#will try to evaluate. But because this is the default, will use a try and except rather than crash program.
             try:
-                self.fig_dict = evaluate_equations_in_fig_dict(self.fig_dict)
+                self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
             except:
                 pass
 
@@ -413,11 +413,11 @@ class JSONGrapherRecord:
 
         #Add optional inputs.
         if len(comments) > 0:
-            data_series_dict["comments"]: comments
+            data_series_dict["comments"] = comments
         if len(uid) > 0:
-            data_series_dict["uid"]: uid
+            data_series_dict["uid"] = uid
         if len(line) > 0:
-            data_series_dict["line"]: line
+            data_series_dict["line"] = line
         #add simulate field if included.
         if simulate:
             data_series_dict["simulate"] = simulate
@@ -463,11 +463,11 @@ class JSONGrapherRecord:
 
         #Add optional inputs.
         if len(comments) > 0:
-            data_series_dict["comments"]: comments
+            data_series_dict["comments"] = comments
         if len(uid) > 0:
-            data_series_dict["uid"]: uid
+            data_series_dict["uid"] = uid
         if len(line) > 0:
-            data_series_dict["line"]: line
+            data_series_dict["line"] = line
         #add equation field if included.
         if equation_dict:
             data_series_dict["equation"] = equation_dict
@@ -726,11 +726,13 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_plotly_fig(self, layout_style_to_apply='default', update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
+        By default, it will apply the default still hard coded into jsongrapher.
 
         Args:
+            layout_style_to_apply: String or Dictionary of style to apply. Use '' to skip applying a style, or provide a style dictionary, or enter  a different style name,
             simulate_all_series (bool): If True, performs simulations for applicable series.
             update_and_validate (bool): If True, applies automatic corrections to fig_dict.
             evaluate_all_equations (bool): If True, evaluates all equation-based series.
@@ -752,14 +754,16 @@ class JSONGrapherRecord:
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation'])
+            self.apply_layout_style(layout_style_to_apply=layout_style_to_apply)
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
         return fig
 
     #simulate all series will simulate any series as needed.
-    def plot_with_plotly(self, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
-        fig = self.get_plotly_fig(simulate_all_series=simulate_all_series, 
+    def plot_with_plotly(self, layout_style_to_apply='default', update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        fig = self.get_plotly_fig(layout_style_to_apply=layout_style_to_apply,
+                                  simulate_all_series=simulate_all_series, 
                                   update_and_validate=update_and_validate, 
                                   evaluate_all_equations=evaluate_all_equations, 
                                   adjust_implicit_data_ranges=adjust_implicit_data_ranges)
@@ -907,8 +911,10 @@ class JSONGrapherRecord:
                         current_field[current_path_key] = ""
 
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
-    def apply_style(self, style_name):
-        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, style_name=style_name)
+    def apply_layout_style(self, layout_style_to_apply='default'):
+        self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
+    def apply_style(self, style_to_apply='default'):
+        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, style_to_apply=style_to_apply)
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -1331,6 +1337,8 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
     return smoothed_x, smoothed_y
 
 
+## Start of Section of Code for Styles and Converting between plotly and matplotlib Fig objectss ##
+
 def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     """
     Converts a Plotly figure dictionary into a Matplotlib figure without using pio.from_json.
@@ -1401,9 +1409,6 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     return fig
     
 
-
-
-
 #The below function works, but because it depends on the python plotly package, we avoid using it
 #To decrease the number of dependencies. 
 def convert_plotly_dict_to_matplotlib(fig_dict):
@@ -1421,7 +1426,7 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
         matplotlib.figure.Figure: The corresponding Matplotlib figure.
     """
     import plotly.io as pio
-
+    import matplotlib.pyplot as plt
     # Convert JSON dictionary into a Plotly figure
     plotly_fig = pio.from_json(json.dumps(fig_dict))
 
@@ -1452,22 +1457,69 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
 
     return fig
     
+#this function uses a stylename or list of stylename/dictionaries to apply *both* layout_style and data_series_style
+#For example: style_to_apply = ['default', 'default'] or style_to_apply = 'science'.
+def apply_style_to_plotly_dict(fig_dict, style_to_apply=['default','default']):
+    if type(style_to_apply) == type('string'):
+        fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=style_to_apply)
+        fig_dict = apply_data_series_style_to_plotly_dict(fig_dict=fig_dict, data_series_style_to_apply=style_to_apply)
+    else:
+        fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=style_to_apply[0])
+        fig_dict = apply_data_series_style_to_plotly_dict(fig_dict=fig_dict, data_series_style_to_apply=style_to_apply[0])
+    return fig_dict
 
-def apply_style_to_plotly_dict(plotly_json, style_name):
+def apply_data_series_style_to_plotly_dict(fig_dict, data_series_style_to_apply="default"):
+    return fig_dict
+
+def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default"):
     """
-    Apply a predefined style to a Plotly JSON object based on a style name which may be a journal name.
+    Apply a predefined style to a Plotly style fig_dict while preserving existing text fields.
     
-    :param plotly_json: dict, Plotly JSON object.
-    :param style_name: str, Name of the style or journal.
-    :return: dict, Updated Plotly JSON object.
+    :param plotly_json: dict, Plotly style fig_dict
+    :param layout_style_to_apply: str, Name of the style or journal, or a style dictionary to apply.
+    :return: dict, Updated Plotly style fig_dict.
     """
     styles_available = {
+        "default": {
+            "layout": {
+                "title": {"font": {"size": 32}, "x": 0.5},
+                "xaxis": {
+                    "title": {"font": {"size": 27}},
+                    "tickfont": {"size": 23},
+                },
+                "yaxis": {
+                    "title": {"font": {"size": 27}},
+                    "tickfont": {"size": 23},
+                },
+                "legend": {"title": {"font": {"size": 20}}, "font": {"size": 20}},
+            }
+        },
         "Nature": {
             "layout": {
                 "title": {"font": {"size": 24, "family": "Times New Roman", "color": "black"}},
                 "font": {"size": 18, "family": "Times New Roman"},
                 "paper_bgcolor": "white",
                 "plot_bgcolor": "white",
+                "xaxis": {
+                    "showgrid": True,
+                    "gridcolor": "#ddd",
+                    "gridwidth": 1,
+                    "linecolor": "black",
+                    "linewidth": 2,
+                    "ticks": "outside",
+                    "tickwidth": 2,
+                    "tickcolor": "black"
+                },
+                "yaxis": {
+                    "showgrid": True,
+                    "gridcolor": "#ddd",
+                    "gridwidth": 1,
+                    "linecolor": "black",
+                    "linewidth": 2,
+                    "ticks": "outside",
+                    "tickwidth": 2,
+                    "tickcolor": "black"
+                }
             }
         },
         "Science": {
@@ -1476,27 +1528,146 @@ def apply_style_to_plotly_dict(plotly_json, style_name):
                 "font": {"size": 16, "family": "Arial"},
                 "paper_bgcolor": "white",
                 "plot_bgcolor": "white",
+                "xaxis": {
+                    "showgrid": True,
+                    "gridcolor": "#ccc",
+                    "gridwidth": 1,
+                    "linecolor": "black",
+                    "linewidth": 2,
+                    "ticks": "outside",
+                    "tickwidth": 2,
+                    "tickcolor": "black"
+                },
+                "yaxis": {
+                    "showgrid": True,
+                    "gridcolor": "#ccc",
+                    "gridwidth": 1,
+                    "linecolor": "black",
+                    "linewidth": 2,
+                    "ticks": "outside",
+                    "tickwidth": 2,
+                    "tickcolor": "black"
+                }
             }
         }
     }
 
-    # Get the style for the specified journal, default to no change if not found
-    style_dict = styles_available.get(style_name, {})
-    
-    # Ensure title field is merged properly to avoid overwriting
-    plotly_json.setdefault("layout", {})
-    plotly_json["layout"].setdefault("title", {})
-    
-    # Merge title settings separately to preserve existing text
-    plotly_json["layout"]["title"] = {**plotly_json["layout"]["title"], **style_dict.get("layout", {}).get("title", {})}
-    
-    # Merge other layout settings
-    for key, value in style_dict.get("layout", {}).items():
-        if key != "title":  # Skip title since it was handled separately
-            plotly_json["layout"][key] = value
-    
-    return plotly_json
+    # Use or get the style specified, default to no change if not found
+    if isinstance(layout_style_to_apply, dict):
+        style_dict = layout_style_to_apply
+    else:
+        style_dict = styles_available.get(layout_style_to_apply, {})
 
+
+    # Ensure layout exists in the figure
+    fig_dict.setdefault("layout", {})
+
+    # Preserve title text while updating font styles
+    fig_dict["layout"].setdefault("title", {})
+    fig_dict["layout"]["title"] = {
+        "text": fig_dict["layout"]["title"].get("text", ""),  # Preserve existing title text
+        **style_dict.get("layout", {}).get("title", {})  # Merge new styles
+    }
+
+    # Preserve axis titles while applying font updates
+    for axis in ["xaxis", "yaxis"]:
+        fig_dict["layout"].setdefault(axis, {})
+        fig_dict["layout"][axis].setdefault("title", {})
+        fig_dict["layout"][axis]["title"] = {
+            "text": fig_dict["layout"][axis]["title"].get("text", ""),  # Preserve existing title text
+            **style_dict.get("layout", {}).get(axis, {}).get("title", {})  # Merge new styles
+        }
+        # Preserve grid settings while merging other styles
+        fig_dict["layout"][axis]["showgrid"] = fig_dict["layout"][axis].get("showgrid", True)
+        fig_dict["layout"][axis]["gridcolor"] = fig_dict["layout"][axis].get("gridcolor", "#FFFFFF")
+        fig_dict["layout"][axis]["gridwidth"] = fig_dict["layout"][axis].get("gridwidth", 1.5)
+
+        for key, value in style_dict.get("layout", {}).get(axis, {}).items():
+            if key not in ["title", "showgrid", "gridcolor", "gridwidth"]:  # Skip keys handled separately
+                fig_dict["layout"][axis][key] = value
+
+    # Preserve legend title text
+    fig_dict["layout"].setdefault("legend", {})
+    fig_dict["layout"]["legend"].setdefault("title", {})
+    fig_dict["layout"]["legend"]["title"] = {
+        "text": fig_dict["layout"]["legend"]["title"].get("text", ""),
+        **style_dict.get("layout", {}).get("legend", {}).get("title", {})
+    }
+
+    # Preserve annotations text
+    if "annotations" in fig_dict["layout"]:
+        for annotation in fig_dict["layout"]["annotations"]:
+            annotation["text"] = annotation.get("text", "")
+
+    # Preserve color bar title text for color axes
+    if "coloraxis" in fig_dict["layout"]:
+        fig_dict["layout"]["coloraxis"].setdefault("colorbar", {})
+        fig_dict["layout"]["coloraxis"]["colorbar"].setdefault("title", {})
+        fig_dict["layout"]["coloraxis"]["colorbar"]["title"] = {
+            "text": fig_dict["layout"]["coloraxis"]["colorbar"]["title"].get("text", ""),
+            **style_dict.get("layout", {}).get("coloraxis", {}).get("colorbar", {}).get("title", {})
+        }
+
+    # Preserve labels in update menus (interactive buttons/sliders)
+    if "updatemenus" in fig_dict["layout"]:
+        for menu in fig_dict["layout"]["updatemenus"]:
+            for button in menu.get("buttons", []):
+                button["label"] = button.get("label", "")
+
+    # Merge other layout settings that do not require special handling
+    for key, value in style_dict.get("layout", {}).items():
+        if key not in ["title", "xaxis", "yaxis", "legend", "annotations", "coloraxis", "updatemenus"]:  # Skip keys handled separately
+            fig_dict["layout"][key] = value
+
+    return fig_dict
+
+
+
+def extract_layout_style_from_plotly_dict(fig_dict):
+    """
+    Extract a layout style dictionary from a given Plotly JSON object, including background color, grids, and other appearance attributes.
+    
+    :param fig_dict: dict, Plotly JSON object.
+    :return: dict, Extracted style settings.
+    """
+    extracted_layout_style = {
+        "layout": {
+            "title": {
+                "font": fig_dict.get("layout", {}).get("title", {}).get("font", {}),
+                "x": fig_dict.get("layout", {}).get("title", {}).get("x", 0)
+            },
+            "xaxis": {
+                "title": {"font": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("font", {})},
+                "tickfont": fig_dict.get("layout", {}).get("xaxis", {}).get("tickfont", {}),
+                "gridcolor": fig_dict.get("layout", {}).get("xaxis", {}).get("gridcolor", ""),
+                "gridwidth": fig_dict.get("layout", {}).get("xaxis", {}).get("gridwidth", 1),
+                "zerolinecolor": fig_dict.get("layout", {}).get("xaxis", {}).get("zerolinecolor", ""),
+                "zerolinewidth": fig_dict.get("layout", {}).get("xaxis", {}).get("zerolinewidth", 1),
+                "tickangle": fig_dict.get("layout", {}).get("xaxis", {}).get("tickangle", 0)
+            },
+            "yaxis": {
+                "title": {"font": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("font", {})},
+                "tickfont": fig_dict.get("layout", {}).get("yaxis", {}).get("tickfont", {}),
+                "gridcolor": fig_dict.get("layout", {}).get("yaxis", {}).get("gridcolor", ""),
+                "gridwidth": fig_dict.get("layout", {}).get("yaxis", {}).get("gridwidth", 1),
+                "zerolinecolor": fig_dict.get("layout", {}).get("yaxis", {}).get("zerolinecolor", ""),
+                "zerolinewidth": fig_dict.get("layout", {}).get("yaxis", {}).get("zerolinewidth", 1),
+                "tickangle": fig_dict.get("layout", {}).get("yaxis", {}).get("tickangle", 0)
+            },
+            "legend": {
+                "font": fig_dict.get("layout", {}).get("legend", {}).get("font", {}),
+                "x": fig_dict.get("layout", {}).get("legend", {}).get("x", 1),
+                "y": fig_dict.get("layout", {}).get("legend", {}).get("y", 1)
+            },
+            "paper_bgcolor": fig_dict.get("layout", {}).get("paper_bgcolor", ""),
+            "plot_bgcolor": fig_dict.get("layout", {}).get("plot_bgcolor", ""),
+            "margin": fig_dict.get("layout", {}).get("margin", {})
+        }
+    }
+    
+    return extracted_layout_style
+
+## Start of Section of Code for Styles and Converting between plotly and matplotlib Fig objectss ##
 
 ### Start of section of code with functions for extracting and updating x and y ranges of data series ###
 
@@ -1571,7 +1742,6 @@ def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
         - If their x-range is absent, individual data series values are used.
         - Ensures empty lists don't trigger errors when computing min/max values.
     """
-    
     # Initialize final range values to None to ensure assignment
     fig_dict_ranges = {
         "min_x": None,

@@ -315,11 +315,11 @@ def generate_points_by_spacing(num_of_points=10, range_min=1, range_max=100, poi
     spacing_type = str(points_spacing).lower() if isinstance(points_spacing, str) else None
     points_list = None
 
-    if spacing_type == "linear":
+    if spacing_type.lower() == "linear":
         points_list = np.linspace(range_min, range_max, num_of_points).tolist()
-    elif spacing_type == "logarithmic":
+    elif spacing_type.lower() == "logarithmic":
         points_list = np.logspace(np.log10(range_min), np.log10(range_max), num_of_points).tolist()
-    elif spacing_type == "exponential":
+    elif spacing_type.lower() == "exponential":
         points_list = (range_min * np.exp(np.linspace(0, np.log(range_max/range_min), num_of_points))).tolist()
     elif isinstance(points_spacing, (int, float)) and points_spacing > 0:
         points_list = generate_multiplicative_points(range_min, range_max, points_spacing, num_of_points)

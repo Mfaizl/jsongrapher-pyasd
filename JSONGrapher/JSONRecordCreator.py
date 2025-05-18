@@ -1593,22 +1593,24 @@ def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
         # Determine if the data series contains either "equation" or "simulate"
         if "equation" in data_series:
             if skip_equations:
+                implicit_data_series_to_extract_from = None
                 pass  # Skip processing, but still append None values
             else:
-                implicit_data_series = data_series["equation"]
+                implicit_data_series_to_extract_from = data_series["equation"]
         
         elif "simulate" in data_series:
             if skip_simulations:
+                implicit_data_series_to_extract_from = None
                 pass  # Skip processing, but still append None values
             else:
-                implicit_data_series = data_series["simulate"]
+                implicit_data_series_to_extract_from = data_series["simulate"]
         
         else:
-            implicit_data_series = None  # No equation or simulation, process x and y normally
+            implicit_data_series_to_extract_from = None  # No equation or simulation, process x and y normally
 
-        if implicit_data_series:
-            x_range_default = implicit_data_series.get("x_range_default", [None, None]) 
-            x_range_limits = implicit_data_series.get("x_range_limits", [None, None]) 
+        if implicit_data_series_to_extract_from:
+            x_range_default = implicit_data_series_to_extract_from.get("x_range_default", [None, None]) 
+            x_range_limits = implicit_data_series_to_extract_from.get("x_range_limits", [None, None]) 
 
             # Assign values, but keep None if missing
             min_x = (x_range_default[0] if (x_range_default[0] is not None) else x_range_limits[0])
@@ -1616,15 +1618,25 @@ def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
 
         # Ensure "x" key exists AND list is not empty before calling min() or max()
         if (min_x is None) and ("x" in data_series) and (len(data_series["x"]) > 0):  
-            min_x = min(data_series["x"])  
+            valid_x_values = [x for x in data_series["x"] if x is not None]  # Filter out None values
+            if valid_x_values:  # Ensure list isn't empty after filtering
+                min_x = min(valid_x_values)  
+
         if (max_x is None) and ("x" in data_series) and (len(data_series["x"]) > 0):  
-            max_x = max(data_series["x"])  
+            valid_x_values = [x for x in data_series["x"] if x is not None]  # Filter out None values
+            if valid_x_values:  # Ensure list isn't empty after filtering
+                max_x = max(valid_x_values)  
 
         # Ensure "y" key exists AND list is not empty before calling min() or max()
         if (min_y is None) and ("y" in data_series) and (len(data_series["y"]) > 0):  
-            min_y = min(data_series["y"])  
+            valid_y_values = [y for y in data_series["y"] if y is not None]  # Filter out None values
+            if valid_y_values:  # Ensure list isn't empty after filtering
+                min_y = min(valid_y_values)  
+
         if (max_y is None) and ("y" in data_series) and (len(data_series["y"]) > 0):  
-            max_y = max(data_series["y"])  
+            valid_y_values = [y for y in data_series["y"] if y is not None]  # Filter out None values
+            if valid_y_values:  # Ensure list isn't empty after filtering
+                max_y = max(valid_y_values)  
 
         # Always add values to the lists, including None if applicable
         data_series_ranges["min_x"].append(min_x)

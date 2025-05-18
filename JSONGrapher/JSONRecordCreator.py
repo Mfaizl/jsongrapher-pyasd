@@ -761,6 +761,13 @@ class JSONGrapherRecord:
             self.fig_dict = update_implicit_data_series_data(self.fig_dict, fig_dict_for_implicit)            
         ##End of block of code for implicit_data_series##
 
+        ##Start of block of code for implicit_data_series##
+        self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
+                                                                simulate_all_series=simulate_all_series, 
+                                                                evaluate_all_equations=evaluate_all_equations, 
+                                                                adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+        ##End of block of code for implicit_data_series##
+
         original_fig_dict = copy.deepcopy(self.fig_dict) #Regardless of implicit data series, we will get a copy, because otherwise the original fig_dict will be forced to be overwritten during cleaning.
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -2069,14 +2076,15 @@ def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, 
     """
     import copy  # Import inside function for modularity
 
+    # Create a copy for processing implicit series separately
+    fig_dict_for_implicit = copy.deepcopy(fig_dict)
+
+    
     if adjust_implicit_data_ranges:
         # Retrieve ranges from data series that are not equation-based or simulation-based.
         fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(fig_dict, skip_equations=True, skip_simulations=True)
         # Apply the extracted ranges to implicit data series before simulation or equation evaluation.
-        fig_dict = update_implicit_data_series_x_ranges(fig_dict, fig_dict_ranges)
-
-    # Create a copy for processing implicit series separately
-    fig_dict_for_implicit = copy.deepcopy(fig_dict)
+        fig_dict_for_implicit = update_implicit_data_series_x_ranges(fig_dict, fig_dict_ranges)
 
     if simulate_all_series:
         # Perform simulations for applicable series
@@ -2089,7 +2097,6 @@ def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, 
         fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
         # Copy results back without overwriting the ranges
         fig_dict = update_implicit_data_series_data(fig_dict, fig_dict_for_implicit, modify_target_directly=True)
-
     return fig_dict
 
 

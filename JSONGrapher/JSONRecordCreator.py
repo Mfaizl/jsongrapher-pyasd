@@ -1682,32 +1682,37 @@ def remove_data_series_style_from_plotly_dict(fig_dict):
         fig_dict["data"] = [remove_data_series_style_from_single_data_series(trace) for trace in fig_dict["data"]]
     return fig_dict
 
-
 def remove_data_series_style_from_single_data_series(data_series):
     """
-    Remove applied styles from a single Plotly data series while preserving all existing fields.
+    Remove only formatting fields from a single Plotly data series while preserving all other fields.
+
+    Note: Since fig_dict data objects may contain custom fields (e.g., "equation", "metadata"),
+    this function explicitly removes predefined **formatting** attributes while leaving all other data intact.
 
     :param data_series: dict, A dictionary representing a single Plotly data series.
-    :return: dict, Updated data series with styles removed but data retained.
+    :return: dict, Updated data series with formatting fields removed but key data retained.
     """
+
     if not isinstance(data_series, dict):
-        return data_series  # Return unchanged if the data series is invalid.
+        return data_series  # Return unchanged if input is invalid.
 
-    style_keys = ["mode", "line", "marker", "colorscale", "opacity"]
+    # **Define formatting fields to remove**
+    formatting_fields = {
+        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
+        "legendgroup", "showlegend", "textposition", "textfont"
+    }
 
-    # Remove style-related fields without modifying core data attributes
-    for key in style_keys:
-        data_series.pop(key, None)
+    # **Create a new data series excluding only formatting fields**
+    cleaned_data_series = {key: value for key, value in data_series.items() if key not in formatting_fields}
 
-    return data_series
-
+    return cleaned_data_series
 
 
 def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default"):
     """
-    Apply a predefined style to a Plotly style fig_dict while preserving existing text fields.
+    Apply a predefined style to a Plotly fig_dict while preserving non-cosmetic fields.
     
-    :param plotly_json: dict, Plotly style fig_dict
+    :param fig_dict: dict, Plotly style fig_dict
     :param layout_style_to_apply: str, Name of the style or journal, or a style dictionary to apply.
     :return: dict, Updated Plotly style fig_dict.
     """
@@ -1721,18 +1726,12 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
         "default": {
             "layout": {
                 "title": {"font": {"size": 32}, "x": 0.5},
-                "xaxis": {
-                    "title": {"font": {"size": 27}},
-                    "tickfont": {"size": 23},
-                },
-                "yaxis": {
-                    "title": {"font": {"size": 27}},
-                    "tickfont": {"size": 23},
-                },
+                "xaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
+                "yaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
                 "legend": {
-                                "title": {"font": {"size": 22}},  # Defines font size for the title of the legend
-                                "font": {"size": 22}  # Defines font size for the legend labels
-                            }
+                    "title": {"font": {"size": 22}},
+                    "font": {"size": 22}
+                }
             }
         },
         "Nature": {
@@ -1742,24 +1741,14 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
                 "paper_bgcolor": "white",
                 "plot_bgcolor": "white",
                 "xaxis": {
-                    "showgrid": True,
-                    "gridcolor": "#ddd",
-                    "gridwidth": 1,
-                    "linecolor": "black",
-                    "linewidth": 2,
-                    "ticks": "outside",
-                    "tickwidth": 2,
-                    "tickcolor": "black"
+                    "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
                 },
                 "yaxis": {
-                    "showgrid": True,
-                    "gridcolor": "#ddd",
-                    "gridwidth": 1,
-                    "linecolor": "black",
-                    "linewidth": 2,
-                    "ticks": "outside",
-                    "tickwidth": 2,
-                    "tickcolor": "black"
+                    "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
                 }
             }
         },
@@ -1770,30 +1759,20 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
                 "paper_bgcolor": "white",
                 "plot_bgcolor": "white",
                 "xaxis": {
-                    "showgrid": True,
-                    "gridcolor": "#ccc",
-                    "gridwidth": 1,
-                    "linecolor": "black",
-                    "linewidth": 2,
-                    "ticks": "outside",
-                    "tickwidth": 2,
-                    "tickcolor": "black"
+                    "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
                 },
                 "yaxis": {
-                    "showgrid": True,
-                    "gridcolor": "#ccc",
-                    "gridwidth": 1,
-                    "linecolor": "black",
-                    "linewidth": 2,
-                    "ticks": "outside",
-                    "tickwidth": 2,
-                    "tickcolor": "black"
+                    "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
                 }
             }
         }
     }
 
-    # Use or get the style specified, default to no change if not found
+    # Use or get the style specified, or use default if not found
     if isinstance(layout_style_to_apply, dict):
         style_dict = layout_style_to_apply
     else:
@@ -1805,66 +1784,49 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     # Ensure layout exists in the figure
     fig_dict.setdefault("layout", {})
 
-    # Preserve title text while updating font styles
-    fig_dict["layout"].setdefault("title", {})
-    fig_dict["layout"]["title"] = {
-        "text": fig_dict["layout"]["title"].get("text", ""),  # Preserve existing title text
-        **style_dict.get("layout", {}).get("title", {})  # Merge new styles
+    # **Extract non-cosmetic fields**
+    non_cosmetic_fields = {
+        "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
+        "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
+        "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
+        "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
+        "annotations.text": [
+            annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])
+        ],
+        "updatemenus.buttons.label": [
+            button.get("label", None) for menu in fig_dict.get("layout", {}).get("updatemenus", [])
+            for button in menu.get("buttons", [])
+        ],
+        "coloraxis.colorbar.title.text": fig_dict.get("layout", {}).get("coloraxis", {}).get("colorbar", {}).get("title", {}).get("text", None),
     }
 
-    # Preserve axis titles while applying font updates
-    for axis in ["xaxis", "yaxis"]:
-        fig_dict["layout"].setdefault(axis, {})
-        fig_dict["layout"][axis].setdefault("title", {})
-        fig_dict["layout"][axis]["title"] = {
-            "text": fig_dict["layout"][axis]["title"].get("text", ""),  # Preserve existing title text
-            **style_dict.get("layout", {}).get(axis, {}).get("title", {})  # Merge new styles
-        }
-        # Preserve grid settings while merging other styles
-        fig_dict["layout"][axis]["showgrid"] = fig_dict["layout"][axis].get("showgrid", True)
-        fig_dict["layout"][axis]["gridcolor"] = fig_dict["layout"][axis].get("gridcolor", "#FFFFFF")
-        fig_dict["layout"][axis]["gridwidth"] = fig_dict["layout"][axis].get("gridwidth", 1.5)
+    # **Apply style dictionary to create a fresh layout object**
+    new_layout = style_dict.get("layout", {}).copy()
 
-        for key, value in style_dict.get("layout", {}).get(axis, {}).items():
-            if key not in ["title", "showgrid", "gridcolor", "gridwidth"]:  # Skip keys handled separately
-                fig_dict["layout"][axis][key] = value
+    # **Restore non-cosmetic fields**
+    if non_cosmetic_fields["title.text"]:
+        new_layout.setdefault("title", {})["text"] = non_cosmetic_fields["title.text"]
 
-    # Preserve legend title text
-    fig_dict["layout"].setdefault("legend", {})
-    # Preserve existing legend settings while merging styles
-    fig_dict["layout"]["legend"] = {
-        **fig_dict["layout"].get("legend", {}),
-        **style_dict.get("layout", {}).get("legend", {})
-    }
-    # Ensure the font for the legend itself is correctly applied
-    fig_dict["layout"]["legend"].setdefault("font", {}).update(
-        style_dict.get("layout", {}).get("legend", {}).get("font", {})
-    )
+    if non_cosmetic_fields["xaxis.title.text"]:
+        new_layout.setdefault("xaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["xaxis.title.text"]
 
-    # Preserve annotations text
-    if "annotations" in fig_dict["layout"]:
-        for annotation in fig_dict["layout"]["annotations"]:
-            annotation["text"] = annotation.get("text", "")
+    if non_cosmetic_fields["yaxis.title.text"]:
+        new_layout.setdefault("yaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["yaxis.title.text"]
 
-    # Preserve color bar title text for color axes
-    if "coloraxis" in fig_dict["layout"]:
-        fig_dict["layout"]["coloraxis"].setdefault("colorbar", {})
-        fig_dict["layout"]["coloraxis"]["colorbar"].setdefault("title", {})
-        fig_dict["layout"]["coloraxis"]["colorbar"]["title"] = {
-            "text": fig_dict["layout"]["coloraxis"]["colorbar"]["title"].get("text", ""),
-            **style_dict.get("layout", {}).get("coloraxis", {}).get("colorbar", {}).get("title", {})
-        }
+    if non_cosmetic_fields["legend.title.text"]:
+        new_layout.setdefault("legend", {}).setdefault("title", {})["text"] = non_cosmetic_fields["legend.title.text"]
 
-    # Preserve labels in update menus (interactive buttons/sliders)
-    if "updatemenus" in fig_dict["layout"]:
-        for menu in fig_dict["layout"]["updatemenus"]:
-            for button in menu.get("buttons", []):
-                button["label"] = button.get("label", "")
+    if non_cosmetic_fields["annotations.text"]:
+        new_layout["annotations"] = [{"text": text} for text in non_cosmetic_fields["annotations.text"]]
 
-    # Merge other layout settings that do not require special handling
-    for key, value in style_dict.get("layout", {}).items():
-        if key not in ["title", "xaxis", "yaxis", "legend", "annotations", "coloraxis", "updatemenus"]:  # Skip keys handled separately
-            fig_dict["layout"][key] = value
+    if non_cosmetic_fields["updatemenus.buttons.label"]:
+        new_layout["updatemenus"] = [{"buttons": [{"label": label} for label in non_cosmetic_fields["updatemenus.buttons.label"]]}]
+
+    if non_cosmetic_fields["coloraxis.colorbar.title.text"]:
+        new_layout.setdefault("coloraxis", {}).setdefault("colorbar", {})["title"] = {"text": non_cosmetic_fields["coloraxis.colorbar.title.text"]}
+
+    # **Assign the new layout back into the figure dictionary**
+    fig_dict["layout"] = new_layout
 
     return fig_dict
 

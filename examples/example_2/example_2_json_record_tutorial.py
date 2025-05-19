@@ -62,8 +62,8 @@ Record.print_to_inspect()
 
 #We can also plot the data with matplotlib, and can export to file as png. 
 print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB AND PLOTLY-PYTHON-MODULE")
-Record.plot_with_matplotlib()
-Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")
+#Record.plot_with_matplotlib()
+#Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")
 
 Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
 Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
@@ -91,10 +91,29 @@ Record.plot_with_plotly()
 
 #Now let's try applying a predfined style!
 print("\n\n STEP 7: TRYING PREDIFINED STYLES")
+#Before applying each style, 
+#we'll call remove style to ensure we start with a style free record.
 Record.apply_style("Science")
 Record.plot_with_plotly()
+import JSONGrapher
+print(JSONGrapher.extract_layout_style_from_plotly_dict(Record.fig_dict))
+fig = Record.get_plotly_fig()
+import json, sys
+fig_json = json.dumps(fig.to_plotly_json()["layout"], indent=4)
+sys.stdout.flush()
+print("line 103")
+print(fig_json)
+sys.exit()
+
 Record.apply_style("Nature")
 Record.plot_with_plotly()
+
+Record.apply_style("minimalist")
+Record.plot_with_plotly()
+
+Record.apply_style("bold")
+Record.plot_with_plotly()
+
 #Note: As of April 2025, the styles have not actually been made suitable for journals. However, the feature is here so that such styles can be made.
 
 

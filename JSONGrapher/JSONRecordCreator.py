@@ -726,13 +726,13 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, layout_style_to_apply='default', update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_plotly_fig(self, style_to_apply='default', update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
         By default, it will apply the default still hard coded into jsongrapher.
 
         Args:
-            layout_style_to_apply: String or Dictionary of style to apply. Use '' to skip applying a style, or provide a style dictionary, or enter  a different style name,
+            style_to_apply: String of style to apply. Use '' to skip applying a style, or provide a list of length two containing both a layout style and a data series style
             simulate_all_series (bool): If True, performs simulations for applicable series.
             update_and_validate (bool): If True, applies automatic corrections to fig_dict.
             evaluate_all_equations (bool): If True, evaluates all equation-based series.
@@ -754,15 +754,15 @@ class JSONGrapherRecord:
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation'])
-            self.apply_layout_style(layout_style_to_apply=layout_style_to_apply)
+            self.apply_style(style_to_apply=style_to_apply)
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
         return fig
 
     #simulate all series will simulate any series as needed.
-    def plot_with_plotly(self, layout_style_to_apply='default', update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
-        fig = self.get_plotly_fig(layout_style_to_apply=layout_style_to_apply,
+    def plot_with_plotly(self, style_to_apply='default', update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        fig = self.get_plotly_fig(style_to_apply=style_to_apply,
                                   simulate_all_series=simulate_all_series, 
                                   update_and_validate=update_and_validate, 
                                   evaluate_all_equations=evaluate_all_equations, 
@@ -915,6 +915,8 @@ class JSONGrapherRecord:
         self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
     def apply_style(self, style_to_apply='default'):
         self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, style_to_apply=style_to_apply)
+    def remove_style(self):
+        self.fig_dict = remove_style_from_plotly_dict(self.fig_dict)
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -1460,16 +1462,246 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
 #this function uses a stylename or list of stylename/dictionaries to apply *both* layout_style and data_series_style
 #For example: style_to_apply = ['default', 'default'] or style_to_apply = 'science'.
 def apply_style_to_plotly_dict(fig_dict, style_to_apply=['default','default']):
+    #before applying a new style, we'll remove any existing style to ensure no interfance with the style we're applying.
+    print("line 1466, before remove_style_from_plotly_dict", style_to_apply)
+    print(fig_dict)
+    #fig_dict = remove_style_from_plotly_dict(fig_dict=fig_dict)
+    print("line 1469, after remove_style_from_plotly_dict", style_to_apply)
+    print(fig_dict)
     if type(style_to_apply) == type('string'):
         fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=style_to_apply)
+        print("line a")
+        print(fig_dict)
         fig_dict = apply_data_series_style_to_plotly_dict(fig_dict=fig_dict, data_series_style_to_apply=style_to_apply)
+        print("line b")
+        print(fig_dict)
     else:
         fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=style_to_apply[0])
+        print("line c")
+        print(fig_dict)
         fig_dict = apply_data_series_style_to_plotly_dict(fig_dict=fig_dict, data_series_style_to_apply=style_to_apply[0])
+    print("line 1477 after new style should have been applied")
+    print(fig_dict)
     return fig_dict
 
-def apply_data_series_style_to_plotly_dict(fig_dict, data_series_style_to_apply="default"):
+def remove_style_from_plotly_dict(fig_dict):
+    """
+    Remove both layout and data series styles from a Plotly figure dictionary.
+
+    :param fig_dict: dict, Plotly style fig_dict
+    :return: dict, Updated Plotly style fig_dict with default formatting.
+    """
+    fig_dict = remove_layout_style_from_plotly_dict(fig_dict)
+    fig_dict = remove_data_series_style_from_plotly_dict(fig_dict)
     return fig_dict
+
+
+def apply_data_series_style_to_plotly_dict(fig_dict, data_series_style_to_apply="default"):
+    """
+    Iterates over all traces in the `data` list of a Plotly figure dictionary 
+    and applies styles to each one.
+
+    Args:
+        fig_dict (dict): A dictionary containing a `data` field with Plotly traces.
+        style_to_apply (str): Optional style preset to apply. Default is "default".
+
+    Returns:
+        dict: Updated Plotly figure dictionary with defaults applied to each trace.
+
+    """
+    if data_series_style_to_apply == '':
+        return fig_dict
+    if isinstance(fig_dict, dict):
+        if "data" in fig_dict and isinstance(fig_dict["data"], list):
+            fig_dict["data"] = [apply_data_series_style_to_single_data_series(trace, data_series_style_to_apply) for trace in fig_dict["data"]]
+            return fig_dict
+    elif isinstance(fig_dict, list):
+        data_list = fig_dict #assume we've received the data_seres_list rather than a fig_dict.
+        data_list = [apply_data_series_style_to_single_data_series(trace, data_series_style_to_apply) for trace in fig_dict["data"]]
+        return data_list
+    elif not isinstance(fig_dict, dict):
+        return fig_dict  # Return unchanged if the input is invalid.
+
+#The logic in JSONGrapher is to apply the style information but to treat "type" differently 
+#compared to how plotly treats plot_type. So later in the process, when actually plotting with plotly, the "type" field will get overwritten.
+def apply_data_series_style_to_single_data_series(data_series, data_series_style_to_apply="default"):
+    """
+    Applies predefined styles to a single Plotly data series while preserving relevant fields.
+
+    Args:
+        data_series (dict): A dictionary representing a single Plotly data series.
+        data_series_style_to_apply (str or dict): Name of the style preset or a custom style dictionary. Default is "default".
+
+    Returns:
+        dict: Updated data series with style applied.
+    """
+    if data_series_style_to_apply == '':
+        return data_series
+    if not isinstance(data_series, dict):
+        return data_series  # Return unchanged if the data series is invalid.
+    if (data_series_style_to_apply.lower() == "nature") or (data_series_style_to_apply.lower() == "science"):
+        data_series_style_to_apply = "default"
+
+    # -------------------------------
+    # Predefined data series styles
+    # -------------------------------
+    # Each style is defined as a dictionary containing multiple plot types.
+    # Users can select a style preset (e.g., "default", "minimalist", "bold"),
+    # and the function will apply appropriate settings for the given plot type.
+    #
+    # Supported plot types:
+    # - "scatter_spline" (default when type is not specified)
+    # - "scatter"
+    # - "spline"
+    # - "bar"
+    # - "heatmap"
+    #
+    # Note: Colors are intentionally omitted to allow users to define their own.
+    # However, predefined colorscales are applied for heatmaps.
+    
+    styles_available = {
+        "default": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 8},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},  # Hide markers for smooth curves
+            },
+            "bar": {
+                "type": "bar",
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        },
+        "minimalist": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 1},
+                "marker": {"size": 6},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "linear", "width": 1},
+                "marker": {"size": 0},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 1},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "bar",
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Greys",
+            }
+        },
+        "bold": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 12},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "bar",
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Jet",
+            }
+        }
+    }
+
+    # Determine the plot type, defaulting to "scatter_spline" if none is defined
+    plot_type = data_series.get("type", "scatter_spline")
+
+    # Get the appropriate style dictionary
+    if isinstance(data_series_style_to_apply, dict):
+        style_dict = data_series_style_to_apply  # Use custom style directly
+    else:
+        style_dict = styles_available.get(data_series_style_to_apply, {})
+        if not style_dict:  # Check if it's an empty dictionary
+            print(f"Warning: Style named '{data_series_style_to_apply}' not found for individual data series. Using 'default' data_series style instead.")
+            style_dict = styles_available.get("default", {})
+
+
+    # Retrieve the specific style for the plot type
+    plot_style = style_dict.get(plot_type, {})
+
+    # Apply type and other predefined settings
+    data_series["type"] = plot_style.get("type", data_series.get("type", plot_type))
+
+    # Apply other attributes while preserving existing values
+    for key, value in plot_style.items():
+        if key not in ["type"]:
+            if isinstance(value, dict):  # Ensure value is a dictionary
+                data_series.setdefault(key, {}).update(value)
+            else:
+                data_series[key] = value  # Direct assignment for non-dictionary values
+    return data_series
+
+def remove_data_series_style_from_plotly_dict(fig_dict):
+    """
+    Remove applied data series styles from a Plotly figure dictionary.
+    
+    :param fig_dict: dict, Plotly style fig_dict
+    :return: dict, Updated Plotly style fig_dict with default formatting.
+    """
+    if isinstance(fig_dict, dict) and "data" in fig_dict and isinstance(fig_dict["data"], list):
+        fig_dict["data"] = [remove_data_series_style_from_single_data_series(trace) for trace in fig_dict["data"]]
+    return fig_dict
+
+
+def remove_data_series_style_from_single_data_series(data_series):
+    """
+    Remove applied styles from a single Plotly data series while preserving all existing fields.
+
+    :param data_series: dict, A dictionary representing a single Plotly data series.
+    :return: dict, Updated data series with styles removed but data retained.
+    """
+    if not isinstance(data_series, dict):
+        return data_series  # Return unchanged if the data series is invalid.
+
+    style_keys = ["mode", "line", "marker", "colorscale", "opacity"]
+
+    # Remove style-related fields without modifying core data attributes
+    for key in style_keys:
+        data_series.pop(key, None)
+
+    return data_series
+
+
 
 def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default"):
     """
@@ -1479,6 +1711,12 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     :param layout_style_to_apply: str, Name of the style or journal, or a style dictionary to apply.
     :return: dict, Updated Plotly style fig_dict.
     """
+    if layout_style_to_apply == '':
+        return fig_dict
+
+    if (layout_style_to_apply.lower() == "minimalist") or (layout_style_to_apply.lower() == "bold"):
+        layout_style_to_apply = "default"
+
     styles_available = {
         "default": {
             "layout": {
@@ -1491,7 +1729,10 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
                     "title": {"font": {"size": 27}},
                     "tickfont": {"size": 23},
                 },
-                "legend": {"title": {"font": {"size": 20}}, "font": {"size": 20}},
+                "legend": {
+                                "title": {"font": {"size": 22}},  # Defines font size for the title of the legend
+                                "font": {"size": 22}  # Defines font size for the legend labels
+                            }
             }
         },
         "Nature": {
@@ -1557,7 +1798,9 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
         style_dict = layout_style_to_apply
     else:
         style_dict = styles_available.get(layout_style_to_apply, {})
-
+        if not style_dict:  # Check if it's an empty dictionary
+            print(f"Warning: Style named '{layout_style_to_apply}' not found for layout. Using 'default' layout style instead.")
+            style_dict = styles_available.get("default", {})
 
     # Ensure layout exists in the figure
     fig_dict.setdefault("layout", {})
@@ -1588,11 +1831,15 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
 
     # Preserve legend title text
     fig_dict["layout"].setdefault("legend", {})
-    fig_dict["layout"]["legend"].setdefault("title", {})
-    fig_dict["layout"]["legend"]["title"] = {
-        "text": fig_dict["layout"]["legend"]["title"].get("text", ""),
-        **style_dict.get("layout", {}).get("legend", {}).get("title", {})
+    # Preserve existing legend settings while merging styles
+    fig_dict["layout"]["legend"] = {
+        **fig_dict["layout"].get("legend", {}),
+        **style_dict.get("layout", {}).get("legend", {})
     }
+    # Ensure the font for the legend itself is correctly applied
+    fig_dict["layout"]["legend"].setdefault("font", {}).update(
+        style_dict.get("layout", {}).get("legend", {}).get("font", {})
+    )
 
     # Preserve annotations text
     if "annotations" in fig_dict["layout"]:
@@ -1621,50 +1868,196 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
 
     return fig_dict
 
+def remove_layout_style_from_plotly_dict(fig_dict):
+    """
+    Remove applied layout styles from a Plotly figure dictionary while preserving essential content.
 
+    :param fig_dict: dict, Plotly style fig_dict
+    :return: dict, Updated Plotly style fig_dict with styles removed but key data intact.
+    """
+    if "layout" in fig_dict:
+        style_keys = ["font", "paper_bgcolor", "plot_bgcolor", "gridcolor", "gridwidth", "tickfont", "linewidth"]
+
+        # **Store non-cosmetic fields if present, otherwise assign None**
+        non_cosmetic_fields = {
+            "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
+            "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
+            "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
+            "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
+            "annotations.text": [annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])],
+            "updatemenus.buttons.label": [
+                button.get("label", None) for menu in fig_dict.get("layout", {}).get("updatemenus", [])
+                for button in menu.get("buttons", [])
+            ],
+            "coloraxis.colorbar.title.text": fig_dict.get("layout", {}).get("coloraxis", {}).get("colorbar", {}).get("title", {}).get("text", None),
+        }
+
+        # Preserve title text while removing font styling
+        if "title" in fig_dict["layout"] and isinstance(fig_dict["layout"]["title"], dict):
+            fig_dict["layout"]["title"] = {"text": non_cosmetic_fields["title.text"]} if non_cosmetic_fields["title.text"] is not None else {}
+
+        # Preserve axis titles while stripping font styles
+        for axis in ["xaxis", "yaxis"]:
+            if axis in fig_dict["layout"] and isinstance(fig_dict["layout"][axis], dict):
+                if "title" in fig_dict["layout"][axis] and isinstance(fig_dict["layout"][axis]["title"], dict):
+                    fig_dict["layout"][axis]["title"] = {"text": non_cosmetic_fields[f"{axis}.title.text"]} if non_cosmetic_fields[f"{axis}.title.text"] is not None else {}
+
+                # Remove style-related attributes but keep axis configurations
+                for key in style_keys:
+                    fig_dict["layout"][axis].pop(key, None)
+
+        # Preserve legend title text while stripping font styling
+        if "legend" in fig_dict["layout"] and isinstance(fig_dict["layout"]["legend"], dict):
+            if "title" in fig_dict["layout"]["legend"] and isinstance(fig_dict["layout"]["legend"]["title"], dict):
+                fig_dict["layout"]["legend"]["title"] = {"text": non_cosmetic_fields["legend.title.text"]} if non_cosmetic_fields["legend.title.text"] is not None else {}
+            fig_dict["layout"]["legend"].pop("font", None)
+
+        # Preserve annotations text while stripping style attributes
+        if "annotations" in fig_dict["layout"]:
+            fig_dict["layout"]["annotations"] = [
+                {"text": text} if text is not None else {} for text in non_cosmetic_fields["annotations.text"]
+            ]
+
+        # Preserve update menu labels while stripping styles
+        if "updatemenus" in fig_dict["layout"]:
+            for menu in fig_dict["layout"]["updatemenus"]:
+                for i, button in enumerate(menu.get("buttons", [])):
+                    button.clear()
+                    if non_cosmetic_fields["updatemenus.buttons.label"][i] is not None:
+                        button["label"] = non_cosmetic_fields["updatemenus.buttons.label"][i]
+
+        # Preserve color bar title while stripping styles
+        if "coloraxis" in fig_dict["layout"] and "colorbar" in fig_dict["layout"]["coloraxis"]:
+            fig_dict["layout"]["coloraxis"]["colorbar"]["title"] = {"text": non_cosmetic_fields["coloraxis.colorbar.title.text"]} if non_cosmetic_fields["coloraxis.colorbar.title.text"] is not None else {}
+
+        # Remove general style settings without clearing layout structure
+        for key in style_keys:
+            fig_dict["layout"].pop(key, None)
+
+    return fig_dict
 
 def extract_layout_style_from_plotly_dict(fig_dict):
     """
     Extract a layout style dictionary from a given Plotly JSON object, including background color, grids, and other appearance attributes.
-    
+
     :param fig_dict: dict, Plotly JSON object.
     :return: dict, Extracted style settings.
     """
-    extracted_layout_style = {
-        "layout": {
-            "title": {
-                "font": fig_dict.get("layout", {}).get("title", {}).get("font", {}),
-                "x": fig_dict.get("layout", {}).get("title", {}).get("x", 0)
-            },
-            "xaxis": {
-                "title": {"font": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("font", {})},
-                "tickfont": fig_dict.get("layout", {}).get("xaxis", {}).get("tickfont", {}),
-                "gridcolor": fig_dict.get("layout", {}).get("xaxis", {}).get("gridcolor", ""),
-                "gridwidth": fig_dict.get("layout", {}).get("xaxis", {}).get("gridwidth", 1),
-                "zerolinecolor": fig_dict.get("layout", {}).get("xaxis", {}).get("zerolinecolor", ""),
-                "zerolinewidth": fig_dict.get("layout", {}).get("xaxis", {}).get("zerolinewidth", 1),
-                "tickangle": fig_dict.get("layout", {}).get("xaxis", {}).get("tickangle", 0)
-            },
-            "yaxis": {
-                "title": {"font": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("font", {})},
-                "tickfont": fig_dict.get("layout", {}).get("yaxis", {}).get("tickfont", {}),
-                "gridcolor": fig_dict.get("layout", {}).get("yaxis", {}).get("gridcolor", ""),
-                "gridwidth": fig_dict.get("layout", {}).get("yaxis", {}).get("gridwidth", 1),
-                "zerolinecolor": fig_dict.get("layout", {}).get("yaxis", {}).get("zerolinecolor", ""),
-                "zerolinewidth": fig_dict.get("layout", {}).get("yaxis", {}).get("zerolinewidth", 1),
-                "tickangle": fig_dict.get("layout", {}).get("yaxis", {}).get("tickangle", 0)
-            },
-            "legend": {
-                "font": fig_dict.get("layout", {}).get("legend", {}).get("font", {}),
-                "x": fig_dict.get("layout", {}).get("legend", {}).get("x", 1),
-                "y": fig_dict.get("layout", {}).get("legend", {}).get("y", 1)
-            },
-            "paper_bgcolor": fig_dict.get("layout", {}).get("paper_bgcolor", ""),
-            "plot_bgcolor": fig_dict.get("layout", {}).get("plot_bgcolor", ""),
-            "margin": fig_dict.get("layout", {}).get("margin", {})
-        }
-    }
-    
+
+
+    # **Extraction Phase** - Collect cosmetic fields if they exist
+    layout = fig_dict.get("layout", {})
+
+    # Note: Each assignment below will return None if the corresponding field is missing
+    title_font = layout.get("title", {}).get("font")
+    title_x = layout.get("title", {}).get("x")
+    title_y = layout.get("title", {}).get("y")
+
+    global_font = layout.get("font")
+    paper_bgcolor = layout.get("paper_bgcolor")
+    plot_bgcolor = layout.get("plot_bgcolor")
+    margin = layout.get("margin")
+
+    # Extract x-axis cosmetic fields
+    xaxis_title_font = layout.get("xaxis", {}).get("title", {}).get("font")
+    xaxis_tickfont = layout.get("xaxis", {}).get("tickfont")
+    xaxis_gridcolor = layout.get("xaxis", {}).get("gridcolor")
+    xaxis_gridwidth = layout.get("xaxis", {}).get("gridwidth")
+    xaxis_zerolinecolor = layout.get("xaxis", {}).get("zerolinecolor")
+    xaxis_zerolinewidth = layout.get("xaxis", {}).get("zerolinewidth")
+    xaxis_tickangle = layout.get("xaxis", {}).get("tickangle")
+
+    # **Set flag for x-axis extraction**
+    xaxis = any([
+        xaxis_title_font, xaxis_tickfont, xaxis_gridcolor, xaxis_gridwidth,
+        xaxis_zerolinecolor, xaxis_zerolinewidth, xaxis_tickangle
+    ])
+
+    # Extract y-axis cosmetic fields
+    yaxis_title_font = layout.get("yaxis", {}).get("title", {}).get("font")
+    yaxis_tickfont = layout.get("yaxis", {}).get("tickfont")
+    yaxis_gridcolor = layout.get("yaxis", {}).get("gridcolor")
+    yaxis_gridwidth = layout.get("yaxis", {}).get("gridwidth")
+    yaxis_zerolinecolor = layout.get("yaxis", {}).get("zerolinecolor")
+    yaxis_zerolinewidth = layout.get("yaxis", {}).get("zerolinewidth")
+    yaxis_tickangle = layout.get("yaxis", {}).get("tickangle")
+
+    # **Set flag for y-axis extraction**
+    yaxis = any([
+        yaxis_title_font, yaxis_tickfont, yaxis_gridcolor, yaxis_gridwidth,
+        yaxis_zerolinecolor, yaxis_zerolinewidth, yaxis_tickangle
+    ])
+
+    # Extract legend styling
+    legend_font = layout.get("legend", {}).get("font")
+    legend_x = layout.get("legend", {}).get("x")
+    legend_y = layout.get("legend", {}).get("y")
+
+    # **Assignment Phase** - Reconstruct dictionary in a structured manner
+    extracted_layout_style = {"layout": {}}
+
+    if title_font or title_x:
+        extracted_layout_style["layout"]["title"] = {}
+        if title_font:
+            extracted_layout_style["layout"]["title"]["font"] = title_font
+        if title_x:
+            extracted_layout_style["layout"]["title"]["x"] = title_x
+        if title_y:
+            extracted_layout_style["layout"]["title"]["y"] = title_y
+
+    if global_font:
+        extracted_layout_style["layout"]["font"] = global_font
+
+    if paper_bgcolor:
+        extracted_layout_style["layout"]["paper_bgcolor"] = paper_bgcolor
+    if plot_bgcolor:
+        extracted_layout_style["layout"]["plot_bgcolor"] = plot_bgcolor
+    if margin:
+        extracted_layout_style["layout"]["margin"] = margin
+
+    if xaxis:
+        extracted_layout_style["layout"]["xaxis"] = {}
+        if xaxis_title_font:
+            extracted_layout_style["layout"]["xaxis"]["title"] = {"font": xaxis_title_font}
+        if xaxis_tickfont:
+            extracted_layout_style["layout"]["xaxis"]["tickfont"] = xaxis_tickfont
+        if xaxis_gridcolor:
+            extracted_layout_style["layout"]["xaxis"]["gridcolor"] = xaxis_gridcolor
+        if xaxis_gridwidth:
+            extracted_layout_style["layout"]["xaxis"]["gridwidth"] = xaxis_gridwidth
+        if xaxis_zerolinecolor:
+            extracted_layout_style["layout"]["xaxis"]["zerolinecolor"] = xaxis_zerolinecolor
+        if xaxis_zerolinewidth:
+            extracted_layout_style["layout"]["xaxis"]["zerolinewidth"] = xaxis_zerolinewidth
+        if xaxis_tickangle:
+            extracted_layout_style["layout"]["xaxis"]["tickangle"] = xaxis_tickangle
+
+    if yaxis:
+        extracted_layout_style["layout"]["yaxis"] = {}
+        if yaxis_title_font:
+            extracted_layout_style["layout"]["yaxis"]["title"] = {"font": yaxis_title_font}
+        if yaxis_tickfont:
+            extracted_layout_style["layout"]["yaxis"]["tickfont"] = yaxis_tickfont
+        if yaxis_gridcolor:
+            extracted_layout_style["layout"]["yaxis"]["gridcolor"] = yaxis_gridcolor
+        if yaxis_gridwidth:
+            extracted_layout_style["layout"]["yaxis"]["gridwidth"] = yaxis_gridwidth
+        if yaxis_zerolinecolor:
+            extracted_layout_style["layout"]["yaxis"]["zerolinecolor"] = yaxis_zerolinecolor
+        if yaxis_zerolinewidth:
+            extracted_layout_style["layout"]["yaxis"]["zerolinewidth"] = yaxis_zerolinewidth
+        if yaxis_tickangle:
+            extracted_layout_style["layout"]["yaxis"]["tickangle"] = yaxis_tickangle
+
+    if legend_font or legend_x or legend_y:
+        extracted_layout_style["layout"]["legend"] = {}
+        if legend_font:
+            extracted_layout_style["layout"]["legend"]["font"] = legend_font
+        if legend_x:
+            extracted_layout_style["layout"]["legend"]["x"] = legend_x
+        if legend_y:
+            extracted_layout_style["layout"]["legend"]["y"] = legend_y
+
     return extracted_layout_style
 
 ## Start of Section of Code for Styles and Converting between plotly and matplotlib Fig objectss ##

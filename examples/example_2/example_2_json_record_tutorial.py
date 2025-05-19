@@ -91,10 +91,16 @@ Record.plot_with_plotly()
 
 #Now let's try applying a predfined style!
 print("\n\n STEP 7: TRYING PREDIFINED STYLES")
-Record.apply_style("Science")
+Record.apply_style("Science") #This command puts the style into the fig_dict record.
 Record.plot_with_plotly()
-Record.apply_style("Nature")
+#we can also "temporarily" apply a style while plotting.
+Record.plot_with_plotly(style_to_apply="Nature")
+#So this plot will produce the "Science" style again:
 Record.plot_with_plotly()
+#One can also remove styles, and produce the default style, again.
+Record.remove_style()
+Record.plot_with_plotly()
+
 #Note: As of April 2025, the styles have not actually been made suitable for journals. However, the feature is here so that such styles can be made.
 
 

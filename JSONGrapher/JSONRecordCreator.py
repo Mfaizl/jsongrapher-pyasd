@@ -488,6 +488,7 @@ class JSONGrapherRecord:
     def change_data_series_name(self, series_index, series_name):
         self.fig_dict["data"][series_index]["name"] = series_name
 
+
     #this function forces the re-simulation of a particular dataseries.
     #The simulator link will be extracted from the record, by default.
     def simulate_data_series_by_index(self, data_series_index, simulator_link='', verbose=False):
@@ -495,6 +496,7 @@ class JSONGrapherRecord:
         data_series_dict = self.fig_dict["data"][data_series_index] #implied return
         return data_series_dict #Extra regular return
     
+
     #this function returns the current record.
     def get_record(self):
         """

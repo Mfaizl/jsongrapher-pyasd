@@ -601,7 +601,7 @@ class JSONGrapherRecord:
         """        
         #If optional argument not provided, take class instance setting.
         if plot_type == None: 
-            plot_type = self.fig_dict["plot_type"]
+            plot_type = self.fig_dict.get("plot_type", '')
         #If the plot_type is not blank, use it for all series.
         if plot_type != "":
             self.set_plot_type_all_series(plot_type)

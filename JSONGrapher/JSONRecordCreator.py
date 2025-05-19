@@ -601,7 +601,7 @@ class JSONGrapherRecord:
         """        
         #If optional argument not provided, take class instance setting.
         if plot_type == None: 
-            plot_type = self.plot_type
+            plot_type = self.fig_dict["plot_type"]
         #If the plot_type is not blank, use it for all series.
         if plot_type != "":
             self.set_plot_type_all_series(plot_type)
@@ -1193,7 +1193,6 @@ def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
         plot_type = 'scatter_line' 
     fields_dict = plot_type_to_field_values(plot_type)
  
-    
     #update the data_series_dict.
     if fields_dict.get("mode_field"):
         data_series_dict["mode"] = fields_dict["mode_field"]
@@ -1615,7 +1614,6 @@ def apply_data_series_style_to_single_data_series(data_series, data_series_style
         return data_series  # Return unchanged if the data series is invalid.
     if (data_series_style_to_apply.lower() == "nature") or (data_series_style_to_apply.lower() == "science"):
         data_series_style_to_apply = "default"
-
     # -------------------------------
     # Predefined data series styles
     # -------------------------------
@@ -1639,12 +1637,11 @@ def apply_data_series_style_to_single_data_series(data_series, data_series_style
                 "type": "scatter",
                 "mode": "lines+markers",
                 "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 8},
+                "marker": {"size": 10},
             },
             "scatter": {
                 "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
+                "mode": "markers",
                 "marker": {"size": 10},
             },
             "spline": {
@@ -1719,7 +1716,6 @@ def apply_data_series_style_to_single_data_series(data_series, data_series_style
 
     # Determine the plot type, defaulting to "scatter_spline" if none is defined
     plot_type = data_series.get("type", "scatter_spline")
-
     # Get the appropriate style dictionary
     if isinstance(data_series_style_to_apply, dict):
         style_dict = data_series_style_to_apply  # Use custom style directly
@@ -1732,10 +1728,8 @@ def apply_data_series_style_to_single_data_series(data_series, data_series_style
 
     # Retrieve the specific style for the plot type
     plot_style = style_dict.get(plot_type, {})
-
     # Apply type and other predefined settings
     data_series["type"] = plot_style.get("type", data_series.get("type", plot_type))
-
     # Apply other attributes while preserving existing values
     for key, value in plot_style.items():
         if key not in ["type"]:

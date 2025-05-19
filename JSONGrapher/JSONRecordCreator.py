@@ -491,11 +491,10 @@ class JSONGrapherRecord:
     #this function forces the re-simulation of a particular dataseries.
     #The simulator link will be extracted from the record, by default.
     def simulate_data_series_by_index(self, data_series_index, simulator_link='', verbose=False):
-        data_series_dict = self.fig_dict["data"][data_series_index]
-        data_series_dict = simulate_data_series(data_series_dict, simulator_link=simulator_link, verbose=verbose)
-        self.fig_dict["data"][data_series_index] = data_series_dict #implied return
+        self.fig_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index, simulator_link=simulator_link, verbose=verbose)
+        data_series_dict = self.fig_dict["data"][data_series_index] #implied return
         return data_series_dict #Extra regular return
-
+    
     #this function returns the current record.
     def get_record(self):
         """
@@ -2498,6 +2497,9 @@ def convert_to_raw_github_url(url):
 #This function takes in a data_series_dict object and then
 #calls an external javascript simulation if needed
 #Then fills the data_series dict with the simulated data.
+#This function is not intended to be called by the regular user
+#because it returns extra fields that need to be parsed out.
+#and because it does not do unit conversions as needed after the simulation resultss are returned.
 def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
     if simulator_link == '':
         simulator_link = data_series_dict["simulate"]["model"]
@@ -2507,42 +2509,43 @@ def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
     return data_series_dict_filled
 
 #Function that goes through a fig_dict data series and simulates each data series as needed.
-#TODO: could probably change this into a loop that calls simulate_specific_data_series_by_index, though this one seems more up to date 5/17/25
 #If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.
 def simulate_as_needed_in_fig_dict(fig_dict, simulator_link='', verbose=False):
-    data_dicts_list = fig_dict['data']
-    for data_dict_index, data_dict in enumerate(data_dicts_list):
-        if 'simulate' in data_dict:
-            data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
-            #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
-            if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)):
-                #first, get the units that are in the layout of fig_dict so we know what to convert to.
-                existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
-                existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
-                existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]
-                existing_record_y_units = separate_label_text_from_units(existing_record_y_label)["units"]
-                #now, get the units from the simulation output.
-                simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled['x_label'])["units"]
-                simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled['y_label'])["units"]
-                x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units)
-                y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units)
-                #We scale the dataseries, which really should be a function.
-                scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by = x_units_ratio, num_to_scale_y_values_by = y_units_ratio)
-                #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
-                data_dict_filled.pop("x_label", None)
-                data_dict_filled.pop("y_label", None)
-            data_dicts_list[data_dict_index] = data_dict_filled
-    fig_dict['data'] = data_dicts_list
+    data_dicts_list = fig_dict['data']    
+    for data_dict_index in range(len(data_dicts_list)):
+        fig_dict = simulate_specific_data_series_by_index(fig_dict, data_dict_index, simulator_link=simulator_link, verbose=verbose)
     return fig_dict
 
-#Function that takes fig_dict and dataseries index and simulates if needed.
-#TODO combine this function and above function. This function seems out of date. 5/17/25
+#Function that takes fig_dict and dataseries index and simulates if needed. Also performs unit conversions as needed.
+#If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.
 def simulate_specific_data_series_by_index(fig_dict, data_series_index, simulator_link='', verbose=False):
     data_dicts_list = fig_dict['data']
     data_dict_index = data_series_index
     data_dict = data_dicts_list[data_dict_index]
     if 'simulate' in data_dict:
         data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
+        # Check if unit scaling is needed
+        if ("x_label" in data_dict_filled) or ("y_label" in data_dict_filled):
+            #first, get the units that are in the layout of fig_dict so we know what to convert to.
+            existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"]
+            existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"]
+            # Extract units  from the simulation output.
+            existing_record_x_units = separate_label_text_from_units(existing_record_x_label).get("units", "")
+            existing_record_y_units = separate_label_text_from_units(existing_record_y_label).get("units", "")
+            simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled.get('x_label', '')).get("units", "")
+            simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled.get('y_label', '')).get("units", "")
+            # Compute unit scaling ratios
+            x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units) if simulated_data_series_x_units and existing_record_x_units else 1
+            y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units) if simulated_data_series_y_units and existing_record_y_units else 1
+            # Apply scaling to the data series
+            scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by=x_units_ratio, num_to_scale_y_values_by=y_units_ratio)
+            #Verbose logging for debugging
+            if verbose:
+                print(f"Scaling X values by: {x_units_ratio}, Scaling Y values by: {y_units_ratio}")
+            #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
+            data_dict_filled.pop("x_label", None)
+            data_dict_filled.pop("y_label", None)
+        # Update the figure dictionary
         data_dicts_list[data_dict_index] = data_dict_filled
     fig_dict['data'] = data_dicts_list
     return fig_dict

@@ -55,6 +55,6 @@ second_Arrhenius_equation.set_x_range_limits([None, 600])
 second_Arrhenius_equation.equation_dict["points_spacing"] = "Linear"
 
 #Use the equation dictionary to add the second data series, then plot
-Record.add_data_series_as_equation(series_name="Arrhenius Example2",equation_dict=second_Arrhenius_equation.equation_dict, trace_type= "spline")
+Record.add_data_series_as_equation(series_name="Arrhenius Example 2",equation_dict=second_Arrhenius_equation.equation_dict, trace_type= "spline")
 
 Record.plot_with_plotly()

@@ -388,7 +388,7 @@ class JSONGrapherRecord:
         return json.dumps(self.fig_dict, indent=4)
 
 
-    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, simulate_as_added = True, comments="", plot_type="",  uid="", line="", extra_fields=None):
+    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, simulate_as_added = True, comments="", trace_type="",  uid="", line="", extra_fields=None):
         """
         This is the normal way of adding an x,y data series.
         """
@@ -398,7 +398,7 @@ class JSONGrapherRecord:
         # simulate: This is an optional field which, if used, is a JSON object with entries for calling external simulation scripts.
         # simulate_as_added: Boolean for calling simulation scripts immediately.
         # comments: Optional description of the data series.
-        # plot_type: Type of the data (e.g., scatter, line).
+        # trace_type: Type of the data (e.g., scatter, line, scatter_spline, spline, bar).
         # line: Dictionary describing line properties (e.g., shape, width).
         # uid: Optional unique identifier for the series (e.g., a DOI).
         # extra_fields: Dictionary containing additional fields to add to the series.
@@ -418,6 +418,8 @@ class JSONGrapherRecord:
             data_series_dict["uid"] = uid
         if len(line) > 0:
             data_series_dict["line"] = line
+        if len(trace_type) > 0:
+            data_series_dict['trace_type'] = trace_type
         #add simulate field if included.
         if simulate:
             data_series_dict["simulate"] = simulate
@@ -430,14 +432,10 @@ class JSONGrapherRecord:
         if extra_fields:
             data_series_dict.update(extra_fields)
         #Add to the class object's data list.
-        self.fig_dict["data"].append(data_series_dict)
-        #update plot_type, since our internal function requires the data series to be added already.
-        if len(plot_type) > 0:
-            newest_record_index = len(self.fig_dict["data"]) - 1
-            self.set_plot_type_one_data_series(newest_record_index, plot_type)
+        self.fig_dict["data"].append(data_series_dict) #implied return.
+        return data_series_dict
 
-
-    def add_data_series_as_equation(self, series_name, x_values=[], y_values=[], equation_dict={}, evaluate_equations_as_added = True, comments="", plot_type="",  uid="", line="", extra_fields=None):
+    def add_data_series_as_equation(self, series_name, x_values=[], y_values=[], equation_dict={}, evaluate_equations_as_added = True, comments="", trace_type="",  uid="", line="", extra_fields=None):
         """
         This is a way to add an equation that would be used to fill an x,y data series.
         The equation will be a equation_dict of the json_equationer type
@@ -468,6 +466,8 @@ class JSONGrapherRecord:
             data_series_dict["uid"] = uid
         if len(line) > 0:
             data_series_dict["line"] = line
+        if len(trace_type) > 0:
+            data_series_dict['trace_type'] = trace_type
         #add equation field if included.
         if equation_dict:
             data_series_dict["equation"] = equation_dict
@@ -570,6 +570,11 @@ class JSONGrapherRecord:
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
         if type(json_filename_or_object) == type(""): #assume it's a filename and path.
+            #if the filename does not exist, then we'll check if adding ".json" fixes the problem.
+            import os
+            if not os.path.exists(json_filename_or_object):
+                json_added_filename = json_filename_or_object + ".json"
+                if os.path.exists(json_added_filename): json_filename_or_object = json_added_filename #only change the filename if the json_filename exists.
             # Open the file in read mode with UTF-8 encoding
             with open(json_filename_or_object, 'r', encoding='utf-8') as file:
                 # Read the entire content of the file
@@ -578,36 +583,40 @@ class JSONGrapherRecord:
         else:
             self.fig_dict = json_filename_or_object
 
-    def set_plot_type_one_data_series(self, data_series_index, plot_type):
+    def set_trace_type_one_data_series(self, data_series_index, trace_type):
+        self.fig_dict['data'][data_series_index]["trace_type"] = trace_type
         data_series_dict = self.fig_dict['data'][data_series_index]
-        data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict, plot_type=plot_type)
+        data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict, trace_type=trace_type)
         #now put the data_series_dict back:
         self.fig_dict['data'][data_series_index] = data_series_dict
 
-    def set_plot_type_all_series(self, plot_type):
+    def set_trace_type_all_series(self, trace_type):
         """
         Sets the plot_type field for the all data series.
         options are: scatter, spline, scatter_spline
         """
-        self.plot_type = plot_type
+        self.plot_type = trace_type
         for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
-            self.set_plot_type_one_data_series(data_series_index, plot_type)
+            self.set_trace_type_one_data_series(data_series_index, trace_type)
      
        
-    def update_plot_types(self, plot_type=None):
+    def update_plot_types(self, trace_type=None):
         """
-        updates the plot types for every existing data series.
-        
+        updates the 'type' field in a data_series, for every existing data series.
+        The trace_type for each data_series is parsed to decide what to make the "type" field.
+        If a "plot_type" field is present at the root fig_dict level, it is applied to the trace_type
+        of all existing dataseries.
+
         """        
         #If optional argument not provided, take class instance setting.
-        if plot_type == None: 
-            plot_type = self.fig_dict.get("plot_type", '')
-        #If the plot_type is not blank, use it for all series.
-        if plot_type != "":
-            self.set_plot_type_all_series(plot_type)
-        else: #if the plot_type is blank, then we will go through each data series and update them individually.
+        if trace_type == None: 
+            trace_type = self.fig_dict.get("plot_type", '')
+        #If the trace_type is not blank, use it for all series.
+        if trace_type != "":
+            self.set_trace_type_all_series(trace_type)
+        else: #if the trace_type is blank, then we will go through each data series and update them individually.
             for data_series_index, data_series_dict in enumerate(self.fig_dict['data']):
-                #This will update the data_series_dict as needed, putting a plot_type if there is not one.
+                #This will update the "type" fields in the data_series_dict as needed, putting a "type" field in them if there is not one.
                 data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict)
                 self.fig_dict['data'][data_series_index] = data_series_dict
  
@@ -1176,23 +1185,24 @@ def parse_units(value):
     return parsed_output
 
 
-#This function sets the plot_type of a data_series_dict
+#This function sets the trace_type of a data_series_dict
 #based on some JSONGrapher options.
-#It calls "plot_type_to_field_values" 
+#It calls "trace_type_to_field_values" 
 #and then updates the data_series_dict accordingly, as needed.
-def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
-    if plot_type == "":
-        plot_type = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
-    #We need to be careful about one case: in plotly, a "spline" is declared a scatter plot with data.line.shape = spline. 
-    #So we need to check if we have spline set, in which case we make the plot_type scatter_spline when calling plot_type_to_field_values.
-    shape_field = data_series_dict.get('line', {}).get('shape', '') #get will return first argument if there, second if not, so can chain things.
-    #TODO: need to distinguish between "spline" and "scatter_spline" by checking for marker instructions.
-    if shape_field == 'spline':
-        plot_type = 'scatter_spline' 
-    if shape_field == 'linear':
-        plot_type = 'scatter_line' 
-    fields_dict = plot_type_to_field_values(plot_type)
- 
+def set_data_series_dict_plot_type(data_series_dict, trace_type=""):
+    if trace_type == "":
+        #Some logic to "guess" what the user wants if no trace_type is provided.
+        #We need to be careful about one case: in plotly, a "spline" is declared a scatter plot with data.line.shape = spline. 
+        #So we need to check if we have spline set, in which case we make the trace_type scatter_spline.
+        shape_field = data_series_dict.get('line', {}).get('shape', '') #get will return first argument if there, second if not, so can chain things.
+        if shape_field == 'spline': #Enchancement: distinguish between "spline" and "scatter_spline" by checking for marker instructions.
+            trace_type = 'scatter_spline' 
+        elif shape_field == 'linear':
+            trace_type = 'scatter_line' 
+        else:
+            trace_type = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
+
+    fields_dict = trace_type_to_field_values(trace_type)
     #update the data_series_dict.
     if fields_dict.get("mode_field"):
         data_series_dict["mode"] = fields_dict["mode_field"]
@@ -1203,37 +1213,37 @@ def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
         data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
     return data_series_dict
 
-#This function creates a fields_dict for the function set_data_series_dict_plot_type
-def plot_type_to_field_values(plot_type):
+#This function creates a fields_dict for the function set_data_series_dict_trace_type
+def trace_type_to_field_values(trace_type):
     """
-    Takes in a string that is a plot type, such as "scatter", "scatter_spline", etc.
+    Takes in a string that is a trace_type, such as "scatter", "scatter_spline", etc.
     and returns the field values that would have to go into a plotly data object.
 
     Returns:
         dict: A dictionary with keys and values for the fields that will be ultimately filled.
 
-    To these fields are used in the function set_plot_type_one_data_series
+    To these fields are used in the function set_trace_type_one_data_series
 
     """
     fields_dict = {}
     #initialize some variables.
-    fields_dict["type_field"] = plot_type.lower()
+    fields_dict["type_field"] = trace_type.lower()
     fields_dict["mode_field"] = None
     fields_dict["line_shape_field"] = None
     # Assign the various types. This list of values was determined 'manually'.
-    if plot_type.lower() == ("scatter" or "markers"):
+    if trace_type.lower() == ("scatter" or "markers"):
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = "markers"
         fields_dict["line_shape_field"] = None
-    elif plot_type.lower() == "scatter_spline":
+    elif trace_type.lower() == "scatter_spline":
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = None
         fields_dict["line_shape_field"] = "spline"
-    elif plot_type.lower() == "spline":
+    elif trace_type.lower() == "spline":
         fields_dict["type_field"] = 'scatter'
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "spline"
-    elif plot_type.lower() == "scatter_line":
+    elif trace_type.lower() == "scatter_line":
         fields_dict["type_field"] = 'scatter'
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "linear"
@@ -1595,7 +1605,8 @@ def apply_data_series_style_to_plotly_dict(fig_dict, data_series_style_to_apply=
         return fig_dict  # Return unchanged if the input is invalid.
 
 #The logic in JSONGrapher is to apply the style information but to treat "type" differently 
-#compared to how plotly treats plot_type. So later in the process, when actually plotting with plotly, the "type" field will get overwritten.
+#Accordingly, we use 'trace_type' as a field in JSONGrapher for each data_series.
+#compared to how plotly treats 'type' for a data series. So later in the process, when actually plotting with plotly, the 'type' field will get overwritten.
 def apply_data_series_style_to_single_data_series(data_series, data_series_style_to_apply="default"):
     """
     Applies predefined styles to a single Plotly data series while preserving relevant fields.
@@ -1609,7 +1620,6 @@ def apply_data_series_style_to_single_data_series(data_series, data_series_style
     """
     if (data_series_style_to_apply == '') or (str(data_series_style_to_apply).lower() == 'none'):
         return data_series    
-
     if not isinstance(data_series, dict):
         return data_series  # Return unchanged if the data series is invalid.
     if (data_series_style_to_apply.lower() == "nature") or (data_series_style_to_apply.lower() == "science"):
@@ -1711,11 +1721,95 @@ def apply_data_series_style_to_single_data_series(data_series, data_series_style
                 "type": "heatmap",
                 "colorscale": "Jet",
             }
+        },
+                "scatter": { #this style forces all traces into scatter.
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        },
+        "scatter_spline": { #this style forces all traces into scatter_spline
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        },
+        "scatter_spline": { #this style forces all traces into spline only
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
         }
     }
 
-    # Determine the plot type, defaulting to "scatter_spline" if none is defined
-    plot_type = data_series.get("type", "scatter_spline")
     # Get the appropriate style dictionary
     if isinstance(data_series_style_to_apply, dict):
         style_dict = data_series_style_to_apply  # Use custom style directly
@@ -1724,14 +1818,17 @@ def apply_data_series_style_to_single_data_series(data_series, data_series_style
         if not style_dict:  # Check if it's an empty dictionary
             print(f"Warning: Style named '{data_series_style_to_apply}' not found for individual data series. Using 'default' data_series style instead.")
             style_dict = styles_available.get("default", {})
-
-
+    # Determine the trace_type, defaulting to the first item in a given style if none is provided.
+    trace_type = data_series.get("trace_type", "")
+    if trace_type == "":
+        trace_type = list(style_dict.keys())[0] #take the first trace_type in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
+    
     # Retrieve the specific style for the plot type
-    plot_style = style_dict.get(plot_type, {})
+    trace_style = style_dict.get(trace_type, {})
     # Apply type and other predefined settings
-    data_series["type"] = plot_style.get("type", data_series.get("type", plot_type))
+    data_series["type"] = trace_style.get("type", data_series.get("type", trace_type))
     # Apply other attributes while preserving existing values
-    for key, value in plot_style.items():
+    for key, value in trace_style.items():
         if key not in ["type"]:
             if isinstance(value, dict):  # Ensure value is a dictionary
                 data_series.setdefault(key, {}).update(value)

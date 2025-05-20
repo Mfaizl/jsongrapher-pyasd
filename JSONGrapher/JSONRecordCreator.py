@@ -780,7 +780,7 @@ class JSONGrapherRecord:
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_type'])
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
@@ -853,7 +853,7 @@ class JSONGrapherRecord:
         self.apply_style(style_to_apply=plot_style)
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_type'])
         fig = convert_JSONGrapher_dict_to_matplotlib_fig(self.fig_dict)
         self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig
@@ -2348,6 +2348,14 @@ def remove_equation_field(json_fig_dict):
     json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
     return json_fig_dict
 
+def remove_trace_type_field(json_fig_dict):
+    data_dicts_list = json_fig_dict['data']
+    for data_dict in data_dicts_list:
+        data_dict.pop('trace_type', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
+        data_dict.pop('tracetype', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
+    json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
+    return json_fig_dict
+
 def remove_custom_units_chevrons(json_fig_dict):
     json_fig_dict['layout']['xaxis']['title']['text'] = json_fig_dict['layout']['xaxis']['title']['text'].replace('<','').replace('>','')
     json_fig_dict['layout']['yaxis']['title']['text'] = json_fig_dict['layout']['yaxis']['title']['text'].replace('<','').replace('>','')
@@ -2375,6 +2383,8 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraIn
         fig_dict = remove_equation_field(fig_dict)
     if "custom_units_chevrons" in fields_to_update:
         fig_dict = remove_custom_units_chevrons(fig_dict)
+    if "trace_type" in fields_to_update:
+        fig_dict = remove_trace_type_field(fig_dict)
 
     return fig_dict
 

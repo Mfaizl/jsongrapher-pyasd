@@ -2605,11 +2605,18 @@ def convert_to_raw_github_url(url):
 #and because it does not do unit conversions as needed after the simulation resultss are returned.
 def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
     if simulator_link == '':
-        simulator_link = data_series_dict["simulate"]["model"]
-    #need to provide the link and the data_dict
-    simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose = verbose)
-    data_series_dict_filled = simulation_return["data"]
-    return data_series_dict_filled
+        simulator_link = data_series_dict["simulate"]["model"]  
+    try:
+        simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose=verbose)
+        if isinstance(simulation_return, dict) and "error" in simulation_return: # Check for errors in the returned data
+            print(f"Simulation failed: {simulation_return.get('error_message', 'Unknown error')}")
+            print(simulation_return)
+            return None
+        return simulation_return.get("data", None)
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return None
 
 #Function that goes through a fig_dict data series and simulates each data series as needed.
 #If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.

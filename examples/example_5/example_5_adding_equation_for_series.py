@@ -28,7 +28,7 @@ equation_dict = {
 
 #Now we can add this equation record as a dataseries into the JSONGrapher record. 
 # By default, the equation will be evaluated when added, and also when plotted.
-Record.add_data_series_as_equation(series_name="Arrhenius Example 1",equation_dict=equation_dict)
+Record.add_data_series_as_equation(series_name="Arrhenius Example 1",equation_dict=equation_dict, trace_type = "spline")
 Record.plot_with_plotly()
 
 ### Now, let's add an equation using json_equationer ###
@@ -55,6 +55,6 @@ second_Arrhenius_equation.set_x_range_limits([None, 600])
 second_Arrhenius_equation.equation_dict["points_spacing"] = "Linear"
 
 #Use the equation dictionary to add the second data series, then plot
-Record.add_data_series_as_equation(series_name="Arrhenius Example2",equation_dict=second_Arrhenius_equation.equation_dict)
+Record.add_data_series_as_equation(series_name="Arrhenius Example2",equation_dict=second_Arrhenius_equation.equation_dict, trace_type= "spline")
 
 Record.plot_with_plotly()

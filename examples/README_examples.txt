@@ -7,3 +7,5 @@ example_2 provides a tutorial like example on how to make JSONGrapher records
 example_3 shows an example where the json record calls JavaScript source code from online to simulate and populate a dataseries.
 
 example_4 shows an example where custom units are used.
+
+example_5 shows an example where an equation with units is plotted.

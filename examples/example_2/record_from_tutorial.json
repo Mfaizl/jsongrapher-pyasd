@@ -18,9 +18,11 @@
                 1.19,
                 1.45
             ],
+            "trace_type": "scatter_spline",
+            "mode": "markers",
             "type": "scatter",
             "line": {
-                "shape": "spline"
+                "shape": null
             }
         }
     ],

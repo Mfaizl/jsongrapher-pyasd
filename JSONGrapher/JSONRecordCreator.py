@@ -311,12 +311,13 @@ class JSONGrapherRecord:
     
     Methods:
         add_data_series: Adds a new data series to the record.
+        add_data_series_as_equation: Adds a new equation to plot, which will be evaluated on the fly.
         set_layout: Updates the layout configuration for the graph.
         export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
     
-    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
@@ -354,6 +355,12 @@ class JSONGrapherRecord:
             except:
                 pass
 
+        if evaluate_equations_as_added:#will try to evaluate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
+            except:
+                pass
+
         self.plot_type = plot_type #the plot_type is normally actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
         if plot_type != "":
             self.fig_dict["plot_type"] = plot_type
@@ -381,7 +388,7 @@ class JSONGrapherRecord:
         return json.dumps(self.fig_dict, indent=4)
 
 
-    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, simulate_as_added = True, comments="", plot_type="",  uid="", line="", extra_fields=None):
+    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, simulate_as_added = True, comments="", trace_type="",  uid="", line="", extra_fields=None):
         """
         This is the normal way of adding an x,y data series.
         """
@@ -390,6 +397,54 @@ class JSONGrapherRecord:
         # y: List of y-axis values. Or similar structure.
         # simulate: This is an optional field which, if used, is a JSON object with entries for calling external simulation scripts.
         # simulate_as_added: Boolean for calling simulation scripts immediately.
+        # comments: Optional description of the data series.
+        # trace_type: Type of the data (e.g., scatter, line, scatter_spline, spline, bar).
+        # line: Dictionary describing line properties (e.g., shape, width).
+        # uid: Optional unique identifier for the series (e.g., a DOI).
+        # extra_fields: Dictionary containing additional fields to add to the series.
+        x_values = list(x_values)
+        y_values = list(y_values)
+
+        data_series_dict = {
+            "name": series_name,
+            "x": x_values, 
+            "y": y_values,
+        }
+
+        #Add optional inputs.
+        if len(comments) > 0:
+            data_series_dict["comments"] = comments
+        if len(uid) > 0:
+            data_series_dict["uid"] = uid
+        if len(line) > 0:
+            data_series_dict["line"] = line
+        if len(trace_type) > 0:
+            data_series_dict['trace_type'] = trace_type
+        #add simulate field if included.
+        if simulate:
+            data_series_dict["simulate"] = simulate
+        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                data_series_dict = simulate_data_series(data_series_dict)
+            except:
+                pass
+        # Add extra fields if provided, they will be added.
+        if extra_fields:
+            data_series_dict.update(extra_fields)
+        #Add to the class object's data list.
+        self.fig_dict["data"].append(data_series_dict) #implied return.
+        return data_series_dict
+
+    def add_data_series_as_equation(self, series_name, x_values=[], y_values=[], equation_dict={}, evaluate_equations_as_added = True, comments="", trace_type="",  uid="", line="", extra_fields=None):
+        """
+        This is a way to add an equation that would be used to fill an x,y data series.
+        The equation will be a equation_dict of the json_equationer type
+        """
+        # series_name: Name of the data series.
+        # x: List of x-axis values. Or similar structure.
+        # y: List of y-axis values. Or similar structure.
+        # equation_dict: This is the field for the equation_dict of json_equationer type
+        # evaluate_equations_as_added: Boolean for evaluating equations immediately.
         # comments: Optional description of the data series.
         # plot_type: Type of the data (e.g., scatter, line).
         # line: Dictionary describing line properties (e.g., shape, width).
@@ -406,39 +461,41 @@ class JSONGrapherRecord:
 
         #Add optional inputs.
         if len(comments) > 0:
-            data_series_dict["comments"]: comments
+            data_series_dict["comments"] = comments
         if len(uid) > 0:
-            data_series_dict["uid"]: uid
+            data_series_dict["uid"] = uid
         if len(line) > 0:
-            data_series_dict["line"]: line
-        #add simulate field if included.
-        if simulate:
-            data_series_dict["simulate"] = simulate
-        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
-            try:
-                data_series_dict = simulate_data_series(data_series_dict)
-            except:
-                pass
+            data_series_dict["line"] = line
+        if len(trace_type) > 0:
+            data_series_dict['trace_type'] = trace_type
+        #add equation field if included.
+        if equation_dict:
+            data_series_dict["equation"] = equation_dict
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
         #Add to the class object's data list.
         self.fig_dict["data"].append(data_series_dict)
-        #update plot_type, since our internal function requires the data series to be added already.
-        if len(plot_type) > 0:
-            newest_record_index = len(self.fig_dict["data"]) - 1
-            self.set_plot_type_one_data_series(newest_record_index, plot_type)
+        new_data_series_index = len(self.fig_dict["data"])-1 
+        if evaluate_equations_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, new_data_series_index)
+            except:
+                pass
+        ## Should consider adding "set_plot_type" for whole fig_dict, similar to what is in add_data_series
+
 
     def change_data_series_name(self, series_index, series_name):
         self.fig_dict["data"][series_index]["name"] = series_name
 
+
     #this function forces the re-simulation of a particular dataseries.
     #The simulator link will be extracted from the record, by default.
     def simulate_data_series_by_index(self, data_series_index, simulator_link='', verbose=False):
-        data_series_dict = self.fig_dict["data"][data_series_index]
-        data_series_dict = simulate_data_series(data_series_dict, simulator_link=simulator_link, verbose=verbose)
-        self.fig_dict["data"][data_series_index] = data_series_dict #implied return
+        self.fig_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index, simulator_link=simulator_link, verbose=verbose)
+        data_series_dict = self.fig_dict["data"][data_series_index] #implied return
         return data_series_dict #Extra regular return
+    
 
     #this function returns the current record.
     def get_record(self):
@@ -513,6 +570,11 @@ class JSONGrapherRecord:
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
         if type(json_filename_or_object) == type(""): #assume it's a filename and path.
+            #if the filename does not exist, then we'll check if adding ".json" fixes the problem.
+            import os
+            if not os.path.exists(json_filename_or_object):
+                json_added_filename = json_filename_or_object + ".json"
+                if os.path.exists(json_added_filename): json_filename_or_object = json_added_filename #only change the filename if the json_filename exists.
             # Open the file in read mode with UTF-8 encoding
             with open(json_filename_or_object, 'r', encoding='utf-8') as file:
                 # Read the entire content of the file
@@ -521,36 +583,40 @@ class JSONGrapherRecord:
         else:
             self.fig_dict = json_filename_or_object
 
-    def set_plot_type_one_data_series(self, data_series_index, plot_type):
+    def set_trace_type_one_data_series(self, data_series_index, trace_type):
+        self.fig_dict['data'][data_series_index]["trace_type"] = trace_type
         data_series_dict = self.fig_dict['data'][data_series_index]
-        data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict, plot_type=plot_type)
+        data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict, trace_type=trace_type)
         #now put the data_series_dict back:
         self.fig_dict['data'][data_series_index] = data_series_dict
 
-    def set_plot_type_all_series(self, plot_type):
+    def set_trace_type_all_series(self, trace_type):
         """
         Sets the plot_type field for the all data series.
         options are: scatter, spline, scatter_spline
         """
-        self.plot_type = plot_type
+        self.plot_type = trace_type
         for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
-            self.set_plot_type_one_data_series(data_series_index, plot_type)
+            self.set_trace_type_one_data_series(data_series_index, trace_type)
      
        
-    def update_plot_types(self, plot_type=None):
+    def update_plot_types(self, trace_type=None):
         """
-        updates the plot types for every existing data series.
-        
+        updates the 'type' field in a data_series, for every existing data series.
+        The trace_type for each data_series is parsed to decide what to make the "type" field.
+        If a "plot_type" field is present at the root fig_dict level, it is applied to the trace_type
+        of all existing dataseries.
+
         """        
         #If optional argument not provided, take class instance setting.
-        if plot_type == None: 
-            plot_type = self.plot_type
-        #If the plot_type is not blank, use it for all series.
-        if plot_type != "":
-            self.set_plot_type_all_series(plot_type)
-        else: #if the plot_type is blank, then we will go through each data series and update them individually.
+        if trace_type == None: 
+            trace_type = self.fig_dict.get("plot_type", '')
+        #If the trace_type is not blank, use it for all series.
+        if trace_type != "":
+            self.set_trace_type_all_series(trace_type)
+        else: #if the trace_type is blank, then we will go through each data series and update them individually.
             for data_series_index, data_series_dict in enumerate(self.fig_dict['data']):
-                #This will update the data_series_dict as needed, putting a plot_type if there is not one.
+                #This will update the "type" fields in the data_series_dict as needed, putting a "type" field in them if there is not one.
                 data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict)
                 self.fig_dict['data'][data_series_index] = data_series_dict
  
@@ -669,26 +735,76 @@ class JSONGrapherRecord:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 
+    def choose_plot_style(self, style_to_apply=''):
+        """
+        Determine the appropriate plot style based on input style or existing figure dictionary settings.
+
+        :param self.fig_dict: dict, A Plotly figure dictionary that may contain "plot_style".
+        :param style_to_apply: str, The style to apply. If empty, it checks for an existing style in fig_dict.
+        :return: dict with "layout_style" and "data_series_style", ensuring defaults if missing.
+        """
+        if style_to_apply == '':
+            # First, check if fig_dict has any plot_style already specified.
+            plot_style = self.fig_dict.get("plot_style", '')  # Return a blank string if the field is not present.
+            # Parse the existing plot style (ensures it's structured properly)
+            plot_style = parse_plot_style(plot_style)
+            # Ensure defaults for blank values
+            if plot_style["layout_style"] == '':
+                plot_style["layout_style"] = 'default'
+            if plot_style["data_series_style"] == '':
+                plot_style["data_series_style"] = 'default'
+        else:
+            # Use the provided style directly
+            plot_style = parse_plot_style(style_to_apply)
+        return plot_style
+
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, simulate_all_series = True, update_and_validate=True):
+    def get_plotly_fig(self, style_to_apply='', update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+        """
+        Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
+        By default, it will apply the default still hard coded into jsongrapher.
+
+        Args:
+            style_to_apply: String of style to apply. Use '' to skip applying a style, or provide a list of length two containing both a layout style and a data series style
+            simulate_all_series (bool): If True, performs simulations for applicable series.
+            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
+            evaluate_all_equations (bool): If True, evaluates all equation-based series.
+            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+
+        Returns:
+            plotly Figure: A validated Plotly figure object based on fig_dict.
+        """
         import plotly.io as pio
         import copy
-        if simulate_all_series == True:
-            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
-        original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.
-        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
+        #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
+        self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
+                                                                simulate_all_series=simulate_all_series, 
+                                                                evaluate_all_equations=evaluate_all_equations, 
+                                                                adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+        #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
+        original_fig_dict = copy.deepcopy(self.fig_dict) 
+        #before cleaning and validating, we'll apply styles.
+        plot_style = self.choose_plot_style(style_to_apply=style_to_apply)
+        self.apply_style(style_to_apply=plot_style)
+        #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
-            self.update_and_validate_JSONGrapher_record()
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons'])
+            self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_type'])
         fig = pio.from_json(json.dumps(self.fig_dict))
-        self.fig_dict = original_fig_dict #restore the original fig_dict.
+        #restore the original fig_dict.
+        self.fig_dict = original_fig_dict 
         return fig
 
     #simulate all series will simulate any series as needed.
-    def plot_with_plotly(self, simulate_all_series = True, update_and_validate=True):
-        fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)
+    def plot_with_plotly(self, style_to_apply='', update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        fig = self.get_plotly_fig(style_to_apply=style_to_apply,
+                                  simulate_all_series=simulate_all_series, 
+                                  update_and_validate=update_and_validate, 
+                                  evaluate_all_equations=evaluate_all_equations, 
+                                  adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         fig.show()
         #No need for fig.close() for plotly figures.
+
 
     #simulate all series will simulate any series as needed.
     def export_to_plotly_png(self, filename, simulate_all_series = True, update_and_validate=True, timeout=10):
@@ -720,23 +836,44 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, simulate_all_series = True, update_and_validate=True):
+    def get_matplotlib_fig(self, style_to_apply='', update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+        """
+        Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
+
+        Args:
+            simulate_all_series (bool): If True, performs simulations for applicable series.
+            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
+            evaluate_all_equations (bool): If True, evaluates all equation-based series.
+            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+
+        Returns:
+            plotly Figure: A validated matplotlib figure object based on fig_dict.
+        """
         import copy
-        #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out.
-        if simulate_all_series == True:
-            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
+        self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
+                                                                simulate_all_series=simulate_all_series, 
+                                                                evaluate_all_equations=evaluate_all_equations, 
+                                                                adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+        #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
+        #before cleaning and validating, we'll apply styles.
+        plot_style = self.choose_plot_style(style_to_apply=style_to_apply)
+        self.apply_style(style_to_apply=plot_style)
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_type'])
         fig = convert_JSONGrapher_dict_to_matplotlib_fig(self.fig_dict)
         self.fig_dict = original_fig_dict #restore the original fig_dict.
         return fig
 
     #simulate all series will simulate any series as needed.
-    def plot_with_matplotlib(self, simulate_all_series = True, update_and_validate=True):
+    def plot_with_matplotlib(self, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         import matplotlib.pyplot as plt
-        fig = self.get_matplotlib_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)
+        fig = self.get_matplotlib_fig(simulate_all_series=simulate_all_series, 
+                                      update_and_validate=update_and_validate, 
+                                      evaluate_all_equations=evaluate_all_equations, 
+                                      adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         plt.show()
         plt.close(fig) #remove fig from memory.
 
@@ -812,8 +949,18 @@ class JSONGrapherRecord:
                         current_field[current_path_key] = ""
 
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
-    def apply_style(self, style_name):
-        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, style_name=style_name)
+    def apply_layout_style(self, layout_style_to_apply=''):
+        self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
+    def apply_style(self, style_to_apply=''): 
+        #the style_to_apply can be a string, or a plot_style dictionary {"layout_style":"default", "data_series_style":"default"} or a list of length two with those two items.
+        #The plot_style dictionary can include a pair of dictionaries.
+        #if apply style is called directly, we will first put the style_to_apply into the plot_style field
+        #This way, the style will stay.
+        self.fig_dict['plot_style'] = style_to_apply
+        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, style_to_apply=style_to_apply)
+    def remove_style(self):
+        self.fig_dict.pop("plot_style")
+        self.fig_dict = remove_style_from_plotly_dict(self.fig_dict)
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -1038,24 +1185,24 @@ def parse_units(value):
     return parsed_output
 
 
-#This function sets the plot_type of a data_series_dict
+#This function sets the trace_type of a data_series_dict
 #based on some JSONGrapher options.
-#It calls "plot_type_to_field_values" 
+#It calls "trace_type_to_field_values" 
 #and then updates the data_series_dict accordingly, as needed.
-def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
-    if plot_type == "":
-        plot_type = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
-    #We need to be careful about one case: in plotly, a "spline" is declared a scatter plot with data.line.shape = spline. 
-    #So we need to check if we have spline set, in which case we make the plot_type scatter_spline when calling plot_type_to_field_values.
-    shape_field = data_series_dict.get('line', {}).get('shape', '') #get will return first argument if there, second if not, so can chain things.
-    #TODO: need to distinguish between "spline" and "scatter_spline" by checking for marker instructions.
-    if shape_field == 'spline':
-        plot_type = 'scatter_spline' 
-    if shape_field == 'linear':
-        plot_type = 'scatter_line' 
-    fields_dict = plot_type_to_field_values(plot_type)
- 
-    
+def set_data_series_dict_plot_type(data_series_dict, trace_type=""):
+    if trace_type == "":
+        #Some logic to "guess" what the user wants if no trace_type is provided.
+        #We need to be careful about one case: in plotly, a "spline" is declared a scatter plot with data.line.shape = spline. 
+        #So we need to check if we have spline set, in which case we make the trace_type scatter_spline.
+        shape_field = data_series_dict.get('line', {}).get('shape', '') #get will return first argument if there, second if not, so can chain things.
+        if shape_field == 'spline': #Enchancement: distinguish between "spline" and "scatter_spline" by checking for marker instructions.
+            trace_type = 'scatter_spline' 
+        elif shape_field == 'linear':
+            trace_type = 'scatter_line' 
+        else:
+            trace_type = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
+
+    fields_dict = trace_type_to_field_values(trace_type)
     #update the data_series_dict.
     if fields_dict.get("mode_field"):
         data_series_dict["mode"] = fields_dict["mode_field"]
@@ -1066,37 +1213,37 @@ def set_data_series_dict_plot_type(data_series_dict, plot_type=""):
         data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
     return data_series_dict
 
-#This function creates a fields_dict for the function set_data_series_dict_plot_type
-def plot_type_to_field_values(plot_type):
+#This function creates a fields_dict for the function set_data_series_dict_trace_type
+def trace_type_to_field_values(trace_type):
     """
-    Takes in a string that is a plot type, such as "scatter", "scatter_spline", etc.
+    Takes in a string that is a trace_type, such as "scatter", "scatter_spline", etc.
     and returns the field values that would have to go into a plotly data object.
 
     Returns:
         dict: A dictionary with keys and values for the fields that will be ultimately filled.
 
-    To these fields are used in the function set_plot_type_one_data_series
+    To these fields are used in the function set_trace_type_one_data_series
 
     """
     fields_dict = {}
     #initialize some variables.
-    fields_dict["type_field"] = plot_type.lower()
+    fields_dict["type_field"] = trace_type.lower()
     fields_dict["mode_field"] = None
     fields_dict["line_shape_field"] = None
     # Assign the various types. This list of values was determined 'manually'.
-    if plot_type.lower() == ("scatter" or "markers"):
+    if trace_type.lower() == ("scatter" or "markers"):
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = "markers"
         fields_dict["line_shape_field"] = None
-    elif plot_type.lower() == "scatter_spline":
+    elif trace_type.lower() == "scatter_spline":
         fields_dict["type_field"] = "scatter"
         fields_dict["mode_field"] = None
         fields_dict["line_shape_field"] = "spline"
-    elif plot_type.lower() == "spline":
+    elif trace_type.lower() == "spline":
         fields_dict["type_field"] = 'scatter'
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "spline"
-    elif plot_type.lower() == "scatter_line":
+    elif trace_type.lower() == "scatter_line":
         fields_dict["type_field"] = 'scatter'
         fields_dict["mode_field"] = 'lines'
         fields_dict["line_shape_field"] = "linear"
@@ -1236,6 +1383,80 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
     return smoothed_x, smoothed_y
 
 
+## Start of Section of Code for Styles and Converting between plotly and matplotlib Fig objectss ##
+
+'''
+#There are a few things to know about the styles logic of JSONGrapher:
+(1) There are actually two parts to the plot_style: a layout_style for the graph and a data_series_style which will get applied to the individual dataseries.
+   So the plot_style is really supposed to be a dictionary with {"layout_style":"default", "data_series_style":"default"} that way it is JSON compatible and avoids ambiguity. 
+   A person can pass in dictionaries for layout_style and for data_series_style and thereby create custom styles.
+   There are helper functions to extract style dictionaries once a person has a JSONGrapher record which they're happy with.
+(2) We parse what the person provides as a style, so we accept things other than the ideal plot_style dictionary format.  
+   If someone provides a single string, we'll use it for both layout_style and data_series_style.
+   If we get a list of two, we'll expect that to be in the order of layout_style then data_series_style
+   If we get a string that we can't find in the existing styles list, then we'll use the default. 
+(1) by default, export to json will *not* include plot_styles.  include_formatting will be an optional argument. 
+(2) There is an apply_style function which will first put the style into self.fig_dict['plot_style'] so it stays there, before applying the style.
+(3) For the plotting functions, they will have style_to_apply = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
+    If somebody passes in a "None" type or the word none, then *no* style changes will be applied during plotting, relative to what the record already has.
+    One can pass a style in for the plotting functions. In those cases, we'll use the remove style option, then apply.
+'''
+
+def parse_plot_style(plot_style):
+    """
+    Parse the given plot style and return a structured dictionary for layout and data series styles.
+
+    :param plot_style: None, str, list of two items, or a dictionary with at least one valid field.
+    :return: dict with "layout_style" and "data_series_style", ensuring defaults if missing.
+    """
+    if plot_style is None:
+        parsed_plot_style = {"layout_style": None, "data_series_style": None}
+    elif isinstance(plot_style, str):
+        parsed_plot_style = {"layout_style": plot_style, "data_series_style": plot_style}
+    elif isinstance(plot_style, list) and len(plot_style) == 2:
+        parsed_plot_style = {"layout_style": plot_style[0], "data_series_style": plot_style[1]}
+    elif isinstance(plot_style, dict):
+        parsed_plot_style = {
+            "layout_style": plot_style.get("layout_style", None),
+            "data_series_style": plot_style.get("data_series_style", None),
+        }
+    else:
+        raise ValueError("Invalid plot style: Must be None, a string, a list of two items, or a dictionary with valid fields.")
+    return parsed_plot_style
+
+#this function uses a stylename or list of stylename/dictionaries to apply *both* layout_style and data_series_style
+#plot_style is a dictionary of form {"layout_style":"default", "data_series_style":"default"}
+#However, the style_to_apply does not need to be passed in as a dictionary.
+#For example: style_to_apply = ['default', 'default'] or style_to_apply = 'science'.
+def apply_style_to_plotly_dict(fig_dict, style_to_apply=''):
+    #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "data_series_style":"default"}
+    plot_style = parse_plot_style(style_to_apply)
+    #Block for layout style.
+    if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
+        if plot_style["layout_style"] == '': #in this case, we're going to use the default.
+            plot_style["layout_style"] = 'default'
+        fig_dict = remove_layout_style_from_plotly_dict(fig_dict=fig_dict)
+        fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=plot_style["layout_style"])
+    #Block for data_series_style style.
+    if str(plot_style["data_series_style"]).lower() != 'none': #take no action if received "None" or NoneType
+        if plot_style["data_series_style"] == '': #in this case, we're going to use the default.
+            plot_style["data_series_style"] = 'default'            
+        fig_dict = remove_data_series_style_from_plotly_dict(fig_dict=fig_dict)
+        fig_dict = apply_data_series_style_to_plotly_dict(fig_dict=fig_dict,data_series_style_to_apply=plot_style["data_series_style"])
+    return fig_dict
+
+def remove_style_from_plotly_dict(fig_dict):
+    """
+    Remove both layout and data series styles from a Plotly figure dictionary.
+
+    :param fig_dict: dict, Plotly style fig_dict
+    :return: dict, Updated Plotly style fig_dict with default formatting.
+    """
+    fig_dict = remove_layout_style_from_plotly_dict(fig_dict)
+    fig_dict = remove_data_series_style_from_plotly_dict(fig_dict)
+    return fig_dict
+
+
 def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     """
     Converts a Plotly figure dictionary into a Matplotlib figure without using pio.from_json.
@@ -1306,9 +1527,6 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     return fig
     
 
-
-
-
 #The below function works, but because it depends on the python plotly package, we avoid using it
 #To decrease the number of dependencies. 
 def convert_plotly_dict_to_matplotlib(fig_dict):
@@ -1326,7 +1544,7 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
         matplotlib.figure.Figure: The corresponding Matplotlib figure.
     """
     import plotly.io as pio
-
+    import matplotlib.pyplot as plt
     # Convert JSON dictionary into a Plotly figure
     plotly_fig = pio.from_json(json.dumps(fig_dict))
 
@@ -1356,51 +1574,802 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
     ax.set_ylabel(plotly_fig.layout.yaxis.title.text if plotly_fig.layout.yaxis.title else "Y-Axis")
 
     return fig
-    
 
-def apply_style_to_plotly_dict(plotly_json, style_name):
+
+
+
+def apply_data_series_style_to_plotly_dict(fig_dict, data_series_style_to_apply="default"):
     """
-    Apply a predefined style to a Plotly JSON object based on a style name which may be a journal name.
+    Iterates over all traces in the `data` list of a Plotly figure dictionary 
+    and applies styles to each one.
+
+    Args:
+        fig_dict (dict): A dictionary containing a `data` field with Plotly traces.
+        style_to_apply (str): Optional style preset to apply. Default is "default".
+
+    Returns:
+        dict: Updated Plotly figure dictionary with defaults applied to each trace.
+
+    """
+    if (data_series_style_to_apply == '') or (str(data_series_style_to_apply).lower() == 'none'):
+        return fig_dict    
+    if isinstance(fig_dict, dict):
+        if "data" in fig_dict and isinstance(fig_dict["data"], list):
+            fig_dict["data"] = [apply_data_series_style_to_single_data_series(trace, data_series_style_to_apply) for trace in fig_dict["data"]]
+            return fig_dict
+    elif isinstance(fig_dict, list):
+        data_list = fig_dict #assume we've received the data_seres_list rather than a fig_dict.
+        data_list = [apply_data_series_style_to_single_data_series(trace, data_series_style_to_apply) for trace in fig_dict["data"]]
+        return data_list
+    elif not isinstance(fig_dict, dict):
+        return fig_dict  # Return unchanged if the input is invalid.
+
+#The logic in JSONGrapher is to apply the style information but to treat "type" differently 
+#Accordingly, we use 'trace_type' as a field in JSONGrapher for each data_series.
+#compared to how plotly treats 'type' for a data series. So later in the process, when actually plotting with plotly, the 'type' field will get overwritten.
+def apply_data_series_style_to_single_data_series(data_series, data_series_style_to_apply="default"):
+    """
+    Applies predefined styles to a single Plotly data series while preserving relevant fields.
+
+    Args:
+        data_series (dict): A dictionary representing a single Plotly data series.
+        data_series_style_to_apply (str or dict): Name of the style preset or a custom style dictionary. Default is "default".
+
+    Returns:
+        dict: Updated data series with style applied.
+    """
+    if (data_series_style_to_apply == '') or (str(data_series_style_to_apply).lower() == 'none'):
+        return data_series    
+    if not isinstance(data_series, dict):
+        return data_series  # Return unchanged if the data series is invalid.
+    if (data_series_style_to_apply.lower() == "nature") or (data_series_style_to_apply.lower() == "science"):
+        data_series_style_to_apply = "default"
+    # -------------------------------
+    # Predefined data series styles
+    # -------------------------------
+    # Each style is defined as a dictionary containing multiple plot types.
+    # Users can select a style preset (e.g., "default", "minimalist", "bold"),
+    # and the function will apply appropriate settings for the given plot type.
+    #
+    # Supported plot types:
+    # - "scatter_spline" (default when type is not specified)
+    # - "scatter"
+    # - "spline"
+    # - "bar"
+    # - "heatmap"
+    #
+    # Note: Colors are intentionally omitted to allow users to define their own.
+    # However, predefined colorscales are applied for heatmaps.
     
-    :param plotly_json: dict, Plotly JSON object.
-    :param style_name: str, Name of the style or journal.
-    :return: dict, Updated Plotly JSON object.
-    """
     styles_available = {
-        "Nature": {
-            "layout": {
-                "title": {"font": {"size": 24, "family": "Times New Roman", "color": "black"}},
-                "font": {"size": 18, "family": "Times New Roman"},
-                "paper_bgcolor": "white",
-                "plot_bgcolor": "white",
+        "default": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},  # Hide markers for smooth curves
+            },
+            "bar": {
+                "type": "bar",
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
             }
         },
-        "Science": {
-            "layout": {
-                "title": {"font": {"size": 22, "family": "Arial", "color": "black"}},
-                "font": {"size": 16, "family": "Arial"},
-                "paper_bgcolor": "white",
-                "plot_bgcolor": "white",
+        "minimalist": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 1},
+                "marker": {"size": 6},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "linear", "width": 1},
+                "marker": {"size": 0},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 1},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "bar",
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Greys",
+            }
+        },
+        "bold": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 12},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "bar",
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Jet",
+            }
+        },
+                "scatter": { #this style forces all traces into scatter.
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        },
+        "scatter_spline": { #this style forces all traces into scatter_spline
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        },
+        "scatter_spline": { #this style forces all traces into spline only
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
             }
         }
     }
 
-    # Get the style for the specified journal, default to no change if not found
-    style_dict = styles_available.get(style_name, {})
+    # Get the appropriate style dictionary
+    if isinstance(data_series_style_to_apply, dict):
+        style_dict = data_series_style_to_apply  # Use custom style directly
+    else:
+        style_dict = styles_available.get(data_series_style_to_apply, {})
+        if not style_dict:  # Check if it's an empty dictionary
+            print(f"Warning: Style named '{data_series_style_to_apply}' not found for individual data series. Using 'default' data_series style instead.")
+            style_dict = styles_available.get("default", {})
+    # Determine the trace_type, defaulting to the first item in a given style if none is provided.
+    trace_type = data_series.get("trace_type", "")
+    if trace_type == "":
+        trace_type = list(style_dict.keys())[0] #take the first trace_type in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
     
-    # Ensure title field is merged properly to avoid overwriting
-    plotly_json.setdefault("layout", {})
-    plotly_json["layout"].setdefault("title", {})
+    # Retrieve the specific style for the plot type
+    trace_style = style_dict.get(trace_type, {})
+    # Apply type and other predefined settings
+    data_series["type"] = trace_style.get("type", data_series.get("type", trace_type))
+    # Apply other attributes while preserving existing values
+    for key, value in trace_style.items():
+        if key not in ["type"]:
+            if isinstance(value, dict):  # Ensure value is a dictionary
+                data_series.setdefault(key, {}).update(value)
+            else:
+                data_series[key] = value  # Direct assignment for non-dictionary values
+    return data_series
+
+def remove_data_series_style_from_plotly_dict(fig_dict):
+    """
+    Remove applied data series styles from a Plotly figure dictionary.
     
-    # Merge title settings separately to preserve existing text
-    plotly_json["layout"]["title"] = {**plotly_json["layout"]["title"], **style_dict.get("layout", {}).get("title", {})}
+    :param fig_dict: dict, Plotly style fig_dict
+    :return: dict, Updated Plotly style fig_dict with default formatting.
+    """
+    if isinstance(fig_dict, dict) and "data" in fig_dict and isinstance(fig_dict["data"], list):
+        fig_dict["data"] = [remove_data_series_style_from_single_data_series(trace) for trace in fig_dict["data"]]
+    return fig_dict
+
+def remove_data_series_style_from_single_data_series(data_series):
+    """
+    Remove only formatting fields from a single Plotly data series while preserving all other fields.
+
+    Note: Since fig_dict data objects may contain custom fields (e.g., "equation", "metadata"),
+    this function explicitly removes predefined **formatting** attributes while leaving all other data intact.
+
+    :param data_series: dict, A dictionary representing a single Plotly data series.
+    :return: dict, Updated data series with formatting fields removed but key data retained.
+    """
+
+    if not isinstance(data_series, dict):
+        return data_series  # Return unchanged if input is invalid.
+
+    # **Define formatting fields to remove**
+    formatting_fields = {
+        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
+        "legendgroup", "showlegend", "textposition", "textfont"
+    }
+
+    # **Create a new data series excluding only formatting fields**
+    cleaned_data_series = {key: value for key, value in data_series.items() if key not in formatting_fields}
+
+    return cleaned_data_series
+
+
+
+def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default"):
+    """
+    Apply a predefined style to a Plotly fig_dict while preserving non-cosmetic fields.
     
-    # Merge other layout settings
-    for key, value in style_dict.get("layout", {}).items():
-        if key != "title":  # Skip title since it was handled separately
-            plotly_json["layout"][key] = value
+    :param fig_dict: dict, Plotly style fig_dict
+    :param layout_style_to_apply: str, Name of the style or journal, or a style dictionary to apply.
+    :return: dict, Updated Plotly style fig_dict.
+    """
+    if (layout_style_to_apply == '') or (str(layout_style_to_apply).lower() == 'none'):
+        return fig_dict
+
+    if (layout_style_to_apply.lower() == "minimalist") or (layout_style_to_apply.lower() == "bold"):
+        layout_style_to_apply = "default"
+
+    styles_available = {
+        "default": {
+            "layout": {
+                "title": {"font": {"size": 32}, "x": 0.5},
+                "xaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
+                "yaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
+                "legend": {
+                    "title": {"font": {"size": 22}},
+                    "font": {"size": 22}
+                }
+            }
+        },
+        "Nature": {
+            "layout": {
+                "title": {"font": {"size": 32, "family": "Times New Roman", "color": "black"}},
+                "font": {"size": 25, "family": "Times New Roman"},
+                "paper_bgcolor": "white",
+                "plot_bgcolor": "white",
+                "xaxis": {
+                    "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
+                },
+                "yaxis": {
+                    "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
+                }
+            }
+        },
+        "Science": {
+            "layout": {
+                "title": {"font": {"size": 32, "family": "Arial", "color": "black"}},
+                "font": {"size": 25, "family": "Arial"},
+                "paper_bgcolor": "white",
+                "plot_bgcolor": "white",
+                "xaxis": {
+                    "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
+                },
+                "yaxis": {
+                    "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
+                }
+            }
+        }
+    }
+
+    # Use or get the style specified, or use default if not found
+    if isinstance(layout_style_to_apply, dict):
+        style_dict = layout_style_to_apply
+    else:
+        style_dict = styles_available.get(layout_style_to_apply, {})
+        if not style_dict:  # Check if it's an empty dictionary
+            print(f"Warning: Style named '{layout_style_to_apply}' not found for layout. Using 'default' layout style instead.")
+            style_dict = styles_available.get("default", {})
+
+    # Ensure layout exists in the figure
+    fig_dict.setdefault("layout", {})
+
+    # **Extract non-cosmetic fields**
+    non_cosmetic_fields = {
+        "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
+        "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
+        "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
+        "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
+        "annotations.text": [
+            annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])
+        ],
+        "updatemenus.buttons.label": [
+            button.get("label", None) for menu in fig_dict.get("layout", {}).get("updatemenus", [])
+            for button in menu.get("buttons", [])
+        ],
+        "coloraxis.colorbar.title.text": fig_dict.get("layout", {}).get("coloraxis", {}).get("colorbar", {}).get("title", {}).get("text", None),
+    }
+
+    # **Apply style dictionary to create a fresh layout object**
+    new_layout = style_dict.get("layout", {}).copy()
+
+    # **Restore non-cosmetic fields**
+    if non_cosmetic_fields["title.text"]:
+        new_layout.setdefault("title", {})["text"] = non_cosmetic_fields["title.text"]
+
+    if non_cosmetic_fields["xaxis.title.text"]:
+        new_layout.setdefault("xaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["xaxis.title.text"]
+
+    if non_cosmetic_fields["yaxis.title.text"]:
+        new_layout.setdefault("yaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["yaxis.title.text"]
+
+    if non_cosmetic_fields["legend.title.text"]:
+        new_layout.setdefault("legend", {}).setdefault("title", {})["text"] = non_cosmetic_fields["legend.title.text"]
+
+    if non_cosmetic_fields["annotations.text"]:
+        new_layout["annotations"] = [{"text": text} for text in non_cosmetic_fields["annotations.text"]]
+
+    if non_cosmetic_fields["updatemenus.buttons.label"]:
+        new_layout["updatemenus"] = [{"buttons": [{"label": label} for label in non_cosmetic_fields["updatemenus.buttons.label"]]}]
+
+    if non_cosmetic_fields["coloraxis.colorbar.title.text"]:
+        new_layout.setdefault("coloraxis", {}).setdefault("colorbar", {})["title"] = {"text": non_cosmetic_fields["coloraxis.colorbar.title.text"]}
+
+    # **Assign the new layout back into the figure dictionary**
+    fig_dict["layout"] = new_layout
+
+    return fig_dict
+
+def remove_layout_style_from_plotly_dict(fig_dict):
+    """
+    Remove applied layout styles from a Plotly figure dictionary while preserving essential content.
+
+    :param fig_dict: dict, Plotly style fig_dict
+    :return: dict, Updated Plotly style fig_dict with styles removed but key data intact.
+    """
+    if "layout" in fig_dict:
+        style_keys = ["font", "paper_bgcolor", "plot_bgcolor", "gridcolor", "gridwidth", "tickfont", "linewidth"]
+
+        # **Store non-cosmetic fields if present, otherwise assign None**
+        non_cosmetic_fields = {
+            "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
+            "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
+            "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
+            "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
+            "annotations.text": [annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])],
+            "updatemenus.buttons.label": [
+                button.get("label", None) for menu in fig_dict.get("layout", {}).get("updatemenus", [])
+                for button in menu.get("buttons", [])
+            ],
+            "coloraxis.colorbar.title.text": fig_dict.get("layout", {}).get("coloraxis", {}).get("colorbar", {}).get("title", {}).get("text", None),
+        }
+
+        # Preserve title text while removing font styling
+        if "title" in fig_dict["layout"] and isinstance(fig_dict["layout"]["title"], dict):
+            fig_dict["layout"]["title"] = {"text": non_cosmetic_fields["title.text"]} if non_cosmetic_fields["title.text"] is not None else {}
+
+        # Preserve axis titles while stripping font styles
+        for axis in ["xaxis", "yaxis"]:
+            if axis in fig_dict["layout"] and isinstance(fig_dict["layout"][axis], dict):
+                if "title" in fig_dict["layout"][axis] and isinstance(fig_dict["layout"][axis]["title"], dict):
+                    fig_dict["layout"][axis]["title"] = {"text": non_cosmetic_fields[f"{axis}.title.text"]} if non_cosmetic_fields[f"{axis}.title.text"] is not None else {}
+
+                # Remove style-related attributes but keep axis configurations
+                for key in style_keys:
+                    fig_dict["layout"][axis].pop(key, None)
+
+        # Preserve legend title text while stripping font styling
+        if "legend" in fig_dict["layout"] and isinstance(fig_dict["layout"]["legend"], dict):
+            if "title" in fig_dict["layout"]["legend"] and isinstance(fig_dict["layout"]["legend"]["title"], dict):
+                fig_dict["layout"]["legend"]["title"] = {"text": non_cosmetic_fields["legend.title.text"]} if non_cosmetic_fields["legend.title.text"] is not None else {}
+            fig_dict["layout"]["legend"].pop("font", None)
+
+        # Preserve annotations text while stripping style attributes
+        if "annotations" in fig_dict["layout"]:
+            fig_dict["layout"]["annotations"] = [
+                {"text": text} if text is not None else {} for text in non_cosmetic_fields["annotations.text"]
+            ]
+
+        # Preserve update menu labels while stripping styles
+        if "updatemenus" in fig_dict["layout"]:
+            for menu in fig_dict["layout"]["updatemenus"]:
+                for i, button in enumerate(menu.get("buttons", [])):
+                    button.clear()
+                    if non_cosmetic_fields["updatemenus.buttons.label"][i] is not None:
+                        button["label"] = non_cosmetic_fields["updatemenus.buttons.label"][i]
+
+        # Preserve color bar title while stripping styles
+        if "coloraxis" in fig_dict["layout"] and "colorbar" in fig_dict["layout"]["coloraxis"]:
+            fig_dict["layout"]["coloraxis"]["colorbar"]["title"] = {"text": non_cosmetic_fields["coloraxis.colorbar.title.text"]} if non_cosmetic_fields["coloraxis.colorbar.title.text"] is not None else {}
+
+        # Remove general style settings without clearing layout structure
+        for key in style_keys:
+            fig_dict["layout"].pop(key, None)
+
+    return fig_dict
+
+def extract_layout_style_from_plotly_dict(fig_dict):
+    """
+    Extract a layout style dictionary from a given Plotly JSON object, including background color, grids, and other appearance attributes.
+
+    :param fig_dict: dict, Plotly JSON object.
+    :return: dict, Extracted style settings.
+    """
+
+
+    # **Extraction Phase** - Collect cosmetic fields if they exist
+    layout = fig_dict.get("layout", {})
+
+    # Note: Each assignment below will return None if the corresponding field is missing
+    title_font = layout.get("title", {}).get("font")
+    title_x = layout.get("title", {}).get("x")
+    title_y = layout.get("title", {}).get("y")
+
+    global_font = layout.get("font")
+    paper_bgcolor = layout.get("paper_bgcolor")
+    plot_bgcolor = layout.get("plot_bgcolor")
+    margin = layout.get("margin")
+
+    # Extract x-axis cosmetic fields
+    xaxis_title_font = layout.get("xaxis", {}).get("title", {}).get("font")
+    xaxis_tickfont = layout.get("xaxis", {}).get("tickfont")
+    xaxis_gridcolor = layout.get("xaxis", {}).get("gridcolor")
+    xaxis_gridwidth = layout.get("xaxis", {}).get("gridwidth")
+    xaxis_zerolinecolor = layout.get("xaxis", {}).get("zerolinecolor")
+    xaxis_zerolinewidth = layout.get("xaxis", {}).get("zerolinewidth")
+    xaxis_tickangle = layout.get("xaxis", {}).get("tickangle")
+
+    # **Set flag for x-axis extraction**
+    xaxis = any([
+        xaxis_title_font, xaxis_tickfont, xaxis_gridcolor, xaxis_gridwidth,
+        xaxis_zerolinecolor, xaxis_zerolinewidth, xaxis_tickangle
+    ])
+
+    # Extract y-axis cosmetic fields
+    yaxis_title_font = layout.get("yaxis", {}).get("title", {}).get("font")
+    yaxis_tickfont = layout.get("yaxis", {}).get("tickfont")
+    yaxis_gridcolor = layout.get("yaxis", {}).get("gridcolor")
+    yaxis_gridwidth = layout.get("yaxis", {}).get("gridwidth")
+    yaxis_zerolinecolor = layout.get("yaxis", {}).get("zerolinecolor")
+    yaxis_zerolinewidth = layout.get("yaxis", {}).get("zerolinewidth")
+    yaxis_tickangle = layout.get("yaxis", {}).get("tickangle")
+
+    # **Set flag for y-axis extraction**
+    yaxis = any([
+        yaxis_title_font, yaxis_tickfont, yaxis_gridcolor, yaxis_gridwidth,
+        yaxis_zerolinecolor, yaxis_zerolinewidth, yaxis_tickangle
+    ])
+
+    # Extract legend styling
+    legend_font = layout.get("legend", {}).get("font")
+    legend_x = layout.get("legend", {}).get("x")
+    legend_y = layout.get("legend", {}).get("y")
+
+    # **Assignment Phase** - Reconstruct dictionary in a structured manner
+    extracted_layout_style = {"layout": {}}
+
+    if title_font or title_x:
+        extracted_layout_style["layout"]["title"] = {}
+        if title_font:
+            extracted_layout_style["layout"]["title"]["font"] = title_font
+        if title_x:
+            extracted_layout_style["layout"]["title"]["x"] = title_x
+        if title_y:
+            extracted_layout_style["layout"]["title"]["y"] = title_y
+
+    if global_font:
+        extracted_layout_style["layout"]["font"] = global_font
+
+    if paper_bgcolor:
+        extracted_layout_style["layout"]["paper_bgcolor"] = paper_bgcolor
+    if plot_bgcolor:
+        extracted_layout_style["layout"]["plot_bgcolor"] = plot_bgcolor
+    if margin:
+        extracted_layout_style["layout"]["margin"] = margin
+
+    if xaxis:
+        extracted_layout_style["layout"]["xaxis"] = {}
+        if xaxis_title_font:
+            extracted_layout_style["layout"]["xaxis"]["title"] = {"font": xaxis_title_font}
+        if xaxis_tickfont:
+            extracted_layout_style["layout"]["xaxis"]["tickfont"] = xaxis_tickfont
+        if xaxis_gridcolor:
+            extracted_layout_style["layout"]["xaxis"]["gridcolor"] = xaxis_gridcolor
+        if xaxis_gridwidth:
+            extracted_layout_style["layout"]["xaxis"]["gridwidth"] = xaxis_gridwidth
+        if xaxis_zerolinecolor:
+            extracted_layout_style["layout"]["xaxis"]["zerolinecolor"] = xaxis_zerolinecolor
+        if xaxis_zerolinewidth:
+            extracted_layout_style["layout"]["xaxis"]["zerolinewidth"] = xaxis_zerolinewidth
+        if xaxis_tickangle:
+            extracted_layout_style["layout"]["xaxis"]["tickangle"] = xaxis_tickangle
+
+    if yaxis:
+        extracted_layout_style["layout"]["yaxis"] = {}
+        if yaxis_title_font:
+            extracted_layout_style["layout"]["yaxis"]["title"] = {"font": yaxis_title_font}
+        if yaxis_tickfont:
+            extracted_layout_style["layout"]["yaxis"]["tickfont"] = yaxis_tickfont
+        if yaxis_gridcolor:
+            extracted_layout_style["layout"]["yaxis"]["gridcolor"] = yaxis_gridcolor
+        if yaxis_gridwidth:
+            extracted_layout_style["layout"]["yaxis"]["gridwidth"] = yaxis_gridwidth
+        if yaxis_zerolinecolor:
+            extracted_layout_style["layout"]["yaxis"]["zerolinecolor"] = yaxis_zerolinecolor
+        if yaxis_zerolinewidth:
+            extracted_layout_style["layout"]["yaxis"]["zerolinewidth"] = yaxis_zerolinewidth
+        if yaxis_tickangle:
+            extracted_layout_style["layout"]["yaxis"]["tickangle"] = yaxis_tickangle
+
+    if legend_font or legend_x or legend_y:
+        extracted_layout_style["layout"]["legend"] = {}
+        if legend_font:
+            extracted_layout_style["layout"]["legend"]["font"] = legend_font
+        if legend_x:
+            extracted_layout_style["layout"]["legend"]["x"] = legend_x
+        if legend_y:
+            extracted_layout_style["layout"]["legend"]["y"] = legend_y
+
+    return extracted_layout_style
+
+## Start of Section of Code for Styles and Converting between plotly and matplotlib Fig objectss ##
+
+### Start of section of code with functions for extracting and updating x and y ranges of data series ###
+
+def update_implicit_data_series_x_ranges(fig_dict, range_dict):
+    """
+    Updates the x_range_default values for all simulate and equation data series 
+    in a given figure dictionary using the provided range dictionary.
+
+    Args:
+        fig_dict (dict): The original figure dictionary containing various data series.
+        range_dict (dict): A dictionary with keys "min_x" and "max_x" providing the 
+                           global minimum and maximum x values for updates.
+
+    Returns:
+        dict: A new figure dictionary with updated x_range_default values for 
+              equation and simulate series, while keeping other data unchanged.
     
-    return plotly_json
+    Notes:
+        - If min_x or max_x in range_dict is None, the function preserves the 
+          existing x_range_default values instead of overwriting them.
+        - Uses deepcopy to ensure modifications do not affect the original fig_dict.
+    """
+    import copy  # Import inside function to limit scope
+
+    updated_fig_dict = copy.deepcopy(fig_dict)  # Deep copy avoids modifying original data
+
+    min_x = range_dict["min_x"]
+    max_x = range_dict["max_x"]
+
+    for data_series in updated_fig_dict.get("data", []):
+        if "equation" in data_series:
+            equation_info = data_series["equation"]
+
+            # Determine valid values before assignment
+            min_x_value = min_x if (min_x is not None) else equation_info.get("x_range_default", [None, None])[0]
+            max_x_value = max_x if (max_x is not None) else equation_info.get("x_range_default", [None, None])[1]
+
+            # Assign updated values
+            equation_info["x_range_default"] = [min_x_value, max_x_value]
+        
+        elif "simulate" in data_series:
+            simulate_info = data_series["simulate"]
+
+            # Determine valid values before assignment
+            min_x_value = min_x if (min_x is not None) else simulate_info.get("x_range_default", [None, None])[0]
+            max_x_value = max_x if (max_x is not None) else simulate_info.get("x_range_default", [None, None])[1]
+
+            # Assign updated values
+            simulate_info["x_range_default"] = [min_x_value, max_x_value]
+
+    return updated_fig_dict
+
+
+
+
+def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
+    """
+    Extracts minimum and maximum x/y values from each data_series in a fig_dict, as well as overall min and max for x and y.
+
+    Args:
+        fig_dict (dict): The figure dictionary containing multiple data series.
+        skip_equations (bool): If True, equation-based data series are ignored.
+        skip_simulations (bool): If True, simulation-based data series are ignored.
+
+    Returns:
+        tuple: 
+            - fig_dict_ranges (dict): A dictionary containing overall min/max x/y values across all valid series.
+            - data_series_ranges (dict): A dictionary with individual min/max values for each data series.
+
+    Notes:
+        - Equations and simulations have predefined x-range defaults and limits.
+        - If their x-range is absent, individual data series values are used.
+        - Ensures empty lists don't trigger errors when computing min/max values.
+    """
+    # Initialize final range values to None to ensure assignment
+    fig_dict_ranges = {
+        "min_x": None,
+        "max_x": None,
+        "min_y": None,
+        "max_y": None
+    }
+
+    data_series_ranges = {
+        "min_x": [],
+        "max_x": [],
+        "min_y": [],
+        "max_y": []
+    }
+
+    for data_series in fig_dict.get("data", []):
+        min_x, max_x, min_y, max_y = None, None, None, None  # Initialize extrema as None
+
+        # Determine if the data series contains either "equation" or "simulate"
+        if "equation" in data_series:
+            if skip_equations:
+                implicit_data_series_to_extract_from = None
+                pass  # Skip processing, but still append None values
+            else:
+                implicit_data_series_to_extract_from = data_series["equation"]
+        
+        elif "simulate" in data_series:
+            if skip_simulations:
+                implicit_data_series_to_extract_from = None
+                pass  # Skip processing, but still append None values
+            else:
+                implicit_data_series_to_extract_from = data_series["simulate"]
+        
+        else:
+            implicit_data_series_to_extract_from = None  # No equation or simulation, process x and y normally
+
+        if implicit_data_series_to_extract_from:
+            x_range_default = implicit_data_series_to_extract_from.get("x_range_default", [None, None]) 
+            x_range_limits = implicit_data_series_to_extract_from.get("x_range_limits", [None, None]) 
+
+            # Assign values, but keep None if missing
+            min_x = (x_range_default[0] if (x_range_default[0] is not None) else x_range_limits[0])
+            max_x = (x_range_default[1] if (x_range_default[1] is not None) else x_range_limits[1])
+
+        # Ensure "x" key exists AND list is not empty before calling min() or max()
+        if (min_x is None) and ("x" in data_series) and (len(data_series["x"]) > 0):  
+            valid_x_values = [x for x in data_series["x"] if x is not None]  # Filter out None values
+            if valid_x_values:  # Ensure list isn't empty after filtering
+                min_x = min(valid_x_values)  
+
+        if (max_x is None) and ("x" in data_series) and (len(data_series["x"]) > 0):  
+            valid_x_values = [x for x in data_series["x"] if x is not None]  # Filter out None values
+            if valid_x_values:  # Ensure list isn't empty after filtering
+                max_x = max(valid_x_values)  
+
+        # Ensure "y" key exists AND list is not empty before calling min() or max()
+        if (min_y is None) and ("y" in data_series) and (len(data_series["y"]) > 0):  
+            valid_y_values = [y for y in data_series["y"] if y is not None]  # Filter out None values
+            if valid_y_values:  # Ensure list isn't empty after filtering
+                min_y = min(valid_y_values)  
+
+        if (max_y is None) and ("y" in data_series) and (len(data_series["y"]) > 0):  
+            valid_y_values = [y for y in data_series["y"] if y is not None]  # Filter out None values
+            if valid_y_values:  # Ensure list isn't empty after filtering
+                max_y = max(valid_y_values)  
+
+        # Always add values to the lists, including None if applicable
+        data_series_ranges["min_x"].append(min_x)
+        data_series_ranges["max_x"].append(max_x)
+        data_series_ranges["min_y"].append(min_y)
+        data_series_ranges["max_y"].append(max_y)
+
+    # Filter out None values for overall min/max calculations
+    valid_min_x_values = [x for x in data_series_ranges["min_x"] if x is not None]
+    valid_max_x_values = [x for x in data_series_ranges["max_x"] if x is not None]
+    valid_min_y_values = [y for y in data_series_ranges["min_y"] if y is not None]
+    valid_max_y_values = [y for y in data_series_ranges["max_y"] if y is not None]
+
+    fig_dict_ranges["min_x"] = min(valid_min_x_values) if valid_min_x_values else None
+    fig_dict_ranges["max_x"] = max(valid_max_x_values) if valid_max_x_values else None
+    fig_dict_ranges["min_y"] = min(valid_min_y_values) if valid_min_y_values else None
+    fig_dict_ranges["max_y"] = max(valid_max_y_values) if valid_max_y_values else None
+
+    return fig_dict_ranges, data_series_ranges
+
+
+# # Example usage
+# fig_dict = {
+#     "data": [
+#         {"x": [1, 2, 3, 4], "y": [10, 20, 30, 40]},
+#         {"x": [5, 6, 7, 8], "y": [50, 60, 70, 80]},
+#         {"equation": {
+#             "x_range_default": [None, 500],
+#             "x_range_limits": [100, 600]
+#         }},
+#         {"simulate": {
+#             "x_range_default": [None, 700],
+#             "x_range_limits": [300, 900]
+#         }}
+#     ]
+# }
+
+# fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(fig_dict, skip_equations=True, skip_simulations=True)  # Skips both
+# print("Data Series Values:", data_series_ranges)
+# print("Extreme Values:", fig_dict_ranges)
+
+### Start of section of code with functions for extracting and updating x and y ranges of data series ###
 
 
 ### Start section of code with functions for cleaning fig_dicts for plotly compatibility ###
@@ -1469,17 +2438,33 @@ def remove_simulate_field(json_fig_dict):
     json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
     return json_fig_dict
 
+def remove_equation_field(json_fig_dict):
+    data_dicts_list = json_fig_dict['data']
+    for data_dict in data_dicts_list:
+        data_dict.pop('equation', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
+    json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
+    return json_fig_dict
+
+def remove_trace_type_field(json_fig_dict):
+    data_dicts_list = json_fig_dict['data']
+    for data_dict in data_dicts_list:
+        data_dict.pop('trace_type', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
+        data_dict.pop('tracetype', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
+    json_fig_dict['data'] = data_dicts_list #this line shouldn't be necessary, but including it for clarity and carefulness.
+    return json_fig_dict
+
 def remove_custom_units_chevrons(json_fig_dict):
     json_fig_dict['layout']['xaxis']['title']['text'] = json_fig_dict['layout']['xaxis']['title']['text'].replace('<','').replace('>','')
     json_fig_dict['layout']['yaxis']['title']['text'] = json_fig_dict['layout']['yaxis']['title']['text'].replace('<','').replace('>','')
     return json_fig_dict
-
 
 def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
      and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. 
      This function can also remove the 'simulate' field from data series. However, that is not the default behavior
      because one would not want to do that by mistake before simulation is performed.
+     This function can also remove the 'equation' field from data series. However, that is not the default behavior
+     because one would not want to do that by mistake before the equation is evaluated.
      """
     fig_dict = json_fig_dict
     #unmodified_data = copy.deepcopy(data)
@@ -1491,14 +2476,18 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraIn
         fig_dict = remove_nested_comments(fig_dict)
     if "simulate" in fields_to_update:
         fig_dict = remove_simulate_field(fig_dict)
+    if "equation" in fields_to_update:
+        fig_dict = remove_equation_field(fig_dict)
     if "custom_units_chevrons" in fields_to_update:
         fig_dict = remove_custom_units_chevrons(fig_dict)
+    if "trace_type" in fields_to_update:
+        fig_dict = remove_trace_type_field(fig_dict)
 
     return fig_dict
 
 ### End section of code with functions for cleaning fig_dicts for plotly compatibility ###
 
-### Beginning of section of file that has functions for calling external javascript simulators ###
+### Beginning of section of file that has functions for "simulate" and "equation" fields, to evaluate equations and call external javascript simulators, as well as support functions ###
 
 def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbose = False):
     """
@@ -1611,55 +2600,234 @@ def convert_to_raw_github_url(url):
 #This function takes in a data_series_dict object and then
 #calls an external javascript simulation if needed
 #Then fills the data_series dict with the simulated data.
+#This function is not intended to be called by the regular user
+#because it returns extra fields that need to be parsed out.
+#and because it does not do unit conversions as needed after the simulation resultss are returned.
 def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
     if simulator_link == '':
-        simulator_link = data_series_dict["simulate"]["model"]
-    #need to provide the link and the data_dict
-    simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose = verbose)
-    data_series_dict_filled = simulation_return["data"]
-    return data_series_dict_filled
+        simulator_link = data_series_dict["simulate"]["model"]  
+    try:
+        simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose=verbose)
+        if isinstance(simulation_return, dict) and "error" in simulation_return: # Check for errors in the returned data
+            print(f"Simulation failed: {simulation_return.get('error_message', 'Unknown error')}")
+            print(simulation_return)
+            return None
+        return simulation_return.get("data", None)
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return None
 
 #Function that goes through a fig_dict data series and simulates each data series as needed.
-#could probably change this into a loop that calls simulate_specific_data_series_by_index
 #If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.
 def simulate_as_needed_in_fig_dict(fig_dict, simulator_link='', verbose=False):
-    data_dicts_list = fig_dict['data']
-    for data_dict_index, data_dict in enumerate(data_dicts_list):
-        if 'simulate' in data_dict:
-            data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
-            #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
-            if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)):
-                #first, get the units that are in the layout of fig_dict so we know what to convert to.
-                existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
-                existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
-                existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]
-                existing_record_y_units = separate_label_text_from_units(existing_record_y_label)["units"]
-                #now, get the units from the simulation output.
-                simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled['x_label'])["units"]
-                simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled['y_label'])["units"]
-                x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units)
-                y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units)
-                #We scale the dataseries, which really should be a function.
-                scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by = x_units_ratio, num_to_scale_y_values_by = y_units_ratio)
-                #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
-                data_dict_filled.pop("x_label", None)
-                data_dict_filled.pop("y_label", None)
-            data_dicts_list[data_dict_index] = data_dict_filled
-    fig_dict['data'] = data_dicts_list
+    data_dicts_list = fig_dict['data']    
+    for data_dict_index in range(len(data_dicts_list)):
+        fig_dict = simulate_specific_data_series_by_index(fig_dict, data_dict_index, simulator_link=simulator_link, verbose=verbose)
     return fig_dict
 
-#Function that takes fig_dict and dataseries index and simulates if needed.
+#Function that takes fig_dict and dataseries index and simulates if needed. Also performs unit conversions as needed.
+#If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.
 def simulate_specific_data_series_by_index(fig_dict, data_series_index, simulator_link='', verbose=False):
     data_dicts_list = fig_dict['data']
     data_dict_index = data_series_index
     data_dict = data_dicts_list[data_dict_index]
     if 'simulate' in data_dict:
         data_dict_filled = simulate_data_series(data_dict, simulator_link=simulator_link, verbose=verbose)
+        # Check if unit scaling is needed
+        if ("x_label" in data_dict_filled) or ("y_label" in data_dict_filled):
+            #first, get the units that are in the layout of fig_dict so we know what to convert to.
+            existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"]
+            existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"]
+            # Extract units  from the simulation output.
+            existing_record_x_units = separate_label_text_from_units(existing_record_x_label).get("units", "")
+            existing_record_y_units = separate_label_text_from_units(existing_record_y_label).get("units", "")
+            simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled.get('x_label', '')).get("units", "")
+            simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled.get('y_label', '')).get("units", "")
+            # Compute unit scaling ratios
+            x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units) if simulated_data_series_x_units and existing_record_x_units else 1
+            y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units) if simulated_data_series_y_units and existing_record_y_units else 1
+            # Apply scaling to the data series
+            scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by=x_units_ratio, num_to_scale_y_values_by=y_units_ratio)
+            #Verbose logging for debugging
+            if verbose:
+                print(f"Scaling X values by: {x_units_ratio}, Scaling Y values by: {y_units_ratio}")
+            #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
+            data_dict_filled.pop("x_label", None)
+            data_dict_filled.pop("y_label", None)
+        # Update the figure dictionary
         data_dicts_list[data_dict_index] = data_dict_filled
     fig_dict['data'] = data_dicts_list
     return fig_dict
 
-### End of section of file that has functions for calling external javascript simulators ###
+def evaluate_equations_as_needed_in_fig_dict(fig_dict):
+    data_dicts_list = fig_dict['data']
+    for data_dict_index, data_dict in enumerate(data_dicts_list):
+        if 'equation' in data_dict:
+            fig_dict = evaluate_equation_for_data_series_by_index(fig_dict, data_dict_index)
+    return fig_dict
+
+def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose=False):   
+    try:
+        import json_equationer.equation_evaluator as equation_evaluator
+        import json_equationer.equation_creator  as equation_creator
+    except:
+        from . import equation_evaluator
+        from . import equation_creator
+    import copy
+    data_dicts_list = fig_dict['data']
+    data_dict = data_dicts_list[data_series_index]
+    if 'equation' in data_dict:
+        equation_object = equation_creator.Equation(data_dict['equation'])
+        equation_dict_evaluated = equation_object.evaluate_equation()
+        data_dict_filled = copy.deepcopy(data_dict)
+        data_dict_filled['equation'] = equation_dict_evaluated
+        data_dict_filled['x_label'] = data_dict_filled['equation']['x_variable'] 
+        data_dict_filled['y_label'] = data_dict_filled['equation']['y_variable'] 
+        data_dict_filled['x'] = equation_dict_evaluated['x_points']
+        data_dict_filled['y'] = equation_dict_evaluated['y_points']
+        #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
+        if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)):
+            #first, get the units that are in the layout of fig_dict so we know what to convert to.
+            existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
+            existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
+            existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]
+            existing_record_y_units = separate_label_text_from_units(existing_record_y_label)["units"]
+            if (existing_record_x_units == '') and (existing_record_y_units == ''): #skip scaling if there are no units.
+                pass
+            else: #If we will be scaling...
+                #now, get the units from the evaluated equation output.
+                simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled['x_label'])["units"]
+                simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled['y_label'])["units"]
+                x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units)
+                y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units)
+                #We scale the dataseries, which really should be a function.
+                scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by = x_units_ratio, num_to_scale_y_values_by = y_units_ratio)
+            #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
+            data_dict_filled.pop("x_label", None)
+            data_dict_filled.pop("y_label", None)
+        data_dict_filled['type'] = 'spline'
+        data_dicts_list[data_series_index] = data_dict_filled
+    fig_dict['data'] = data_dicts_list
+    return fig_dict
+
+
+def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_structure=True, modify_target_directly = False):
+    """
+    Updates the x and y values of implicit data series (equation/simulate) in target_fig_dict 
+    using values from the corresponding series in source_fig_dict.
+
+    Args:
+        target_fig_dict (dict): The figure dictionary that needs updated data.
+        source_fig_dict (dict): The figure dictionary that provides x and y values.
+        parallel_structure (bool, optional): If True, assumes both data lists are the same 
+                                             length and updates using zip(). If False, 
+                                             matches by name instead. Default is True.
+
+    Returns:
+        dict: A new figure dictionary with updated x and y values for implicit data series.
+
+    Notes:
+        - If parallel_structure=True and both lists have the same length, updates use zip().
+        - If parallel_structure=False, matching is done by the "name" field.
+        - Only updates data series that contain "simulate" or "equation".
+        - Ensures deep copying to avoid modifying the original structures.
+    """
+    if modify_target_directly == False:
+        import copy  # Import inside function to limit scope   
+        updated_fig_dict =  copy.deepcopy(target_fig_dict)  # Deep copy to avoid modifying original
+    if modify_target_directly == True:
+        updated_fig_dict = target_fig_dict
+
+    target_data_series = updated_fig_dict.get("data", [])
+    source_data_series = source_fig_dict.get("data", [])
+
+    if parallel_structure and len(target_data_series) == len(source_data_series):
+        # Use zip() when parallel_structure=True and lengths match
+        for target_series, source_series in zip(target_data_series, source_data_series):
+            if ("equation" in target_series) or ("simulate" in target_series):
+                target_series["x"] = source_series.get("x", [])  # Extract and apply "x" values
+                target_series["y"] = source_series.get("y", [])  # Extract and apply "y" values
+    else:
+        # Match by name when parallel_structure=False or lengths differ
+        source_data_dict = {series["name"]: series for series in source_data_series if "name" in series}
+
+        for target_series in target_data_series:
+            if ("equation" in target_series) or ("simulate" in target_series):
+                target_name = target_series.get("name")
+                
+                if target_name in source_data_dict:
+                    source_series = source_data_dict[target_name]
+                    target_series["x"] = source_series.get("x", [])  # Extract and apply "x" values
+                    target_series["y"] = source_series.get("y", [])  # Extract and apply "y" values
+
+    return updated_fig_dict
+
+
+def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    """
+    This function is designed to be called during creation of a plotly or matplotlib figure creation.
+    Processes implicit data series (equation/simulate), adjusting ranges, performing simulations,
+    and evaluating equations as needed.
+
+    The important thing is that this function creates a "fresh" fig_dict, does some manipulation, then then gets the data from that
+    and adds it to the original fig_dict.
+    That way the original fig_dict is not changed other than getting the simulated/evaluated data.
+
+    The reason the function works this way is that the x_range_default of the implicit data series (equations and simulations)
+    are adjusted to match the data in the fig_dict, but we don't want to change the x_range_default of our main record.
+    That's why we make a copy for creating simulated/evaluated data from those adjusted ranges, and then put the simulated/evaluated data
+    back into the original dict.
+
+    
+
+    Args:
+        fig_dict (dict): The figure dictionary containing data series.
+        simulate_all_series (bool): If True, performs simulations for applicable series.
+        evaluate_all_equations (bool): If True, evaluates all equation-based series.
+        adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+
+    Returns:
+        dict: Updated figure dictionary with processed implicit data series.
+
+    Notes:
+        - If adjust_implicit_data_ranges=True, retrieves min/max values from regular data series 
+          (those that are not equations and not simulations) and applies them to implicit data.
+        - If simulate_all_series=True, executes simulations for all series that require them 
+          and transfers the computed data back to fig_dict without copying ranges.
+        - If evaluate_all_equations=True, solves equations as needed and transfers results 
+          back to fig_dict without copying ranges.
+        - Uses deepcopy to avoid modifying the original input dictionary.
+    """
+    import copy  # Import inside function for modularity
+
+    # Create a copy for processing implicit series separately
+    fig_dict_for_implicit = copy.deepcopy(fig_dict)
+
+    
+    if adjust_implicit_data_ranges:
+        # Retrieve ranges from data series that are not equation-based or simulation-based.
+        fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(fig_dict, skip_equations=True, skip_simulations=True)
+        # Apply the extracted ranges to implicit data series before simulation or equation evaluation.
+        fig_dict_for_implicit = update_implicit_data_series_x_ranges(fig_dict, fig_dict_ranges)
+
+    if simulate_all_series:
+        # Perform simulations for applicable series
+        fig_dict_for_implicit = simulate_as_needed_in_fig_dict(fig_dict_for_implicit)
+        # Copy data back to fig_dict, ensuring ranges remain unchanged
+        fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
+
+    if evaluate_all_equations:
+        # Evaluate equations that require computation
+        fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
+        # Copy results back without overwriting the ranges
+        fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
+
+    return fig_dict
+
+
+
+### End of section of file that has functions for "simulate" and "equation" fields, to evaluate equations and call external javascript simulators, as well as support functions###
 
 # Example Usage
 if __name__ == "__main__":

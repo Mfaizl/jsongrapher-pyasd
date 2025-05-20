@@ -4,7 +4,7 @@
     "data": [
         {
             "name": "LaFeO3",
-            "type": "scatter",
+            "trace_type":"scatter",
             "x": [
                 null,
                 0.167,

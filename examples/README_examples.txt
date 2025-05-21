@@ -10,4 +10,7 @@ example_4 shows an example where custom units are used.
 
 example_5 shows an example where an equation with units is entered from python commands and plotted.
 
-example_5 shows an example where equations with units are loaded from JSONGrapher records and plotted alongside datapoints.
+example_6 shows an example where equations with units are loaded from JSONGrapher records and plotted alongside datapoints.
+
+example_7 shows an example of how to make, extract and use styles (both layout_style and data_series_style)
+

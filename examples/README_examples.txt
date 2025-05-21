@@ -8,4 +8,6 @@ example_3 shows an example where the json record calls JavaScript source code fr
 
 example_4 shows an example where custom units are used.
 
-example_5 shows an example where an equation with units is plotted.
+example_5 shows an example where an equation with units is entered from python commands and plotted.
+
+example_5 shows an example where equations with units are loaded from JSONGrapher records and plotted alongside datapoints.

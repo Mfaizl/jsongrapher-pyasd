@@ -75,11 +75,9 @@ def solve_equation(equation_string, independent_variables_values_and_units, depe
         # if there is any "^" in the equation, it will be changed to **
 
     """
-    
     # Convert string inputs into Pint quantities
     variables = {name: ureg(value) for name, value in independent_variables_values_and_units.items()}
     independent_variables = list(independent_variables_values_and_units.keys())
-
     # Explicitly define symbolic variables
     symbols_dict = {var: symbols(var) for var in independent_variables_values_and_units.keys()}
     for var in independent_variables:
@@ -97,10 +95,8 @@ def solve_equation(equation_string, independent_variables_values_and_units, depe
 
     # Create the equation object
     eq_sympy = Eq(lhs_sympy, rhs_sympy)
-
     # Solve for the dependent variable
     solutions = solve(eq_sympy, symbols_dict[dependent_variable])
-
     # Extract magnitude and unit separately from SymPy expressions
     separated_solutions = []
     for sol in solutions:
@@ -120,9 +116,9 @@ def parse_equation_dict(equation_dict):
         if len(split_entry) > 1:
             value = split_entry[0]
             units = split_entry[1] # Everything after the number
-            return value, units
+            return [value, units]
         else:
-            return float(split_entry[0]), None  # Handle constants without units
+            return [float(split_entry[0]), None]  # Handle constants without units
 
     def extract_constants(constants_dict):
         return {
@@ -136,11 +132,13 @@ def parse_equation_dict(equation_dict):
 
     constants_extracted_dict = extract_constants(equation_dict["constants"])
     equation_extracted_dict = extract_equation(equation_dict["equation_string"])
+    # x_match = re.match(r"([\w\d{}$/*_°α-ωΑ-Ω]+)\s*\(([\w\d{}$/*_°α-ωΑ-Ω]*)\)", equation_dict["x_variable"])
+    # y_match = re.match(r"([\w\d{}$/*_°α-ωΑ-Ω]+)\s*\(([\w\d{}$/*_°α-ωΑ-Ω]*)\)", equation_dict["y_variable"])
+    # x_match  = (x_match.group(1), x_match.group(2)) if x_match else (equation_dict["x_variable"], None)
+    # y_match = (y_match.group(1), y_match.group(2)) if y_match else (equation_dict["y_variable"], None)
+    x_match = extract_value_units(equation_dict["x_variable"])
+    y_match = extract_value_units(equation_dict["y_variable"])
 
-    x_match = re.match(r"([\w\d]+)\s*\((.*)\)", equation_dict["x_variable"])
-    y_match = re.match(r"([\w\d]+)\s*\((.*)\)", equation_dict["y_variable"])
-    x_match  = (x_match.group(1), x_match.group(2)) if x_match else (equation_dict["x_variable"], None)
-    y_match = (y_match.group(1), y_match.group(2)) if y_match else (equation_dict["y_variable"], None)
 
 
     # Create dictionaries for extracted variables
@@ -289,7 +287,7 @@ def generate_multiplicative_points(range_min, range_max, num_of_points=None, fac
 # print(generate_multiplicative_points(-10, 50, factor=1.3))                    # Case 2: Uses factor-based spacing
 # print(generate_multiplicative_points(-30, 30))                                # Case 3: Uses default intermediate spacing
 
-def generate_points_by_spacing(num_of_points=10, range_min=1, range_max=100, points_spacing="linear"):
+def generate_points_by_spacing(num_of_points=10, range_min=0, range_max=1, points_spacing="linear"):
     """
     Generates a sequence of points based on the specified spacing method.
     
@@ -314,7 +312,16 @@ def generate_points_by_spacing(num_of_points=10, range_min=1, range_max=100, poi
     import numpy as np  # Ensure numpy is imported
     spacing_type = str(points_spacing).lower() if isinstance(points_spacing, str) else None
     points_list = None
-
+    if num_of_points == None:
+        num_of_points = 10
+    if range_min == None:
+        range_min = 0
+    if range_max == None:
+        range_max = 1
+    if str(spacing_type).lower() == "none":
+        spacing_type = "linear"
+    if spacing_type == "":
+        spacing_type = "linear"
     if spacing_type.lower() == "linear":
         points_list = np.linspace(range_min, range_max, num_of_points).tolist()
     elif spacing_type.lower() == "logarithmic":
@@ -354,21 +361,22 @@ def generate_points_from_range_dict(range_dict):
     """
     # Assigning range. 
     # Start with default values
-    if range_dict.get('x_range_default'): #get prevents crashing if the field is not present.
+    if range_dict.get('x_range_default'):  #get prevents crashing if the field is not present.
         range_min, range_max = range_dict['x_range_default']
 
-    # If 'x_range_limits' is provided, update values where applicable
+    # If 'x_range_limits' is provided, update values only if they narrow the range
     if range_dict.get('x_range_limits'):
         limit_min, limit_max = range_dict['x_range_limits']
-        if limit_min is not None:
+        # Apply limits only if they tighten the range
+        if limit_min is not None and limit_min > range_min:
             range_min = limit_min
-        if limit_max is not None:
+        if limit_max is not None and limit_max < range_max:
             range_max = limit_max
+
 
     # Ensure at least one valid limit exists
     if range_min is None or range_max is None:
         raise ValueError("At least one min and one max must be specified between x_range_default and x_range_limts.")
-
     list_of_points = generate_points_by_spacing(
         num_of_points=range_dict['num_of_points'],
         range_min=range_min,

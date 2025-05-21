@@ -234,7 +234,5 @@ if __name__ == "__main__":
     print(equation_dict)
 
     example_Arrhenius.evaluate_equation()
-    import sys
-    sys.stdout.flush()
     example_Arrhenius.print_equation_dict()
     

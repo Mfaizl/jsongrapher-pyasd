@@ -806,6 +806,8 @@ class JSONGrapherRecord:
         """
         import plotly.io as pio
         import copy
+        if plot_style == {"layout_style":"", "data_series_style":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
+            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "data_series_style":""})
         #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
@@ -884,6 +886,8 @@ class JSONGrapherRecord:
             plotly Figure: A validated matplotlib figure object based on fig_dict.
         """
         import copy
+        if plot_style == {"layout_style":"", "data_series_style":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
+            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "data_series_style":""})
         #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
@@ -993,8 +997,8 @@ class JSONGrapherRecord:
         self.fig_dict['plot_style'] = plot_style
         self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
     def remove_style(self):
-        self.fig_dict.pop("plot_style")
-        self.fig_dict = remove_style_from_plotly_dict(self.fig_dict)
+        self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
+        self.fig_dict = remove_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):

@@ -87,6 +87,8 @@ def import_JSONGrapherRecords(recordsList):
 #The units used will be that of the first record encountered
 #if changing this function's arguments, then also change those for load_JSONGrapherRecords and import_JSONGrapherRecords
 def merge_JSONGrapherRecords(recordsList):
+    if type(recordsList) == type(""):
+        recordsList = [recordsList]
     import copy
     recordsAsDictionariesList = []
     merged_JSONGrapherRecord = create_new_JSONGrapherRecord()
@@ -763,15 +765,15 @@ class JSONGrapherRecord:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 
-    def choose_plot_style(self, style_to_apply=''):
+    def choose_plot_style(self, plot_style= {"layout_style":"", "data_series_style":""}):
         """
         Determine the appropriate plot style based on input style or existing figure dictionary settings.
 
         :param self.fig_dict: dict, A Plotly figure dictionary that may contain "plot_style".
-        :param style_to_apply: str, The style to apply. If empty, it checks for an existing style in fig_dict.
+        :param plot_style: str, The style to apply. If empty, it checks for an existing style in fig_dict.
         :return: dict with "layout_style" and "data_series_style", ensuring defaults if missing.
         """
-        if style_to_apply == '':
+        if plot_style == '':
             # First, check if fig_dict has any plot_style already specified.
             plot_style = self.fig_dict.get("plot_style", '')  # Return a blank string if the field is not present.
             # Parse the existing plot style (ensures it's structured properly)
@@ -783,17 +785,17 @@ class JSONGrapherRecord:
                 plot_style["data_series_style"] = 'default'
         else:
             # Use the provided style directly
-            plot_style = parse_plot_style(style_to_apply)
+            plot_style = parse_plot_style(plot_style)
         return plot_style
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, style_to_apply='', update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_plotly_fig(self, plot_style = {"layout_style":"", "data_series_style":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
         By default, it will apply the default still hard coded into jsongrapher.
 
         Args:
-            style_to_apply: String of style to apply. Use '' to skip applying a style, or provide a list of length two containing both a layout style and a data series style
+            plot_style: String or dictionary of style to apply. Use '' to skip applying a style, or provide a list of length two containing both a layout style and a data series style."none" removes all style.
             simulate_all_series (bool): If True, performs simulations for applicable series.
             update_and_validate (bool): If True, applies automatic corrections to fig_dict.
             evaluate_all_equations (bool): If True, evaluates all equation-based series.
@@ -812,8 +814,8 @@ class JSONGrapherRecord:
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) 
         #before cleaning and validating, we'll apply styles.
-        plot_style = self.choose_plot_style(style_to_apply=style_to_apply)
-        self.apply_style(style_to_apply=plot_style)
+        plot_style = self.choose_plot_style(plot_style=plot_style)
+        self.apply_style(plot_style=plot_style)
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
@@ -824,12 +826,12 @@ class JSONGrapherRecord:
         return fig
 
     #Just a wrapper aroudn plot_with_plotly.
-    def plot(self, style_to_apply='', update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
-        return self.plot_with_plotly(style_to_apply=style_to_apply, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+    def plot(self, plot_style = {"layout_style":"", "data_series_style":""}, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        return self.plot_with_plotly(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
 
     #simulate all series will simulate any series as needed. If changing this function's arguments, also change those for self.plot()
-    def plot_with_plotly(self, style_to_apply='', update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
-        fig = self.get_plotly_fig(style_to_apply=style_to_apply,
+    def plot_with_plotly(self, plot_style = {"layout_style":"", "data_series_style":""}, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        fig = self.get_plotly_fig(plot_style=plot_style,
                                   simulate_all_series=simulate_all_series, 
                                   update_and_validate=update_and_validate, 
                                   evaluate_all_equations=evaluate_all_equations, 
@@ -868,7 +870,7 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, style_to_apply='', update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_matplotlib_fig(self, plot_style = {"layout_style":"", "data_series_style":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
 
@@ -890,8 +892,8 @@ class JSONGrapherRecord:
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
         #before cleaning and validating, we'll apply styles.
-        plot_style = self.choose_plot_style(style_to_apply=style_to_apply)
-        self.apply_style(style_to_apply=plot_style)
+        plot_style = self.choose_plot_style(plot_style=plot_style)
+        self.apply_style(plot_style=plot_style)
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_type'])
@@ -983,13 +985,13 @@ class JSONGrapherRecord:
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
     def apply_layout_style(self, layout_style_to_apply=''):
         self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
-    def apply_style(self, style_to_apply=''): 
-        #the style_to_apply can be a string, or a plot_style dictionary {"layout_style":"default", "data_series_style":"default"} or a list of length two with those two items.
+    def apply_style(self, plot_style= {"layout_style":"", "data_series_style":""}): 
+        #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "data_series_style":"default"} or a list of length two with those two items.
         #The plot_style dictionary can include a pair of dictionaries.
-        #if apply style is called directly, we will first put the style_to_apply into the plot_style field
+        #if apply style is called directly, we will first put the plot_style into the plot_style field
         #This way, the style will stay.
-        self.fig_dict['plot_style'] = style_to_apply
-        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, style_to_apply=style_to_apply)
+        self.fig_dict['plot_style'] = plot_style
+        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
     def remove_style(self):
         self.fig_dict.pop("plot_style")
         self.fig_dict = remove_style_from_plotly_dict(self.fig_dict)
@@ -1429,7 +1431,7 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
    If we get a string that we can't find in the existing styles list, then we'll use the default. 
 (1) by default, export to json will *not* include plot_styles.  include_formatting will be an optional argument. 
 (2) There is an apply_style function which will first put the style into self.fig_dict['plot_style'] so it stays there, before applying the style.
-(3) For the plotting functions, they will have style_to_apply = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
+(3) For the plotting functions, they will have plot_style = {"layout_style":"", "data_series_style":""} or = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
     If somebody passes in a "None" type or the word none, then *no* style changes will be applied during plotting, relative to what the record already has.
     One can pass a style in for the plotting functions. In those cases, we'll use the remove style option, then apply.
 '''
@@ -1460,9 +1462,9 @@ def parse_plot_style(plot_style):
 #plot_style is a dictionary of form {"layout_style":"default", "data_series_style":"default"}
 #However, the style_to_apply does not need to be passed in as a dictionary.
 #For example: style_to_apply = ['default', 'default'] or style_to_apply = 'science'.
-def apply_style_to_plotly_dict(fig_dict, style_to_apply=''):
+def apply_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "data_series_style":""}):
     #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "data_series_style":"default"}
-    plot_style = parse_plot_style(style_to_apply)
+    plot_style = parse_plot_style(plot_style)
     #Block for layout style.
     if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
         if plot_style["layout_style"] == '': #in this case, we're going to use the default.
@@ -1617,7 +1619,7 @@ def apply_data_series_style_to_plotly_dict(fig_dict, data_series_style_to_apply=
 
     Args:
         fig_dict (dict): A dictionary containing a `data` field with Plotly traces.
-        style_to_apply (str): Optional style preset to apply. Default is "default".
+        data_series_style_to_apply (str): Optional style preset to apply. Default is "default".
 
     Returns:
         dict: Updated Plotly figure dictionary with defaults applied to each trace.

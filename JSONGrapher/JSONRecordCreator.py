@@ -72,12 +72,20 @@ def create_new_JSONGrapherRecord(hints=False):
         new_record.add_hints()
     return new_record
 
+#This is actually a wrapper around merge_JSONGrapherRecords. Made for convenience.
+def load_JSONGrapherRecords(recordsList):
+    return merge_JSONGrapherRecords(recordsList)
+
+#This is actually a wrapper around merge_JSONGrapherRecords. Made for convenience.
+def import_JSONGrapherRecords(recordsList):
+    return merge_JSONGrapherRecords(recordsList)
 
 #This is a function for merging JSONGrapher records.
 #recordsList is a list of records 
 #Each record can be a JSONGrapherRecord object (a python class object) or a dictionary (meaning, a JSONGrapher JSON as a dictionary)
 #If a record is received that is a string, then the function will attempt to convert that into a dictionary.
 #The units used will be that of the first record encountered
+#if changing this function's arguments, then also change those for load_JSONGrapherRecords and import_JSONGrapherRecords
 def merge_JSONGrapherRecords(recordsList):
     import copy
     recordsAsDictionariesList = []
@@ -87,8 +95,9 @@ def merge_JSONGrapherRecords(recordsList):
         if type(record) == type({}):
             recordsAsDictionariesList.append(record)
         elif type(record) == type("string"):
-            record = json.loads(record)
-            recordsAsDictionariesList.append(record)
+            new_record = create_new_JSONGrapherRecord()
+            new_fig_dict = new_record.import_from_json(record)
+            recordsAsDictionariesList.append(new_fig_dict)
         else: #this assumpes there is a JSONGrapherRecord type received. 
             record = record.fig_dict
             recordsAsDictionariesList.append(record)
@@ -172,7 +181,18 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
         units_string_1 = convert_inverse_units(units_string_1)
         units_string_2 = convert_inverse_units(units_string_2)
         units_object_converted = 1*unitpy.U(units_string_1)
-        ratio_with_units_object = units_object_converted.to(units_string_2)
+        try:
+            ratio_with_units_object = units_object_converted.to(units_string_2)
+        except KeyError as e:
+            import sys
+            print(f"Error during unit converion in get_units_scaling_ratio: Missing key {e}. Ensure all unit definitions are correctly set.", "Unit 1:", units_string_1, "Unit 2:", units_string_2)
+        except ValueError as e:
+            import sys
+            print(f"Error during unit conversion in get_units_scaling_ratio: {e}. Make sure unit values are valid and properly formatted.", "Unit 1:", units_string_1, "Unit 2:", units_string_2)
+        except Exception as e:
+            import sys
+            print(f"An unexpected error occurred in in get_units_scaling_ratio when trying to convert units: {e}. Double-check that your records have the same units.", "Unit 1:", units_string_1, "Unit 2:",units_string_2)
+
     ratio_with_units_string = str(ratio_with_units_object)
     ratio_only = ratio_with_units_string.split(' ')[0] #what comes out may look like 1000 gram/(meter second), so we split and take first part.
     ratio_only = float(ratio_only)
@@ -569,19 +589,27 @@ class JSONGrapherRecord:
 
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
-        if type(json_filename_or_object) == type(""): #assume it's a filename and path.
-            #if the filename does not exist, then we'll check if adding ".json" fixes the problem.
-            import os
-            if not os.path.exists(json_filename_or_object):
-                json_added_filename = json_filename_or_object + ".json"
-                if os.path.exists(json_added_filename): json_filename_or_object = json_added_filename #only change the filename if the json_filename exists.
-            # Open the file in read mode with UTF-8 encoding
-            with open(json_filename_or_object, 'r', encoding='utf-8') as file:
-                # Read the entire content of the file
-                content = file.read()
-                self.fig_dict = json.loads(content)   
+        if type(json_filename_or_object) == type(""): #assume it's a json_string or filename_and_path.
+            try:
+                record = json.loads(json_filename_or_object) #first check if it's a json string.
+            except json.JSONDecodeError as e1:  # Catch specific exception
+                try:
+                    import os
+                    #if the filename does not exist, then we'll check if adding ".json" fixes the problem.
+                    if not os.path.exists(json_filename_or_object):
+                        json_added_filename = json_filename_or_object + ".json"
+                        if os.path.exists(json_added_filename): json_filename_or_object = json_added_filename #only change the filename if the json_filename exists.
+                    # Open the file in read mode with UTF-8 encoding
+                    with open(json_filename_or_object, "r", encoding="utf-8") as file:
+                        # Read the entire content of the file
+                        record = file.read().strip()  # Stripping leading/trailing whitespace
+                        self.fig_dict = json.loads(record)
+                        return self.fig_dict
+                except json.JSONDecodeError as e2:  # Catch specific exception
+                    print(f"JSON loading failed on record: {record}. Error: {e1} when trying to parse as a json directly, and {e2} when trying to use as a filename. You may want to try opening your JSON file in VS Code or in an online JSON Validator. Does your json have double quotes around strings? Single quotes around strings is allowed in python, but disallowed in JSON specifications. You may also need to check how Booleans and other aspects are defined in JSON.")  # Improved error reporting
         else:
             self.fig_dict = json_filename_or_object
+            return self.fig_dict
 
     def set_trace_type_one_data_series(self, data_series_index, trace_type):
         self.fig_dict['data'][data_series_index]["trace_type"] = trace_type
@@ -795,7 +823,11 @@ class JSONGrapherRecord:
         self.fig_dict = original_fig_dict 
         return fig
 
-    #simulate all series will simulate any series as needed.
+    #Just a wrapper aroudn plot_with_plotly.
+    def plot(self, style_to_apply='', update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        return self.plot_with_plotly(style_to_apply=style_to_apply, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+
+    #simulate all series will simulate any series as needed. If changing this function's arguments, also change those for self.plot()
     def plot_with_plotly(self, style_to_apply='', update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         fig = self.get_plotly_fig(style_to_apply=style_to_apply,
                                   simulate_all_series=simulate_all_series, 

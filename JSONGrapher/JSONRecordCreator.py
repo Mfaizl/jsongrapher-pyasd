@@ -999,6 +999,15 @@ class JSONGrapherRecord:
     def remove_style(self):
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
         self.fig_dict = remove_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
+    def extract_layout_style(self):
+        layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
+        return layout_style
+    def extract_data_series_style_by_index(self, data_series_index=0):
+        extracted_data_series_style = extract_data_series_style_by_index(self.fig_dict, data_series_index)
+        return extracted_data_series_style
+    def extract_trace_style_by_index(self, data_series_index=0):
+        extracted_data_series_style = extract_data_series_style_by_index(self.fig_dict, data_series_index)
+        return extracted_data_series_style
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -1901,7 +1910,7 @@ def remove_data_series_style_from_single_data_series(data_series):
 
     # **Define formatting fields to remove**
     formatting_fields = {
-        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
+        "type", "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
         "legendgroup", "showlegend", "textposition", "textfont"
     }
 
@@ -1909,6 +1918,60 @@ def remove_data_series_style_from_single_data_series(data_series):
     cleaned_data_series = {key: value for key, value in data_series.items() if key not in formatting_fields}
 
     return cleaned_data_series
+
+def extract_data_series_style_by_index(fig_dict, data_series_index, trace_type=''):
+    data_series_dict = fig_dict["data"][data_series_index]
+    extracted_data_series_style = extract_data_series_style_from_dict(data_series_dict=data_series_dict, trace_type=trace_type)
+    return extracted_data_series_style
+
+def extract_trace_style_from_dict(data_series_dict, trace_type=''):
+    extracted_data_series_style = extract_data_series_style_from_dict(data_series_dict=data_series_dict, trace_type=trace_type)
+    return extracted_data_series_style
+
+def extract_data_series_style_from_dict(data_series_dict, trace_type=''):
+    """
+    Extract formatting attributes from a given Plotly data series.
+
+    The function scans the provided `data_series` dictionary and returns a new dictionary
+    containing only the predefined formatting fields.
+
+    Examples of formatting attributes extracted:
+    - "type"
+    - "mode"
+    - "line"
+    - "marker"
+    - "colorscale"
+    - "opacity"
+    - "fill"
+    - "fillcolor"
+    - "legendgroup"
+    - "showlegend"
+    - "textposition"
+    - "textfont"
+
+    :param data_series_dict: dict, A dictionary representing a single Plotly data series.
+    :param trace_type: string, the key name for what user wants to call the trace_type in the style, after extraction.
+    :return: dict, A dictionary containing only the formatting attributes.
+    """
+
+    if trace_type=='':
+        data_series_dict.get("trace_type", "") #keep blank if not present.
+    if trace_type=='':
+        trace_type = "custom"
+
+    if not isinstance(data_series_dict, dict):
+        return {}  # Return an empty dictionary if input is invalid.
+
+    # Define known formatting attributes
+    formatting_fields = {
+        "type", "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
+        "legendgroup", "showlegend", "textposition", "textfont"
+    }
+
+    # Extract only formatting-related attributes
+    trace_style_dict = {key: value for key, value in data_series_dict.items() if key in formatting_fields}
+    extracted_data_series_style = {trace_type : trace_style_dict} #this is a data_series_style dict.
+    return extracted_data_series_style #this is a data_series_style dict.
 
 
 

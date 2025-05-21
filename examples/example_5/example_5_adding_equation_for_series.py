@@ -13,17 +13,19 @@ Record.set_y_axis_label_including_units("k (s**(-1))")
 
 #We'll define an equation, with parameters using the equation_dict format that json_equationer uses.
 #The later variables define the default range and points resolution of the curve.
+#Here, we are using a python dictionary. Python dictionaries are slightly different than JSON. With a json string, one would have to use json.loads()
+
 equation_dict = {
-    'equation_string': 'k = A*(e**((-Ea)/(R*T)))',
-    'x_variable': 'T (K)',  
-    'y_variable': 'k (s**(-1))',
-    'constants': {'Ea': '30000 (J)*(mol^(-1))', 'R': '8.314 (J)*(mol^(-1))*(K^(-1))' , 'A': '1*10^13 (s^-1)', 'e': '2.71828'},
-    'num_of_points': 10,
-    'x_range_default': [200, 500],
-    'x_range_limits' : [],
-    'x_points_specified' : [],
-    'points_spacing': 'Linear',
-    'reverse_scaling' : False
+    "equation_string": "k = A*(e**((-Ea)/(R*T)))",
+    "x_variable": "T (K)",  
+    "y_variable": "k (s**(-1))",
+    "constants": {"Ea": "30000 (J)*(mol^(-1))", "R": "8.314 (J)*(mol^(-1))*(K^(-1))" , "A": "1*10^13 (s^-1)", "e": "2.71828"},
+    "num_of_points": 10,
+    "x_range_default": [200, 500],
+    "x_range_limits" : [],
+    "x_points_specified" : [],
+    "points_spacing": "Linear",
+    "reverse_scaling" : False
 }
 
 #Now we can add this equation record as a dataseries into the JSONGrapher record. 

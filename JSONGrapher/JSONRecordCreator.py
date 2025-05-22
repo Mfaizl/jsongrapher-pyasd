@@ -795,7 +795,7 @@ class JSONGrapherRecord:
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) 
         #before cleaning and validating, we'll apply styles.
-        plot_style = self.parse_plot_style(plot_style=plot_style)
+        plot_style = parse_plot_style(plot_style=plot_style)
         self.apply_style(plot_style=plot_style)
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -876,7 +876,7 @@ class JSONGrapherRecord:
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
         #before cleaning and validating, we'll apply styles.
-        plot_style = self.choose_plot_style(plot_style=plot_style)
+        plot_style = parse_plot_style(plot_style=plot_style)
         self.apply_style(plot_style=plot_style)
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
@@ -969,13 +969,13 @@ class JSONGrapherRecord:
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
     # def apply_layout_style(self, layout_style_to_apply=''):
     #     self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
-    # def apply_style(self, plot_style= {"layout_style":"", "data_series_style":""}): 
-    #     #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "data_series_style":"default"} or a list of length two with those two items.
-    #     #The plot_style dictionary can include a pair of dictionaries.
-    #     #if apply style is called directly, we will first put the plot_style into the plot_style field
-    #     #This way, the style will stay.
-    #     self.fig_dict['plot_style'] = plot_style
-    #     self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
+    def apply_style(self, plot_style= {"layout_style":"", "data_series_style":""}): 
+        #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "data_series_style":"default"} or a list of length two with those two items.
+        #The plot_style dictionary can include a pair of dictionaries.
+        #if apply style is called directly, we will first put the plot_style into the plot_style field
+        #This way, the style will stay.
+        self.fig_dict['plot_style'] = plot_style
+        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
     def remove_style(self):
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
         self.fig_dict = remove_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.

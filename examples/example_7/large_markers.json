@@ -3,7 +3,7 @@
         "type": "scatter",
         "mode": "markers",
         "marker": {
-            "size": 12,
+            "size": 15,
             "color": "green"
         }
     },
@@ -11,7 +11,7 @@
         "type": "scatter",
         "mode": "markers",
         "marker": {
-            "size": 12,
+            "size": 15,
             "color": "purple"
         }
     }

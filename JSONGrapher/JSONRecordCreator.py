@@ -767,29 +767,6 @@ class JSONGrapherRecord:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
 
-    # def choose_plot_style(self, plot_style= {"layout_style":"", "data_series_style":""}):
-    #     """
-    #     Determine the appropriate plot style based on input style or existing figure dictionary settings.
-
-    #     :param self.fig_dict: dict, A Plotly figure dictionary that may contain "plot_style".
-    #     :param plot_style: str, The style to apply. If empty, it checks for an existing style in fig_dict.
-    #     :return: dict with "layout_style" and "data_series_style", ensuring defaults if missing.
-    #     """
-    #     if plot_style == '':
-    #         # First, check if fig_dict has any plot_style already specified.
-    #         plot_style = self.fig_dict.get("plot_style", '')  # Return a blank string if the field is not present.
-    #         # Parse the existing plot style (ensures it's structured properly)
-    #         plot_style = parse_plot_style(plot_style)
-    #         # Ensure defaults for blank values
-    #         if plot_style["layout_style"] == '':
-    #             plot_style["layout_style"] = 'default'
-    #         if plot_style["data_series_style"] == '':
-    #             plot_style["data_series_style"] = 'default'
-    #     else:
-    #         # Use the provided style directly
-    #         plot_style = parse_plot_style(plot_style)
-    #     return plot_style
-
     #simulate all series will simulate any series as needed.
     def get_plotly_fig(self, plot_style = {"layout_style":"", "data_series_style":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
@@ -809,7 +786,7 @@ class JSONGrapherRecord:
         import plotly.io as pio
         import copy
         if plot_style == {"layout_style":"", "data_series_style":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
-            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "data_series_style":""})
+            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "data_series_style":""}) #retrieve from self.fig_dict, and use defualt if not there.
         #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
@@ -818,7 +795,7 @@ class JSONGrapherRecord:
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) 
         #before cleaning and validating, we'll apply styles.
-        plot_style = self.choose_plot_style(plot_style=plot_style)
+        plot_style = self.parse_plot_style(plot_style=plot_style)
         self.apply_style(plot_style=plot_style)
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -1463,27 +1440,27 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
     One can pass a style in for the plotting functions. In those cases, we'll use the remove style option, then apply.
 '''
 
-# def parse_plot_style(plot_style):
-#     """
-#     Parse the given plot style and return a structured dictionary for layout and data series styles.
+def parse_plot_style(plot_style):
+    """
+    Parse the given plot style and return a structured dictionary for layout and data series styles.
 
-#     :param plot_style: None, str, list of two items, or a dictionary with at least one valid field.
-#     :return: dict with "layout_style" and "data_series_style", ensuring defaults if missing.
-#     """
-#     if plot_style is None:
-#         parsed_plot_style = {"layout_style": None, "data_series_style": None}
-#     elif isinstance(plot_style, str):
-#         parsed_plot_style = {"layout_style": plot_style, "data_series_style": plot_style}
-#     elif isinstance(plot_style, list) and len(plot_style) == 2:
-#         parsed_plot_style = {"layout_style": plot_style[0], "data_series_style": plot_style[1]}
-#     elif isinstance(plot_style, dict):
-#         parsed_plot_style = {
-#             "layout_style": plot_style.get("layout_style", None),
-#             "data_series_style": plot_style.get("data_series_style", None),
-#         }
-#     else:
-#         raise ValueError("Invalid plot style: Must be None, a string, a list of two items, or a dictionary with valid fields.")
-#     return parsed_plot_style
+    :param plot_style: None, str, list of two items, or a dictionary with at least one valid field.
+    :return: dict with "layout_style" and "data_series_style", ensuring defaults if missing.
+    """
+    if plot_style is None:
+        parsed_plot_style = {"layout_style": None, "data_series_style": None}
+    elif isinstance(plot_style, str):
+        parsed_plot_style = {"layout_style": plot_style, "data_series_style": plot_style}
+    elif isinstance(plot_style, list) and len(plot_style) == 2:
+        parsed_plot_style = {"layout_style": plot_style[0], "data_series_style": plot_style[1]}
+    elif isinstance(plot_style, dict):
+        parsed_plot_style = {
+            "layout_style": plot_style.get("layout_style", None),
+            "data_series_style": plot_style.get("data_series_style", None),
+        }
+    else:
+        raise ValueError("Invalid plot style: Must be None, a string, a list of two items, or a dictionary with valid fields.")
+    return parsed_plot_style
 
 #this function uses a stylename or list of stylename/dictionaries to apply *both* layout_style and data_series_style
 #plot_style is a dictionary of form {"layout_style":"default", "data_series_style":"default"}

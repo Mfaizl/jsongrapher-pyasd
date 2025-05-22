@@ -1,0 +1,18 @@
+{
+    "large_green": {
+        "type": "scatter",
+        "mode": "markers",
+        "marker": {
+            "size": 12,
+            "color": "green"
+        }
+    },
+    "large_purple": {
+        "type": "scatter",
+        "mode": "markers",
+        "marker": {
+            "size": 12,
+            "color": "purple"
+        }
+    }
+}

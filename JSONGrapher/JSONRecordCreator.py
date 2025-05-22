@@ -614,12 +614,8 @@ class JSONGrapherRecord:
             return self.fig_dict
 
     def set_trace_type_one_data_series(self, data_series_index, trace_type):
-        self.fig_dict['data'][data_series_index]["trace_type"] = trace_type
-        #data_series_dict = self.fig_dict['data'][data_series_index]
-        #data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict, trace_type=trace_type)
-        #now put the data_series_dict back:
-        #self.fig_dict['data'][data_series_index] = data_series_dict
-        return self.fig_dict['data'][data_series_index]
+         self.fig_dict['data'][data_series_index]["trace_type"] = trace_type
+         return self.fig_dict['data'][data_series_index]
 
     def set_trace_type_all_series(self, trace_type):
         """
@@ -801,7 +797,6 @@ class JSONGrapherRecord:
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_type'])
-        print("line 825", self.fig_dict)
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
@@ -982,15 +977,12 @@ class JSONGrapherRecord:
     def extract_layout_style(self):
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
-    # def apply_data_series_style_by_index(self, data_series_index, data_series_style):
-    #     #data_series_style should be a dictionary, but can be a string.
-    #     data_series = self.fig_dict["data"][data_series_index]
-    #     print("line 1008", data_series_style)
-    #     print("line 1008", data_series)
-    #     data_series = apply_data_series_style_to_single_data_series(data_series, data_series_style_to_apply=data_series_style) #this is the 'external' function, not the one in the class.
-    #     self.fig_dict["data"][data_series_index] = data_series
-    #     print("line 1010", data_series)
-    #     return data_series
+    def apply_data_series_style_by_index(self, data_series_index, data_series_style):
+        #data_series_style should be a dictionary, but can be a string.
+        data_series = self.fig_dict["data"][data_series_index]
+        data_series = apply_data_series_style_to_single_data_series(data_series, data_series_style_to_apply=data_series_style) #this is the 'external' function, not the one in the class.
+        self.fig_dict["data"][data_series_index] = data_series
+        return data_series
     def extract_data_series_style_by_index(self, data_series_index, new_trace_type_name=''):
         extracted_data_series_style = extract_data_series_style_by_index(self.fig_dict, data_series_index, new_trace_type_name=new_trace_type_name)
         return extracted_data_series_style
@@ -1290,7 +1282,7 @@ def parse_units(value):
 #This function does updating of internal things before validating
 #This is used before printing and returning the JSON record.
 def update_and_validate_JSONGrapher_record(record, clean_for_plotly=True):
-    record.update_trace_types()
+    #record.update_trace_types()
     record.validate_JSONGrapher_record()
     if clean_for_plotly == True:
         record.fig_dict = clean_json_fig_dict(record.fig_dict)
@@ -1466,23 +1458,24 @@ def parse_plot_style(plot_style):
 #plot_style is a dictionary of form {"layout_style":"default", "data_series_style":"default"}
 #However, the style_to_apply does not need to be passed in as a dictionary.
 #For example: style_to_apply = ['default', 'default'] or style_to_apply = 'science'.
-# def apply_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "data_series_style":""}):
-#     #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "data_series_style":"default"}
-#     plot_style = parse_plot_style(plot_style)
-#     #Block for layout style.
-#     if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
-#         if plot_style["layout_style"] == '': #in this case, we're going to use the default.
-#             plot_style["layout_style"] = 'default'
-#         fig_dict = remove_layout_style_from_plotly_dict(fig_dict=fig_dict)
-#         fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=plot_style["layout_style"])
-#     #Block for data_series_style style.
-#     print("line 1497", plot_style["data_series_style"])
-#     if str(plot_style["data_series_style"]).lower() != 'none': #take no action if received "None" or NoneType
-#         if plot_style["data_series_style"] == '': #in this case, we're going to use the default.
-#             plot_style["data_series_style"] = 'default'            
-#         fig_dict = remove_data_series_style_from_plotly_dict(fig_dict=fig_dict)
-#         fig_dict = apply_data_series_style_to_plotly_dict(fig_dict=fig_dict,data_series_style_to_apply=plot_style["data_series_style"])
-#     return fig_dict
+#IMPORTANT: This is the only function that will set a layout_style or data_series_style that is an empty string into 'default'.
+# all other style applying functions (including parse_plot_style) will pass on the empty string or will do nothing if receiving an empty string.
+def apply_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "data_series_style":""}):
+    #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "data_series_style":"default"}
+    plot_style = parse_plot_style(plot_style)
+    #Block for layout style.
+    if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
+        if plot_style["layout_style"] == '': #in this case, we're going to use the default.
+            plot_style["layout_style"] = 'default'
+        fig_dict = remove_layout_style_from_plotly_dict(fig_dict=fig_dict)
+        fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=plot_style["layout_style"])
+    #Block for data_series_style style.
+    if str(plot_style["data_series_style"]).lower() != 'none': #take no action if received "None" or NoneType
+        if plot_style["data_series_style"] == '': #in this case, we're going to use the default.
+            plot_style["data_series_style"] = 'default'            
+        fig_dict = remove_data_series_style_from_plotly_dict(fig_dict=fig_dict)
+        fig_dict = apply_data_series_style_to_plotly_dict(fig_dict=fig_dict,data_series_style_to_apply=plot_style["data_series_style"])
+    return fig_dict
 
 def remove_style_from_plotly_dict(fig_dict):
     """
@@ -1617,274 +1610,274 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
 
 
 
-# def apply_data_series_style_to_plotly_dict(fig_dict, data_series_style_to_apply="default"):
-#     """
-#     Iterates over all traces in the `data` list of a Plotly figure dictionary 
-#     and applies styles to each one.
+def apply_data_series_style_to_plotly_dict(fig_dict, data_series_style_to_apply="default"):
+    """
+    Iterates over all traces in the `data` list of a Plotly figure dictionary 
+    and applies styles to each one.
 
-#     Args:
-#         fig_dict (dict): A dictionary containing a `data` field with Plotly traces.
-#         data_series_style_to_apply (str): Optional style preset to apply. Default is "default".
+    Args:
+        fig_dict (dict): A dictionary containing a `data` field with Plotly traces.
+        data_series_style_to_apply (str): Optional style preset to apply. Default is "default".
 
-#     Returns:
-#         dict: Updated Plotly figure dictionary with defaults applied to each trace.
+    Returns:
+        dict: Updated Plotly figure dictionary with defaults applied to each trace.
 
-#     """
-#     print("line 1650", fig_dict)
-#     print("line 1651", data_series_style_to_apply)
-#     if (data_series_style_to_apply == '') or (str(data_series_style_to_apply).lower() == 'none'):
-#         return fig_dict    
-#     if isinstance(fig_dict, dict):
-#         if "data" in fig_dict and isinstance(fig_dict["data"], list):
-#             fig_dict["data"] = [apply_data_series_style_to_single_data_series(trace, data_series_style_to_apply) for trace in fig_dict["data"]]
-#             return fig_dict
-#     elif isinstance(fig_dict, list):
-#         data_list = fig_dict #assume we've received the data_seres_list rather than a fig_dict.
-#         data_list = [apply_data_series_style_to_single_data_series(trace, data_series_style_to_apply) for trace in fig_dict["data"]]
-#         return data_list
-#     elif not isinstance(fig_dict, dict):
-#         return fig_dict  # Return unchanged if the input is invalid.
+    """
+    print("line 1650", fig_dict)
+    print("line 1651", data_series_style_to_apply)
+    if (data_series_style_to_apply == '') or (str(data_series_style_to_apply).lower() == 'none'):
+        return fig_dict    
+    if isinstance(fig_dict, dict):
+        if "data" in fig_dict and isinstance(fig_dict["data"], list):
+            fig_dict["data"] = [apply_data_series_style_to_single_data_series(trace, data_series_style_to_apply) for trace in fig_dict["data"]]
+            return fig_dict
+    elif isinstance(fig_dict, list):
+        data_list = fig_dict #assume we've received the data_seres_list rather than a fig_dict.
+        data_list = [apply_data_series_style_to_single_data_series(trace, data_series_style_to_apply) for trace in fig_dict["data"]]
+        return data_list
+    elif not isinstance(fig_dict, dict):
+        return fig_dict  # Return unchanged if the input is invalid.
 
-#The logic in JSONGrapher is to apply the style information but to treat "type" differently 
-#Accordingly, we use 'trace_type' as a field in JSONGrapher for each data_series.
-#compared to how plotly treats 'type' for a data series. So later in the process, when actually plotting with plotly, the 'type' field will get overwritten.
-# def apply_data_series_style_to_single_data_series(data_series, data_series_style_to_apply="default"):
-#     """
-#     Applies predefined styles to a single Plotly data series while preserving relevant fields.
+# The logic in JSONGrapher is to apply the style information but to treat "type" differently 
+# Accordingly, we use 'trace_type' as a field in JSONGrapher for each data_series.
+# compared to how plotly treats 'type' for a data series. So later in the process, when actually plotting with plotly, the 'type' field will get overwritten.
+def apply_data_series_style_to_single_data_series(data_series, data_series_style_to_apply="default"):
+    """
+    Applies predefined styles to a single Plotly data series while preserving relevant fields.
 
-#     Args:
-#         data_series (dict): A dictionary representing a single Plotly data series.
-#         data_series_style_to_apply (str or dict): Name of the style preset or a custom style dictionary. Default is "default".
+    Args:
+        data_series (dict): A dictionary representing a single Plotly data series.
+        data_series_style_to_apply (str or dict): Name of the style preset or a custom style dictionary. Default is "default".
 
-#     Returns:
-#         dict: Updated data series with style applied.
-#     """
-#     if (data_series_style_to_apply == '') or (str(data_series_style_to_apply).lower() == 'none'):
-#         return data_series    
-#     if not isinstance(data_series, dict):
-#         return data_series  # Return unchanged if the data series is invalid.
-#     if type(data_series_style_to_apply) == type("string"):
-#         if (data_series_style_to_apply.lower() == "nature") or (data_series_style_to_apply.lower() == "science"):
-#             data_series_style_to_apply = "default"
-#     # -------------------------------
-#     # Predefined data series styles
-#     # -------------------------------
-#     # Each style is defined as a dictionary containing multiple plot types.
-#     # Users can select a style preset (e.g., "default", "minimalist", "bold"),
-#     # and the function will apply appropriate settings for the given plot type.
-#     #
-#     # Supported plot types:
-#     # - "scatter_spline" (default when type is not specified)
-#     # - "scatter"
-#     # - "spline"
-#     # - "bar"
-#     # - "heatmap"
-#     #
-#     # Note: Colors are intentionally omitted to allow users to define their own.
-#     # However, predefined colorscales are applied for heatmaps.
+    Returns:
+        dict: Updated data series with style applied.
+    """
+    if (data_series_style_to_apply == '') or (str(data_series_style_to_apply).lower() == 'none'):
+        return data_series    
+    if not isinstance(data_series, dict):
+        return data_series  # Return unchanged if the data series is invalid.
+    if type(data_series_style_to_apply) == type("string"):
+        if (data_series_style_to_apply.lower() == "nature") or (data_series_style_to_apply.lower() == "science"):
+            data_series_style_to_apply = "default"
+    # -------------------------------
+    # Predefined data series styles
+    # -------------------------------
+    # Each style is defined as a dictionary containing multiple plot types.
+    # Users can select a style preset (e.g., "default", "minimalist", "bold"),
+    # and the function will apply appropriate settings for the given plot type.
+    #
+    # Supported plot types:
+    # - "scatter_spline" (default when type is not specified)
+    # - "scatter"
+    # - "spline"
+    # - "bar"
+    # - "heatmap"
+    #
+    # Note: Colors are intentionally omitted to allow users to define their own.
+    # However, predefined colorscales are applied for heatmaps.
     
-#     styles_available = {
-#         "default": {
-#             "scatter_spline": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 10},
-#             },
-#             "scatter": {
-#                 "type": "scatter",
-#                 "mode": "markers",
-#                 "marker": {"size": 10},
-#             },
-#             "spline": {
-#                 "type": "scatter",
-#                 "mode": "lines",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 0},  # Hide markers for smooth curves
-#             },
-#             "bar": {
-#                 "type": "bar",
-#                 "marker": {
-#                                 "color": "blue",
-#                                 "opacity": 0.8,
-#                                 "line": {
-#                                     "color": "black",
-#                                     "width": 2
-#                                 }
-#                             },
-#             },
-#             "heatmap": {
-#                 "type": "heatmap",
-#                 "colorscale": "Viridis",
-#             }
-#         },
-#         "minimalist": {
-#             "scatter_spline": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 1},
-#                 "marker": {"size": 6},
-#             },
-#             "scatter": {
-#                 "type": "scatter",
-#                 "mode": "lines",
-#                 "line": {"shape": "linear", "width": 1},
-#                 "marker": {"size": 0},
-#             },
-#             "spline": {
-#                 "type": "scatter",
-#                 "mode": "lines",
-#                 "line": {"shape": "spline", "width": 1},
-#                 "marker": {"size": 0},
-#             },
-#             "bar": {
-#                 "type": "bar",
-#             },
-#             "heatmap": {
-#                 "type": "heatmap",
-#                 "colorscale": "Greys",
-#             }
-#         },
-#         "bold": {
-#             "scatter_spline": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 4},
-#                 "marker": {"size": 10},
-#             },
-#             "scatter": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 4},
-#                 "marker": {"size": 12},
-#             },
-#             "spline": {
-#                 "type": "scatter",
-#                 "mode": "lines",
-#                 "line": {"shape": "spline", "width": 4},
-#                 "marker": {"size": 0},
-#             },
-#             "bar": {
-#                 "type": "bar",
-#             },
-#             "heatmap": {
-#                 "type": "heatmap",
-#                 "colorscale": "Jet",
-#             }
-#         },
-#                 "scatter": { #this style forces all traces into scatter.
-#             "scatter_spline": {
-#                 "type": "scatter",
-#                 "mode": "markers",
-#                 "marker": {"size": 10},
-#             },
-#             "scatter": {
-#                 "type": "scatter",
-#                 "mode": "markers",
-#                 "marker": {"size": 10},
-#             },
-#             "spline": {
-#                 "type": "scatter",
-#                 "mode": "markers",
-#                 "marker": {"size": 10},
-#             },
-#             "bar": {
-#                 "type": "scatter",
-#                 "mode": "markers",
-#                 "marker": {"size": 10},
-#             },
-#             "heatmap": {
-#                 "type": "heatmap",
-#                 "colorscale": "Viridis",
-#             }
-#         },
-#         "scatter_spline": { #this style forces all traces into scatter_spline
-#             "scatter_spline": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 10},
-#             },
-#             "scatter": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 10},
-#             },
-#             "spline": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 10},
-#             },
-#             "bar": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 10},
-#             },
-#             "heatmap": {
-#                 "type": "heatmap",
-#                 "colorscale": "Viridis",
-#             }
-#         },
-#         "scatter_spline": { #this style forces all traces into spline only
-#             "scatter_spline": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 0},
-#             },
-#             "scatter": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 0},
-#             },
-#             "spline": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 0},
-#             },
-#             "bar": {
-#                 "type": "scatter",
-#                 "mode": "lines+markers",
-#                 "line": {"shape": "spline", "width": 2},
-#                 "marker": {"size": 0},
-#             },
-#             "heatmap": {
-#                 "type": "heatmap",
-#                 "colorscale": "Viridis",
-#             }
-#         }
-#     }
-#     print("line 1876", data_series_style_to_apply)
-#     # Get the appropriate style dictionary
-#     if isinstance(data_series_style_to_apply, dict):
-#         style_dict = data_series_style_to_apply  # Use custom style directly
-#     else:
-#         style_dict = styles_available.get(data_series_style_to_apply, {})
-#         if not style_dict:  # Check if it's an empty dictionary
-#             print(f"Warning: Style named '{data_series_style_to_apply}' not found for individual data series. Using 'default' data_series style instead.")
-#             style_dict = styles_available.get("default", {})
-#     # Determine the trace_type, defaulting to the first item in a given style if none is provided.
-#     trace_type = data_series.get("trace_type", "")
-#     if trace_type == "":
-#         trace_type = list(style_dict.keys())[0] #take the first trace_type in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
+    styles_available = {
+        "default": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},  # Hide markers for smooth curves
+            },
+            "bar": {
+                "type": "bar",
+                "marker": {
+                                "color": "blue",
+                                "opacity": 0.8,
+                                "line": {
+                                    "color": "black",
+                                    "width": 2
+                                }
+                            },
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        },
+        "minimalist": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 1},
+                "marker": {"size": 6},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "linear", "width": 1},
+                "marker": {"size": 0},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 1},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "bar",
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Greys",
+            }
+        },
+        "bold": {
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 12},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "spline", "width": 4},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "bar",
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Jet",
+            }
+        },
+                "scatter": { #this style forces all traces into scatter.
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {"size": 10},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        },
+        "scatter_spline": { #this style forces all traces into scatter_spline
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        },
+        "scatter_spline": { #this style forces all traces into spline only
+            "scatter_spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "scatter": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "spline": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "bar": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 0},
+            },
+            "heatmap": {
+                "type": "heatmap",
+                "colorscale": "Viridis",
+            }
+        }
+    }
+    print("line 1876", data_series_style_to_apply)
+    # Get the appropriate style dictionary
+    if isinstance(data_series_style_to_apply, dict):
+        style_dict = data_series_style_to_apply  # Use custom style directly
+    else:
+        style_dict = styles_available.get(data_series_style_to_apply, {})
+        if not style_dict:  # Check if it's an empty dictionary
+            print(f"Warning: Style named '{data_series_style_to_apply}' not found for individual data series. Using 'default' data_series style instead.")
+            style_dict = styles_available.get("default", {})
+    # Determine the trace_type, defaulting to the first item in a given style if none is provided.
+    trace_type = data_series.get("trace_type", "")
+    if trace_type == "":
+        trace_type = list(style_dict.keys())[0] #take the first trace_type in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
     
-#     # Retrieve the specific style for the plot type
-#     trace_style = style_dict.get(trace_type, {})
-#     # Apply type and other predefined settings
-#     data_series["type"] = trace_style.get("type", data_series.get("type", trace_type))
-#     # Apply other attributes while preserving existing values
-#     for key, value in trace_style.items():
-#         if key not in ["type"]:
-#             if isinstance(value, dict):  # Ensure value is a dictionary
-#                 data_series.setdefault(key, {}).update(value)
-#             else:
-#                 data_series[key] = value  # Direct assignment for non-dictionary values
-#     return data_series
+    # Retrieve the specific style for the plot type
+    trace_style = style_dict.get(trace_type, {})
+    # Apply type and other predefined settings
+    data_series["type"] = trace_style.get("type", data_series.get("type", trace_type))
+    # Apply other attributes while preserving existing values
+    for key, value in trace_style.items():
+        if key not in ["type"]:
+            if isinstance(value, dict):  # Ensure value is a dictionary
+                data_series.setdefault(key, {}).update(value)
+            else:
+                data_series[key] = value  # Direct assignment for non-dictionary values
+    return data_series
 
 def remove_data_series_style_from_plotly_dict(fig_dict):
     """
@@ -1978,127 +1971,128 @@ def extract_data_series_style_from_dict(data_series_dict, new_trace_type_name=''
 
 
 
-# def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default"):
-#     """
-#     Apply a predefined style to a Plotly fig_dict while preserving non-cosmetic fields.
+def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default"):
+    """
+    Apply a predefined style to a Plotly fig_dict while preserving non-cosmetic fields.
     
-#     :param fig_dict: dict, Plotly style fig_dict
-#     :param layout_style_to_apply: str, Name of the style or journal, or a style dictionary to apply.
-#     :return: dict, Updated Plotly style fig_dict.
-#     """
-#     if (layout_style_to_apply == '') or (str(layout_style_to_apply).lower() == 'none'):
-#         return fig_dict
+    :param fig_dict: dict, Plotly style fig_dict
+    :param layout_style_to_apply: str, Name of the style or journal, or a style dictionary to apply.
+    :return: dict, Updated Plotly style fig_dict.
+    """
+    if (layout_style_to_apply == '') or (str(layout_style_to_apply).lower() == 'none'):
+        return fig_dict
 
-#     if (layout_style_to_apply.lower() == "minimalist") or (layout_style_to_apply.lower() == "bold"):
-#         layout_style_to_apply = "default"
+    #Hardcoding some cases as ones that will call the default layout, for convenience.
+    if (layout_style_to_apply.lower() == "minimalist") or (layout_style_to_apply.lower() == "bold"):
+        layout_style_to_apply = "default"
 
-#     styles_available = {
-#         "default": {
-#             "layout": {
-#                 "title": {"font": {"size": 32}, "x": 0.5},
-#                 "xaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
-#                 "yaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
-#                 "legend": {
-#                     "title": {"font": {"size": 22}},
-#                     "font": {"size": 22}
-#                 }
-#             }
-#         },
-#         "Nature": {
-#             "layout": {
-#                 "title": {"font": {"size": 32, "family": "Times New Roman", "color": "black"}},
-#                 "font": {"size": 25, "family": "Times New Roman"},
-#                 "paper_bgcolor": "white",
-#                 "plot_bgcolor": "white",
-#                 "xaxis": {
-#                     "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
-#                     "linecolor": "black", "linewidth": 2, "ticks": "outside",
-#                     "tickwidth": 2, "tickcolor": "black"
-#                 },
-#                 "yaxis": {
-#                     "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
-#                     "linecolor": "black", "linewidth": 2, "ticks": "outside",
-#                     "tickwidth": 2, "tickcolor": "black"
-#                 }
-#             }
-#         },
-#         "Science": {
-#             "layout": {
-#                 "title": {"font": {"size": 32, "family": "Arial", "color": "black"}},
-#                 "font": {"size": 25, "family": "Arial"},
-#                 "paper_bgcolor": "white",
-#                 "plot_bgcolor": "white",
-#                 "xaxis": {
-#                     "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
-#                     "linecolor": "black", "linewidth": 2, "ticks": "outside",
-#                     "tickwidth": 2, "tickcolor": "black"
-#                 },
-#                 "yaxis": {
-#                     "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
-#                     "linecolor": "black", "linewidth": 2, "ticks": "outside",
-#                     "tickwidth": 2, "tickcolor": "black"
-#                 }
-#             }
-#         }
-#     }
+    styles_available = {
+        "default": {
+            "layout": {
+                "title": {"font": {"size": 32}, "x": 0.5},
+                "xaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
+                "yaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
+                "legend": {
+                    "title": {"font": {"size": 22}},
+                    "font": {"size": 22}
+                }
+            }
+        },
+        "Nature": {
+            "layout": {
+                "title": {"font": {"size": 32, "family": "Times New Roman", "color": "black"}},
+                "font": {"size": 25, "family": "Times New Roman"},
+                "paper_bgcolor": "white",
+                "plot_bgcolor": "white",
+                "xaxis": {
+                    "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
+                },
+                "yaxis": {
+                    "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
+                }
+            }
+        },
+        "Science": {
+            "layout": {
+                "title": {"font": {"size": 32, "family": "Arial", "color": "black"}},
+                "font": {"size": 25, "family": "Arial"},
+                "paper_bgcolor": "white",
+                "plot_bgcolor": "white",
+                "xaxis": {
+                    "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
+                },
+                "yaxis": {
+                    "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
+                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
+                    "tickwidth": 2, "tickcolor": "black"
+                }
+            }
+        }
+    }
 
-#     # Use or get the style specified, or use default if not found
-#     if isinstance(layout_style_to_apply, dict):
-#         style_dict = layout_style_to_apply
-#     else:
-#         style_dict = styles_available.get(layout_style_to_apply, {})
-#         if not style_dict:  # Check if it's an empty dictionary
-#             print(f"Warning: Style named '{layout_style_to_apply}' not found for layout. Using 'default' layout style instead.")
-#             style_dict = styles_available.get("default", {})
+    # Use or get the style specified, or use default if not found
+    if isinstance(layout_style_to_apply, dict):
+        style_dict = layout_style_to_apply
+    else:
+        style_dict = styles_available.get(layout_style_to_apply, {})
+        if not style_dict:  # Check if it's an empty dictionary
+            print(f"Style named '{layout_style_to_apply}' not found with explicit layout dictionary. Using 'default' layout style.")
+            style_dict = styles_available.get("default", {})
 
-#     # Ensure layout exists in the figure
-#     fig_dict.setdefault("layout", {})
+    # Ensure layout exists in the figure
+    fig_dict.setdefault("layout", {})
 
-#     # **Extract non-cosmetic fields**
-#     non_cosmetic_fields = {
-#         "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
-#         "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
-#         "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
-#         "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
-#         "annotations.text": [
-#             annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])
-#         ],
-#         "updatemenus.buttons.label": [
-#             button.get("label", None) for menu in fig_dict.get("layout", {}).get("updatemenus", [])
-#             for button in menu.get("buttons", [])
-#         ],
-#         "coloraxis.colorbar.title.text": fig_dict.get("layout", {}).get("coloraxis", {}).get("colorbar", {}).get("title", {}).get("text", None),
-#     }
+    # **Extract non-cosmetic fields**
+    non_cosmetic_fields = {
+        "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
+        "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
+        "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
+        "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
+        "annotations.text": [
+            annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])
+        ],
+        "updatemenus.buttons.label": [
+            button.get("label", None) for menu in fig_dict.get("layout", {}).get("updatemenus", [])
+            for button in menu.get("buttons", [])
+        ],
+        "coloraxis.colorbar.title.text": fig_dict.get("layout", {}).get("coloraxis", {}).get("colorbar", {}).get("title", {}).get("text", None),
+    }
 
-#     # **Apply style dictionary to create a fresh layout object**
-#     new_layout = style_dict.get("layout", {}).copy()
+    # **Apply style dictionary to create a fresh layout object**
+    new_layout = style_dict.get("layout", {}).copy()
 
-#     # **Restore non-cosmetic fields**
-#     if non_cosmetic_fields["title.text"]:
-#         new_layout.setdefault("title", {})["text"] = non_cosmetic_fields["title.text"]
+    # **Restore non-cosmetic fields**
+    if non_cosmetic_fields["title.text"]:
+        new_layout.setdefault("title", {})["text"] = non_cosmetic_fields["title.text"]
 
-#     if non_cosmetic_fields["xaxis.title.text"]:
-#         new_layout.setdefault("xaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["xaxis.title.text"]
+    if non_cosmetic_fields["xaxis.title.text"]:
+        new_layout.setdefault("xaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["xaxis.title.text"]
 
-#     if non_cosmetic_fields["yaxis.title.text"]:
-#         new_layout.setdefault("yaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["yaxis.title.text"]
+    if non_cosmetic_fields["yaxis.title.text"]:
+        new_layout.setdefault("yaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["yaxis.title.text"]
 
-#     if non_cosmetic_fields["legend.title.text"]:
-#         new_layout.setdefault("legend", {}).setdefault("title", {})["text"] = non_cosmetic_fields["legend.title.text"]
+    if non_cosmetic_fields["legend.title.text"]:
+        new_layout.setdefault("legend", {}).setdefault("title", {})["text"] = non_cosmetic_fields["legend.title.text"]
 
-#     if non_cosmetic_fields["annotations.text"]:
-#         new_layout["annotations"] = [{"text": text} for text in non_cosmetic_fields["annotations.text"]]
+    if non_cosmetic_fields["annotations.text"]:
+        new_layout["annotations"] = [{"text": text} for text in non_cosmetic_fields["annotations.text"]]
 
-#     if non_cosmetic_fields["updatemenus.buttons.label"]:
-#         new_layout["updatemenus"] = [{"buttons": [{"label": label} for label in non_cosmetic_fields["updatemenus.buttons.label"]]}]
+    if non_cosmetic_fields["updatemenus.buttons.label"]:
+        new_layout["updatemenus"] = [{"buttons": [{"label": label} for label in non_cosmetic_fields["updatemenus.buttons.label"]]}]
 
-#     if non_cosmetic_fields["coloraxis.colorbar.title.text"]:
-#         new_layout.setdefault("coloraxis", {}).setdefault("colorbar", {})["title"] = {"text": non_cosmetic_fields["coloraxis.colorbar.title.text"]}
+    if non_cosmetic_fields["coloraxis.colorbar.title.text"]:
+        new_layout.setdefault("coloraxis", {}).setdefault("colorbar", {})["title"] = {"text": non_cosmetic_fields["coloraxis.colorbar.title.text"]}
 
-#     # **Assign the new layout back into the figure dictionary**
-#     fig_dict["layout"] = new_layout
+    # **Assign the new layout back into the figure dictionary**
+    fig_dict["layout"] = new_layout
 
-#     return fig_dict
+    return fig_dict
 
 def remove_layout_style_from_plotly_dict(fig_dict):
     """

@@ -11,14 +11,18 @@ import JSONGrapher
 # First, we will load two example records and plot them with the default settings of JSONGrapher.
 
 merged_record = JSONGrapher.load_JSONGrapherRecords(["LaMnO3.json", "LaFeO3.json"])
-###merged_record.plot()
+merged_record.plot()
 
 
-#IMPORTANT: Before we get started, we need to set the data_series_style to none. Otherwise, JSONGrapher will switch back to the default.
-merged_record.apply_style(plot_style = {"layout_style":"default", "data_series_style":"default"},)
-merged_record.plot()  #<-- this 2nd plot is the default for plotly. It is a bit different from the default JSONGrapher style.
+#Let's set the data_series_style to "none" to see what happens.
+merged_record.apply_style(plot_style = {"layout_style":"default", "data_series_style":"none"})
+#When we plot this, we get the plotly 'default' settings which are different from JSONGrapher.
+#Additionally, the plotly settings are not consistent between data_series. Plotly changes how series are plotted based on the number of points.
+merged_record.plot() 
 
-#Now, let's change something about one of the data_series. To do this, we're going to modify a dataseries directly.
+#Now, let's go back to the JSONGrapher default, then something about one of the data_series. 
+merged_record.apply_style(plot_style = {"layout_style":"default", "data_series_style":"default"})
+merged_record.plot() 
 
 new_trace_type = merged_record.extract_data_series_style_by_index(0, new_trace_type_name="test")
 print('line 24', new_trace_type)
@@ -26,22 +30,25 @@ print('line 24', new_trace_type)
 #The syntax for adding things into a record is Record.fig_dict["data"][0]
 #There are no 'commands' for formatting in JSONGrapher. Instead, we use formatting that is allowed for plotly.
 
-#We will make the first data_series have marker size 12 and color of green.
+#Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series.
+merged_record.apply_style(plot_style = {"layout_style":"default", "data_series_style":"none"})
+
+#We will make the first data_series have marker size 15 and color of green.
 # We want to do something like this:
-# merged_record.fig_dict["data"][0]["marker"]["size"] = 12 #This line provides 
+# merged_record.fig_dict["data"][0]["marker"]["size"] = 15 
 #let's first print out the data_series dictionary:
 print(merged_record.fig_dict["data"][0])
 
 #The marker field does not exis in the data_series, and in python, we must add missing fields, first.
 merged_record.fig_dict["data"][0]["marker"] = {}
-merged_record.fig_dict["data"][0]["marker"]["size"] = 12
+merged_record.fig_dict["data"][0]["marker"]["size"] = 15
 merged_record.fig_dict["data"][0]["marker"]["color"] = "green"
-#### merged_record.plot() 
+merged_record.plot() 
 #now, let's make the other markers large and purple.
 merged_record.fig_dict["data"][1]["marker"] = {}
-merged_record.fig_dict["data"][1]["marker"]["size"] = 12
+merged_record.fig_dict["data"][1]["marker"]["size"] = 15
 merged_record.fig_dict["data"][1]["marker"]["color"] = "purple"
-#### merged_record.plot() 
+merged_record.plot() 
 
 #Let's save these two styles, so we can use them later. We also need to name these new styles.
 style_with_large_green_trace_type = merged_record.extract_data_series_style_by_index(0, new_trace_type_name="large_green")
@@ -69,6 +76,9 @@ with open("large_markers.json", "w") as file:
 # Load the JSON files
 with open("large_markers.json", "r") as file:
     large_markers_data_series_style = json.load(file)
+
+#Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series.
+merged_record.apply_style(plot_style = {"layout_style":"default", "data_series_style":"none"})
 
 print("Line 68!!!!!!!!!!!!!!!!!!!!!!!!!")
 #It is important to note that a data_series_style typically has more than one trace_type.

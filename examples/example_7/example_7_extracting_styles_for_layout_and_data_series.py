@@ -92,3 +92,4 @@ merged_record.apply_data_series_style_by_index(data_series_index=0, data_series_
 merged_record.apply_data_series_style_by_index(data_series_index=1, data_series_style=large_markers_data_series_style)
 print("Line 79!!!!!!!!!!!!!!!!!!!!!!!!!")
 merged_record.plot()
+print(merged_record.extract_data_series_styles_collection())

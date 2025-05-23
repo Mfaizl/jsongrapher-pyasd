@@ -987,7 +987,7 @@ class JSONGrapherRecord:
         fig_dict = self.fig_dict
         new_trace_styles_collection_dictionary = {}
         if new_trace_styles_collection_name == '':
-            new_trace_styles_collection_name = 'custom'
+            new_trace_styles_collection_name = 'replace_this_with_your_trace_styles_collection_name'
         if indices_of_data_series_to_extract_styles_from == []:
             indices_of_data_series_to_extract_styles_from = range(len(fig_dict["data"]))
         if new_trace_type_names_list == []:
@@ -995,7 +995,7 @@ class JSONGrapherRecord:
                 data_series_dict = fig_dict["data"][data_series_index]
                 trace_type_name = data_series_dict.get('trace_type', '')  # return blank line if not there.
                 if trace_type_name == '':
-                    trace_type_name = 'custom' + str(data_series_index)
+                    trace_type_name = 'custom_trace_style' + str(data_series_index)
                 if trace_type_name not in new_trace_type_names_list:
                     pass
                 else:
@@ -1006,7 +1006,8 @@ class JSONGrapherRecord:
         for index_to_extract_from in indices_of_data_series_to_extract_styles_from:
             new_trace_type_name = new_trace_type_names_list[index_to_extract_from]
             extracted_trace_style = extract_data_series_style_by_index(fig_dict, index_to_extract_from, new_trace_type_name=new_trace_type_names_list[index_to_extract_from])
-            new_trace_styles_collection_dictionary[new_trace_type_name] = extracted_trace_style
+            print("line 1009", extracted_trace_style)
+            new_trace_styles_collection_dictionary[new_trace_type_name] = extracted_trace_style[new_trace_type_name]
         new_trace_styles_collection = {new_trace_styles_collection_name: new_trace_styles_collection_dictionary}
         return new_trace_styles_collection
     def extract_data_series_style_by_index(self, data_series_index, new_trace_type_name=''):

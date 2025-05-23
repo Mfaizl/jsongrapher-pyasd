@@ -14,24 +14,21 @@ merged_record = JSONGrapher.load_JSONGrapherRecords(["LaMnO3.json", "LaFeO3.json
 merged_record.plot()
 
 
-#Let's set the trace_style to "none" to see what happens.
-merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_style":"none"})
+#Let's set the trace_styles_collection to "none" to see what happens.
+merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"none"})
 #When we plot this, we get the plotly 'default' settings which are different from JSONGrapher.
 #Additionally, the plotly settings are not consistent between data_series. Plotly changes how series are plotted based on the number of points.
 merged_record.plot() 
 
 #Now, let's go back to the JSONGrapher default, then something about one of the data_series. 
-merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_style":"default"})
+merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"default"})
 merged_record.plot() 
-
-new_trace_style = merged_record.extract_trace_style_by_index(0, new_trace_style_name="test")
-print('line 24', new_trace_style)
 
 #The syntax for adding things into a record is Record.fig_dict["data"][0]
 #There are no 'commands' for formatting in JSONGrapher. Instead, we use formatting that is allowed for plotly.
 
 #Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series.
-merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_style":"none"})
+merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"none"})
 
 #We will make the first data_series have marker size 15 and color of green.
 # We want to do something like this:
@@ -55,9 +52,9 @@ style_with_large_green_trace_style = merged_record.extract_trace_style_by_index(
 style_with_large_purple_trace_style = merged_record.extract_trace_style_by_index(1, new_trace_style_name="large_purple")
 
 #A data_series style normally consists of multiple trace_styles. Let's put both of these in a new style.
-large_markers_trace_style = {}
-large_markers_trace_style["large_green"] = style_with_large_green_trace_style["large_green"]
-large_markers_trace_style["large_purple"] = style_with_large_purple_trace_style["large_purple"]
+large_markers_trace_styles_collection = {}
+large_markers_trace_styles_collection["large_green"] = style_with_large_green_trace_style["large_green"]
+large_markers_trace_styles_collection["large_purple"] = style_with_large_purple_trace_style["large_purple"]
 
 #let's save these to file.
 import json
@@ -69,27 +66,28 @@ with open("large_purple.json", "w") as file:
     json.dump(style_with_large_purple_trace_style, file, indent=4)
 
 with open("large_markers.json", "w") as file:
-    json.dump(large_markers_trace_style, file, indent=4)
+    json.dump(large_markers_trace_styles_collection, file, indent=4)
 
-#Now, for practice, let's read the data_series style in that has more than one trace_style, and use that.
+#Now, for practice, let's read the large_markers_trace_styles_collection in that has more than one trace_style, and use that.
 
 # Load the JSON files
 with open("large_markers.json", "r") as file:
-    large_markers_trace_style = json.load(file)
+    large_markers_trace_styles_collection = json.load(file)
 
 #Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series.
-merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_style":"none"})
+merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"none"})
 
-print("Line 68!!!!!!!!!!!!!!!!!!!!!!!!!")
-#It is important to note that a trace_style typically has more than one trace_style.
+#It is important to note that a trace_styles_collection typically has more than one trace_style.
 #To apply a trace_style, you must *first* set the data_series to having that trace_style.
 #Here, we are going to swap the trace types.
 merged_record.set_trace_style_one_data_series(0,"large_purple") 
 merged_record.set_trace_style_one_data_series(1,"large_green")
 #We could apply the trace_style_by_index.
-print("Line 76!!!!!!!!!!!!!!!!!!!!!!!!!")
-merged_record.apply_trace_style_by_index(data_series_index=0, trace_style=large_markers_trace_style)
-merged_record.apply_trace_style_by_index(data_series_index=1, trace_style=large_markers_trace_style)
-print("Line 79!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+merged_record.apply_trace_style_by_index(data_series_index=0, trace_styles_collection=large_markers_trace_styles_collection, trace_style="large_purple")
+merged_record.apply_trace_style_by_index(data_series_index=1, trace_styles_collection=large_markers_trace_styles_collection, trace_style="large_green")
 merged_record.plot()
-print(merged_record.extract_trace_styles_collection())
+
+#Let's export this style.
+merged_record.export_trace_styles_collection(new_trace_styles_collection_name="exported_large_markers_trace_styles_collection")
+

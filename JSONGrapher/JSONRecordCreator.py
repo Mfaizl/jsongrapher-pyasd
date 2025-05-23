@@ -617,37 +617,21 @@ class JSONGrapherRecord:
          self.fig_dict['data'][data_series_index]["trace_style"] = trace_style
          return self.fig_dict['data'][data_series_index]
 
+    def set_trace_styles_collection(self, trace_styles_collection):
+        """
+        Sets the plot_type field for the all data series.
+        options are: scatter, spline, scatter_spline
+        """
+        self.plot_type["trace_styles_collection"] = trace_styles_collection
+
     def set_trace_style_all_series(self, trace_style):
         """
         Sets the plot_type field for the all data series.
         options are: scatter, spline, scatter_spline
         """
-        self.plot_type = trace_style
         for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
             self.set_trace_style_one_data_series(data_series_index, trace_style)
-     
-       
-    # def update_trace_styles(self, trace_style=''):
-    #     """
-    #     updates the 'type' field in a data_series, for every existing data series.
-    #     The trace_style and the trace_style for each data_series are parsed to decide what to make the "type" field.
-    #     If a "plot_type" field is present at the root fig_dict level, that trace_style is applied to the trace_style
-    #     of all existing dataseries.
-
-    #     """        
-    #     #If optional argument not provided, take class instance setting.
-    #     if trace_style == '': 
-    #         trace_style = self.fig_dict.get("plot_type", {}).get("trace_style", '')
-    #     #If the global trace_style is not set to 'none', use it for all series.
-    #     if str(trace_style).lower() != "none":
-    #         self.set_trace_style_all_series(trace_style)
-    #     #Next, We will go through each data series and update them individually.
-    #     for data_series_index, data_series_dict in enumerate(self.fig_dict['data']):
-    #         self.apply_trace_style_by_index(data_series_index,trace_style=trace_style)
-    #         #This will update the "type" fields in the data_series_dict as needed, putting a "type" field in them if there is not one.
-    #         #data_series_dict = set_data_series_dict_plot_type(data_series_dict=data_series_dict)
-    #         #self.fig_dict['data'][data_series_index] = data_series_dict
- 
+  
     def set_datatype(self, datatype):
         """
         Sets the datatype field used as the experiment type or schema identifier.
@@ -764,7 +748,7 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, plot_style = {"layout_style":"", "trace_style":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_plotly_fig(self, plot_style = {"layout_style":"", "trace_styles_collection":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
         By default, it will apply the default still hard coded into jsongrapher.
@@ -781,8 +765,8 @@ class JSONGrapherRecord:
         """
         import plotly.io as pio
         import copy
-        if plot_style == {"layout_style":"", "trace_style":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
-            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "trace_style":""}) #retrieve from self.fig_dict, and use defualt if not there.
+        if plot_style == {"layout_style":"", "trace_styles_collection":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
+            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "trace_styles_collection":""}) #retrieve from self.fig_dict, and use defualt if not there.
         #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
@@ -803,11 +787,11 @@ class JSONGrapherRecord:
         return fig
 
     #Just a wrapper aroudn plot_with_plotly.
-    def plot(self, plot_style = {"layout_style":"", "trace_style":""}, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def plot(self, plot_style = {"layout_style":"", "trace_styles_collection":""}, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         return self.plot_with_plotly(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
 
     #simulate all series will simulate any series as needed. If changing this function's arguments, also change those for self.plot()
-    def plot_with_plotly(self, plot_style = {"layout_style":"", "trace_style":""}, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def plot_with_plotly(self, plot_style = {"layout_style":"", "trace_styles_collection":""}, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         fig = self.get_plotly_fig(plot_style=plot_style,
                                   simulate_all_series=simulate_all_series, 
                                   update_and_validate=update_and_validate, 
@@ -847,7 +831,7 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, plot_style = {"layout_style":"", "trace_style":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_matplotlib_fig(self, plot_style = {"layout_style":"", "trace_styles_collection":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
 
@@ -861,8 +845,8 @@ class JSONGrapherRecord:
             plotly Figure: A validated matplotlib figure object based on fig_dict.
         """
         import copy
-        if plot_style == {"layout_style":"", "trace_style":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
-            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "trace_style":""})
+        if plot_style == {"layout_style":"", "trace_styles_collection":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
+            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "trace_styles_collection":""})
         #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
@@ -964,8 +948,8 @@ class JSONGrapherRecord:
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
     # def apply_layout_style(self, layout_style_to_apply=''):
     #     self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
-    def apply_plot_style(self, plot_style= {"layout_style":"", "trace_style":""}): 
-        #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "trace_style":"default"} or a list of length two with those two items.
+    def apply_plot_style(self, plot_style= {"layout_style":"", "trace_styles_collection":""}): 
+        #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "trace_styles_collection":"default"} or a list of length two with those two items.
         #The plot_style dictionary can include a pair of dictionaries.
         #if apply style is called directly, we will first put the plot_style into the plot_style field
         #This way, the style will stay.
@@ -977,10 +961,13 @@ class JSONGrapherRecord:
     def extract_layout_style(self):
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
-    def apply_trace_style_by_index(self, data_series_index, trace_style):
+    def apply_trace_style_by_index(self, data_series_index, trace_styles_collection='', trace_style=''):
+        if trace_styles_collection == '':
+            self.fig_dict.setdefault("plot_style",{}) #create the plot_style dictionary if it's not there. Else, return current value.
+            trace_styles_collection = self.fig_dict["plot_style"].get("trace_styles_collection", '') #check if there is a trace_styles_collection within it, and use that. If it's not there, then use ''.
         #trace_style should be a dictionary, but can be a string.
         data_series = self.fig_dict["data"][data_series_index]
-        data_series = apply_trace_style_to_single_data_series(data_series, trace_style_to_apply=trace_style) #this is the 'external' function, not the one in the class.
+        data_series = apply_trace_style_to_single_data_series(data_series, trace_styles_collection=trace_styles_collection, trace_style_to_apply=trace_style) #this is the 'external' function, not the one in the class.
         self.fig_dict["data"][data_series_index] = data_series
         return data_series
     def extract_trace_styles_collection(self, new_trace_styles_collection_name='', indices_of_data_series_to_extract_styles_from=[], new_trace_style_names_list = []):
@@ -1006,16 +993,26 @@ class JSONGrapherRecord:
         for index_to_extract_from in indices_of_data_series_to_extract_styles_from:
             new_trace_style_name = new_trace_style_names_list[index_to_extract_from]
             extracted_trace_style = extract_trace_style_by_index(fig_dict, index_to_extract_from, new_trace_style_name=new_trace_style_names_list[index_to_extract_from])
-            print("line 1009", extracted_trace_style)
             new_trace_styles_collection_dictionary[new_trace_style_name] = extracted_trace_style[new_trace_style_name]
         new_trace_styles_collection = {new_trace_styles_collection_name: new_trace_styles_collection_dictionary}
         return new_trace_styles_collection
+    def export_trace_styles_collection(self, new_trace_styles_collection_name='', indices_of_data_series_to_extract_styles_from=[], new_trace_style_names_list = [], filename=''):
+        new_trace_styles_collection = self.extract_trace_styles_collection(new_trace_styles_collection_name=new_trace_styles_collection_name, indices_of_data_series_to_extract_styles_from=indices_of_data_series_to_extract_styles_from, new_trace_style_names_list = new_trace_style_names_list)
+        if new_trace_styles_collection_name == '':
+            new_trace_styles_collection_name = list(new_trace_styles_collection.keys())[0] #the first key will contain the collection name.
+        if filename == '':
+            filename = new_trace_styles_collection_name
+        export_trace_styles_collection(trace_styles_collection=new_trace_styles_collection, trace_styles_collection_name=new_trace_styles_collection_name, filename=filename)
     def extract_trace_style_by_index(self, data_series_index, new_trace_style_name=''):
         extracted_trace_style = extract_trace_style_by_index(self.fig_dict, data_series_index, new_trace_style_name=new_trace_style_name)
         return extracted_trace_style
-    def extract_trace_style_by_index(self, data_series_index, new_trace_style_name=''):
+    def export_trace_style_by_index(self, data_series_index, new_trace_style_name='', filename=''):
         extracted_trace_style = extract_trace_style_by_index(self.fig_dict, data_series_index, new_trace_style_name=new_trace_style_name)
-        return extracted_trace_style
+        new_trace_style_name = list(extracted_trace_style.keys())[0] #the extracted_trace_style will have a single key which is the style name.
+        if filename == '': 
+            filename = new_trace_style_name
+        export_trace_style(trace_style_dict=extracted_trace_style[new_trace_style_name],trace_style_name=new_trace_style_name, filename=filename)
+        return extracted_trace_style       
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -1239,77 +1236,9 @@ def parse_units(value):
     
     return parsed_output
 
-
-#This function sets the trace_style of a data_series_dict
-#based on some JSONGrapher options.
-#It calls "trace_style_to_field_values" 
-#and then updates the data_series_dict accordingly, as needed.
-# def set_data_series_dict_plot_type(data_series_dict, trace_style=""):
-#     print("line 1248", trace_style)
-#     if trace_style == "":
-#         #Some logic to "guess" what the user wants if no trace_style is provided.
-#         #We need to be careful about one case: in plotly, a "spline" is declared a scatter plot with data.line.shape = spline. 
-#         #So we need to check if we have spline set, in which case we make the trace_style scatter_spline.
-#         shape_field = data_series_dict.get('line', {}).get('shape', '') #get will return first argument if there, second if not, so can chain things.
-#         if shape_field == 'spline': #Enchancement: distinguish between "spline" and "scatter_spline" by checking for marker instructions.
-#             trace_style = 'scatter_spline' 
-#         elif shape_field == 'linear':
-#             trace_style = 'scatter_line' 
-#         else:
-#             trace_style = data_series_dict.get('type', 'scatter') #get will return the second argument if the first argument is not present.       
-
-#     # fields_dict = trace_style_to_field_values(trace_style)
-#     # #update the data_series_dict.
-#     # if fields_dict.get("mode_field"):
-#     #     data_series_dict["mode"] = fields_dict["mode_field"]
-#     # if fields_dict.get("type_field"):
-#     #     data_series_dict["type"] = fields_dict["type_field"]
-#     # if fields_dict.get("line_shape_field") != "":
-#     #     data_series_dict.setdefault("line", {"shape": ''})  # Creates the field if it does not already exist.
-#     #     data_series_dict["line"]["shape"] = fields_dict["line_shape_field"]
-#     # print("line 1271 in set_data_series_dict_plot_type", data_series_dict)
-#     return data_series_dict
-
-# #This function creates a fields_dict for the function set_data_series_dict_trace_style
-# def trace_style_to_field_values(trace_style):
-#     """
-#     Takes in a string that is a trace_style, such as "scatter", "scatter_spline", etc.
-#     and returns the field values that would have to go into a plotly data object.
-
-#     Returns:
-#         dict: A dictionary with keys and values for the fields that will be ultimately filled.
-
-#     To these fields are used in the function set_trace_style_one_data_series
-
-#     """
-#     fields_dict = {}
-#     #initialize some variables.
-#     #fields_dict["type_field"] = trace_style.lower()
-#     fields_dict["mode_field"] = None
-#     fields_dict["line_shape_field"] = None
-#     # Assign the various types. This list of values was determined 'manually'.
-#     if trace_style.lower() == ("scatter" or "markers"):
-#         fields_dict["type_field"] = "scatter"
-#         fields_dict["mode_field"] = "markers"
-#         fields_dict["line_shape_field"] = None
-#     elif trace_style.lower() == "scatter_spline":
-#         fields_dict["type_field"] = "scatter"
-#         fields_dict["mode_field"] = None
-#         fields_dict["line_shape_field"] = "spline"
-#     elif trace_style.lower() == "spline":
-#         fields_dict["type_field"] = 'scatter'
-#         fields_dict["mode_field"] = 'lines'
-#         fields_dict["line_shape_field"] = "spline"
-#     elif trace_style.lower() == "scatter_line":
-#         fields_dict["type_field"] = 'scatter'
-#         fields_dict["mode_field"] = 'lines'
-#         fields_dict["line_shape_field"] = "linear"
-#     return fields_dict
-
 #This function does updating of internal things before validating
 #This is used before printing and returning the JSON record.
 def update_and_validate_JSONGrapher_record(record, clean_for_plotly=True):
-    #record.update_trace_styles()
     record.validate_JSONGrapher_record()
     if clean_for_plotly == True:
         record.fig_dict = clean_json_fig_dict(record.fig_dict)
@@ -1444,17 +1373,17 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
 
 '''
 #There are a few things to know about the styles logic of JSONGrapher:
-(1) There are actually two parts to the plot_style: a layout_style for the graph and a trace_style which will get applied to the individual dataseries.
-   So the plot_style is really supposed to be a dictionary with {"layout_style":"default", "trace_style":"default"} that way it is JSON compatible and avoids ambiguity. 
-   A person can pass in dictionaries for layout_style and for trace_style and thereby create custom styles.
+(1) There are actually two parts to the plot_style: a layout_style for the graph and a trace_styles_collection which will get applied to the individual dataseries.
+   So the plot_style is really supposed to be a dictionary with {"layout_style":"default", "trace_styles_collection":"default"} that way it is JSON compatible and avoids ambiguity. 
+   A person can pass in dictionaries for layout_style and for trace_styles_collection and thereby create custom styles.
    There are helper functions to extract style dictionaries once a person has a JSONGrapher record which they're happy with.
 (2) We parse what the person provides as a style, so we accept things other than the ideal plot_style dictionary format.  
-   If someone provides a single string, we'll use it for both layout_style and trace_style.
-   If we get a list of two, we'll expect that to be in the order of layout_style then trace_style
+   If someone provides a single string, we'll use it for both layout_style and trace_styles_collection.
+   If we get a list of two, we'll expect that to be in the order of layout_style then trace_styles_collection
    If we get a string that we can't find in the existing styles list, then we'll use the default. 
 (1) by default, export to json will *not* include plot_styles.  include_formatting will be an optional argument. 
 (2) There is an apply_plot_style function which will first put the style into self.fig_dict['plot_style'] so it stays there, before applying the style.
-(3) For the plotting functions, they will have plot_style = {"layout_style":"", "trace_style":""} or = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
+(3) For the plotting functions, they will have plot_style = {"layout_style":"", "trace_styles_collection":""} or = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
     If somebody passes in a "None" type or the word none, then *no* style changes will be applied during plotting, relative to what the record already has.
     One can pass a style in for the plotting functions. In those cases, we'll use the remove style option, then apply.
 '''
@@ -1464,31 +1393,40 @@ def parse_plot_style(plot_style):
     Parse the given plot style and return a structured dictionary for layout and data series styles.
 
     :param plot_style: None, str, list of two items, or a dictionary with at least one valid field.
-    :return: dict with "layout_style" and "trace_style", ensuring defaults if missing.
+    :return: dict with "layout_style" and "trace_styles_collection", ensuring defaults if missing.
     """
     if plot_style is None:
-        parsed_plot_style = {"layout_style": None, "trace_style": None}
+        parsed_plot_style = {"layout_style": None, "trace_styles_collection": None}
     elif isinstance(plot_style, str):
-        parsed_plot_style = {"layout_style": plot_style, "trace_style": plot_style}
+        parsed_plot_style = {"layout_style": plot_style, "trace_styles_collection": plot_style}
     elif isinstance(plot_style, list) and len(plot_style) == 2:
-        parsed_plot_style = {"layout_style": plot_style[0], "trace_style": plot_style[1]}
+        parsed_plot_style = {"layout_style": plot_style[0], "trace_styles_collection": plot_style[1]}
     elif isinstance(plot_style, dict):
+        if "trace_styles_collection" not in plot_style:
+            if "trace_style_collection" in plot_style:
+                print("Warning: plot_style has 'trace_style_collection', this key should be 'trace_styles_collection'.  The key is being used, but the spelling error should be fixed.")
+                plot_style["traces_styles_collection"] = plot_style["trace_style_collection"]
+            if "traces_style_collection" in plot_style:
+                print("Warning: plot_style has 'traces_style_collection', this key should be 'trace_styles_collection'.  The key is being used, but the spelling error should be fixed.")
+                plot_style["traces_styles_collection"] = plot_style["traces_style_collection"]
+
         parsed_plot_style = {
             "layout_style": plot_style.get("layout_style", None),
-            "trace_style": plot_style.get("trace_style", None),
+            "trace_styles_collection": plot_style.get("trace_styles_collection", None),
         }
+        
     else:
         raise ValueError("Invalid plot style: Must be None, a string, a list of two items, or a dictionary with valid fields.")
     return parsed_plot_style
 
-#this function uses a stylename or list of stylename/dictionaries to apply *both* layout_style and trace_style
-#plot_style is a dictionary of form {"layout_style":"default", "trace_style":"default"}
+#this function uses a stylename or list of stylename/dictionaries to apply *both* layout_style and trace_styles_collection
+#plot_style is a dictionary of form {"layout_style":"default", "trace_styles_collection":"default"}
 #However, the style_to_apply does not need to be passed in as a dictionary.
 #For example: style_to_apply = ['default', 'default'] or style_to_apply = 'science'.
-#IMPORTANT: This is the only function that will set a layout_style or trace_style that is an empty string into 'default'.
+#IMPORTANT: This is the only function that will set a layout_style or trace_styles_collection that is an empty string into 'default'.
 # all other style applying functions (including parse_plot_style) will pass on the empty string or will do nothing if receiving an empty string.
-def apply_plot_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "trace_style":""}):
-    #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "trace_style":"default"}
+def apply_plot_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "trace_styles_collection":""}):
+    #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "trace_styles_collection":"default"}
     plot_style = parse_plot_style(plot_style)
     #Block for layout style.
     if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
@@ -1496,12 +1434,12 @@ def apply_plot_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "
             plot_style["layout_style"] = 'default'
         fig_dict = remove_layout_style_from_plotly_dict(fig_dict=fig_dict)
         fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=plot_style["layout_style"])
-    #Block for trace_style style.
-    if str(plot_style["trace_style"]).lower() != 'none': #take no action if received "None" or NoneType
-        if plot_style["trace_style"] == '': #in this case, we're going to use the default.
-            plot_style["trace_style"] = 'default'            
-        fig_dict = remove_trace_style_from_plotly_dict(fig_dict=fig_dict)
-        fig_dict = apply_trace_style_to_plotly_dict(fig_dict=fig_dict,trace_style_to_apply=plot_style["trace_style"])
+    #Block for trace_styles_collection style.
+    if str(plot_style["trace_styles_collection"]).lower() != 'none': #take no action if received "None" or NoneType
+        if plot_style["trace_styles_collection"] == '': #in this case, we're going to use the default.
+            plot_style["trace_styles_collection"] = 'default'            
+        fig_dict = remove_trace_styles_collection_from_plotly_dict(fig_dict=fig_dict)
+        fig_dict = apply_trace_styles_collection_to_plotly_dict(fig_dict=fig_dict,trace_styles_collection=plot_style["trace_styles_collection"])
     return fig_dict
 
 def remove_plot_style_from_plotly_dict(fig_dict):
@@ -1512,7 +1450,7 @@ def remove_plot_style_from_plotly_dict(fig_dict):
     :return: dict, Updated Plotly style fig_dict with default formatting.
     """
     fig_dict = remove_layout_style_from_plotly_dict(fig_dict)
-    fig_dict = remove_trace_style_from_plotly_dict(fig_dict)
+    fig_dict = remove_trace_styles_collection_from_plotly_dict(fig_dict)
     return fig_dict
 
 
@@ -1634,10 +1572,7 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
 
     return fig
 
-
-
-
-def apply_trace_style_to_plotly_dict(fig_dict, trace_style_to_apply="default"):
+def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collection="default", trace_style_to_apply="default"):
     """
     Iterates over all traces in the `data` list of a Plotly figure dictionary 
     and applies styles to each one.
@@ -1650,25 +1585,24 @@ def apply_trace_style_to_plotly_dict(fig_dict, trace_style_to_apply="default"):
         dict: Updated Plotly figure dictionary with defaults applied to each trace.
 
     """
-    print("line 1650", fig_dict)
-    print("line 1651", trace_style_to_apply)
-    if (trace_style_to_apply == '') or (str(trace_style_to_apply).lower() == 'none'):
-        return fig_dict    
-    if isinstance(fig_dict, dict):
-        if "data" in fig_dict and isinstance(fig_dict["data"], list):
-            fig_dict["data"] = [apply_trace_style_to_single_data_series(trace, trace_style_to_apply) for trace in fig_dict["data"]]
-            return fig_dict
-    elif isinstance(fig_dict, list):
-        data_list = fig_dict #assume we've received the data_seres_list rather than a fig_dict.
-        data_list = [apply_trace_style_to_single_data_series(trace, trace_style_to_apply) for trace in fig_dict["data"]]
-        return data_list
-    elif not isinstance(fig_dict, dict):
-        return fig_dict  # Return unchanged if the input is invalid.
+    if type(trace_styles_collection) == type("string"):
+        trace_styles_collection_name = trace_styles_collection
+    else:
+        trace_styles_collection_name = trace_styles_collection["name"]
+
+    if "data" in fig_dict and isinstance(fig_dict["data"], list):
+        fig_dict["data"] = [apply_trace_style_to_single_data_series(data_series=trace,trace_styles_collection=trace_styles_collection, trace_style_to_apply=trace_style_to_apply) for trace in fig_dict["data"]]
+    #now note
+    if "plot_style" not in fig_dict:
+        fig_dict["plot_style"] = {}
+    fig_dict["plot_style"]["trace_styles_collection"] = trace_styles_collection_name
+    return fig_dict
+
 
 # The logic in JSONGrapher is to apply the style information but to treat "type" differently 
-# Accordingly, we use 'trace_style' as a field in JSONGrapher for each data_series.
+# Accordingly, we use 'trace_styles_collection' as a field in JSONGrapher for each data_series.
 # compared to how plotly treats 'type' for a data series. So later in the process, when actually plotting with plotly, the 'type' field will get overwritten.
-def apply_trace_style_to_single_data_series(data_series, trace_style_to_apply="default"):
+def apply_trace_style_to_single_data_series(data_series, trace_styles_collection="default", trace_style_to_apply="default"):
     """
     Applies predefined styles to a single Plotly data series while preserving relevant fields.
 
@@ -1679,7 +1613,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_style_to_apply="d
     Returns:
         dict: Updated data series with style applied.
     """
-    if (trace_style_to_apply == '') or (str(trace_style_to_apply).lower() == 'none'):
+    if (trace_styles_collection == '') or (str(trace_styles_collection).lower() == 'none'):
         return data_series    
     if not isinstance(data_series, dict):
         return data_series  # Return unchanged if the data series is invalid.
@@ -1879,22 +1813,21 @@ def apply_trace_style_to_single_data_series(data_series, trace_style_to_apply="d
             }
         }
     }
-    print("line 1876", trace_style_to_apply)
     # Get the appropriate style dictionary
-    if isinstance(trace_style_to_apply, dict):
-        style_dict = trace_style_to_apply  # Use custom style directly
+    if isinstance(trace_styles_collection, dict):
+        styles_collection_dict = trace_styles_collection  # Use custom style directly
     else:
-        style_dict = styles_available.get(trace_style_to_apply, {})
-        if not style_dict:  # Check if it's an empty dictionary
-            print(f"Warning: Style named '{trace_style_to_apply}' not found for individual data series. Using 'default' data_series style instead.")
-            style_dict = styles_available.get("default", {})
+        styles_collection_dict = styles_available.get(trace_styles_collection, {})
+        if not styles_collection_dict:  # Check if it's an empty dictionary
+            print(f"Warning: Style named '{trace_styles_collection}' not found for individual data series. Using 'default' trace_styles_collection instead.")
+            styles_collection_dict = styles_available.get("default", {})
     # Determine the trace_style, defaulting to the first item in a given style if none is provided.
     trace_style = data_series.get("trace_style", "")
     if trace_style == "":
-        trace_style = list(style_dict.keys())[0] #take the first trace_style in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
+        trace_style = list(styles_collection_dict.keys())[0] #take the first trace_style name in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
     
     # Retrieve the specific style for the plot type
-    trace_style = style_dict.get(trace_style, {})
+    trace_style = styles_collection_dict.get(trace_style, {})
     # Apply type and other predefined settings
     data_series["type"] = trace_style.get("type", data_series.get("type", trace_style))
     # Apply other attributes while preserving existing values
@@ -1906,7 +1839,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_style_to_apply="d
                 data_series[key] = value  # Direct assignment for non-dictionary values
     return data_series
 
-def remove_trace_style_from_plotly_dict(fig_dict):
+def remove_trace_styles_collection_from_plotly_dict(fig_dict):
     """
     Remove applied data series styles from a Plotly figure dictionary.
     
@@ -1915,6 +1848,11 @@ def remove_trace_style_from_plotly_dict(fig_dict):
     """
     if isinstance(fig_dict, dict) and "data" in fig_dict and isinstance(fig_dict["data"], list):
         fig_dict["data"] = [remove_trace_style_from_single_data_series(trace) for trace in fig_dict["data"]]
+
+    #If being told to remove the style, should also pop it from fig_dict.
+    if "plot_style" in fig_dict:
+        if "trace_styles_collection" in fig_dict["plot_style"]:
+            fig_dict["plot_style"].pop("trace_styles_collection")
     return fig_dict
 
 def remove_trace_style_from_single_data_series(data_series):
@@ -1944,14 +1882,11 @@ def remove_trace_style_from_single_data_series(data_series):
 
 def extract_trace_style_by_index(fig_dict, data_series_index, new_trace_style_name=''):
     data_series_dict = fig_dict["data"][data_series_index]
-    extracted_trace_style = extract_trace_style_from_dict(data_series_dict=data_series_dict, new_trace_style_name=new_trace_style_name)
+    extracted_trace_style = extract_trace_style_from_data_series_dict(data_series_dict=data_series_dict, new_trace_style_name=new_trace_style_name)
     return extracted_trace_style
 
-def extract_trace_style_from_dict(data_series_dict, new_trace_style_name=''):
-    extracted_trace_style = extract_trace_style_from_dict(data_series_dict=data_series_dict, new_trace_style_name=new_trace_style_name)
-    return extracted_trace_style
 
-def extract_trace_style_from_dict(data_series_dict, new_trace_style_name=''):
+def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_name=''):
     """
     Extract formatting attributes from a given Plotly data series.
 
@@ -1996,6 +1931,85 @@ def extract_trace_style_from_dict(data_series_dict, new_trace_style_name=''):
     extracted_trace_style = {new_trace_style_name : trace_style_dict} #this is a trace_style dict.
     return extracted_trace_style #this is a trace_style dict.
 
+#export a single trace_style dictionary to .json.
+def export_trace_style(trace_style_dict, trace_style_name, filename):
+    # Ensure the filename ends with .json
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+
+    json_structure = {
+        "trace_style": {
+            "name": trace_style_name,
+            trace_style_name: {
+                trace_style_dict
+            }
+        }
+    }
+
+    with open(filename, "w") as file:
+        json.dump(json_structure, file, indent=4)
+
+#export an entire trace_styles_collection to .json. THe trace_styles_collection is dict.
+def export_trace_styles_collection(trace_styles_collection, trace_styles_collection_name, filename):
+    if "trace_styles_collection" in trace_styles_collection: #We may receive a traces_style collection in a container. If so, we pull the traces_style_collection out.
+        trace_styles_collection = trace_styles_collection[trace_styles_collection["name"]] 
+    # Ensure the filename ends with .json
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+
+    json_structure = {
+        "trace_styles_collection": {
+            "name": trace_styles_collection_name,
+            trace_styles_collection_name: trace_styles_collection
+        }
+    }
+    print("line 1964", json_structure)
+    with open(filename, "w") as file:
+        json.dump(json_structure, file, indent=4)
+
+#export an entire trace_styles_collection from .json. THe trace_styles_collection is dict.
+def import_trace_styles_collection(filename):
+    # Ensure the filename ends with .json
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    # Validate JSON structure
+    containing_dict = data.get("trace_styles_collection")
+    if not isinstance(containing_dict, dict):
+        raise ValueError("Error: Missing or malformed 'trace_styles_collection'.")
+
+    collection_name = containing_dict.get("name")
+    if not isinstance(collection_name, str) or collection_name not in containing_dict:
+        raise ValueError(f"Error: Expected dictionary '{collection_name}' is missing or malformed.")
+    trace_styles_collection  = containing_dict[collection_name]
+    # Return only the dictionary corresponding to the collection name
+    return trace_styles_collection
+
+
+#export an entire trace_styles_collection from .json. THe trace_styles_collection is dict.
+def import_trace_style(filename):
+    # Ensure the filename ends with .json
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    # Validate JSON structure
+    containing_dict = data.get("trace_style")
+    if not isinstance(containing_dict, dict):
+        raise ValueError("Error: Missing or malformed 'trace_style'.")
+
+    style_name = containing_dict.get("name")
+    if not isinstance(style_name, str) or style_name not in containing_dict:
+        raise ValueError(f"Error: Expected dictionary '{style_name}' is missing or malformed.")
+    trace_style_dict = containing_dict[style_name]
+
+    # Return only the dictionary corresponding to the trace style name
+    return trace_style_dict
 
 
 def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default"):
@@ -2006,6 +2020,10 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     :param layout_style_to_apply: str, Name of the style or journal, or a style dictionary to apply.
     :return: dict, Updated Plotly style fig_dict.
     """
+    if type(layout_style_to_apply) == type("string"):
+        layout_style_to_apply_name = layout_style_to_apply
+    else:
+        layout_style_to_apply_name = list(layout_style_to_appy.keys())[0]#if it is a dictionary, it will have one key which is its name.
     if (layout_style_to_apply == '') or (str(layout_style_to_apply).lower() == 'none'):
         return fig_dict
 
@@ -2118,7 +2136,10 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
 
     # **Assign the new layout back into the figure dictionary**
     fig_dict["layout"] = new_layout
-
+    #Now update the fig_dict to signify the new layout_style used.
+    if "plot_style" not in fig_dict:
+        fig_dict["plot_style"] = {}
+    fig_dict["plot_style"]["layout_style"] = layout_style_to_apply_name
     return fig_dict
 
 def remove_layout_style_from_plotly_dict(fig_dict):
@@ -2187,6 +2208,10 @@ def remove_layout_style_from_plotly_dict(fig_dict):
         for key in style_keys:
             fig_dict["layout"].pop(key, None)
 
+    #If being told to remove the style, should also pop it from fig_dict.
+    if "plot_style" in fig_dict:
+        if "layout_style" in fig_dict["plot_style"]:
+            fig_dict["plot_style"].pop("layout_style")
     return fig_dict
 
 def extract_layout_style_from_plotly_dict(fig_dict):

@@ -62,11 +62,12 @@ Record.print_to_inspect()
 
 #We can also plot the data with matplotlib, and can export to file as png. 
 print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB AND PLOTLY-PYTHON-MODULE")
+Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
+#Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
+
 Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")
 
-Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
-Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
 
 
 print("\n\n STEP 6: ADDING SERIES AND MERGING RECORDS")

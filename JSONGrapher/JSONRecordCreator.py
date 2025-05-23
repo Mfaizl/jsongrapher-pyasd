@@ -329,7 +329,9 @@ class JSONGrapherRecord:
     """
     This class enables making JSONGrapher records. Each instance represents a structured JSON record for a graph.
     One can optionally provide an existing JSONGrapher record during creation to pre-populate the object.
-    One can also manipulate the fig_dict inside, directly, using syntax like Record.fig_dict["comments"] = ...
+    One can manipulate the fig_dict inside, directly, using syntax like Record.fig_dict["comments"] = ...
+    One can also use syntax like Record["comments"] = ...  as some 'magic' synchronizes fields directlyin the Record with fields in the fig_dict.
+    However, developers should usually use the syntax like Record.fig_dict, internally, to avoid any referencing mistakes.
 
     Arguments & Attributes (all are optional):
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.

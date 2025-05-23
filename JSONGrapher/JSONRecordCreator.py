@@ -325,13 +325,10 @@ class SyncedDict(dict):
         setattr(self.owner, key, value)  # Sync with instance attribute
 
 
-class DataSeries:
-    def __init__(self, uid="", name="", trace_style="scatter", x=None, y=None, **kwargs):
-        """Initialize a data series with synced dictionary behavior."""
-        self.data_series_dict = SyncedDict(self)  # Use SyncedDict for auto-syncing
-
-        # Default trace properties
-        self.data_series_dict.update({
+class JSONGrapherDataSeries:
+    def __init__(self, uid="", name="", trace_style="scatter_spline", x=None, y=None, **kwargs):
+        """Initialize a data series with synced dictionary behavior.
+        Here are some fields that can be included, with example values.
             "uid": uid,
             "name": name,
             "trace_style": trace_style,
@@ -347,6 +344,16 @@ class DataSeries:
             "hoverinfo": kwargs.get("hoverinfo", "x+y"),
             "legend_group": kwargs.get("legend_group", None),
             "text": kwargs.get("text", None)
+        """
+        self.data_series_dict = SyncedDict(self)  # Use SyncedDict for auto-syncing
+
+        # Default trace properties
+        self.data_series_dict.update({
+            "uid": uid,
+            "name": name,
+            "trace_style": trace_style,
+            "x": list(x) if x else [],
+            "y": list(y) if y else []
         })
 
     # The __getitem__ and __setitem__ functions allow the class instance to behave 'like' a dictionary without using super.
@@ -359,17 +366,62 @@ class DataSeries:
         """Redirect modifications of self[key] to self.data_series_dict[key]."""
         self.data_series_dict[key] = value
 
+    def update_new_terms_only(self, series_dict):
+        """Update instance attributes from a dictionary."""
+        self.data_series_dict.update(series_dict)
+
     def get_data_series_dict(self):
         """Return the dictionary representation of the trace."""
         return dict(self.data_series_dict)
+
+    def set_x_values(self, x_values):
+        """Update the x-axis values."""
+        self.data_series_dict["x"] = list(x_values) if x_values else []
+
+    def set_y_values(self, y_values):
+        """Update the y-axis values."""
+        self.data_series_dict["y"] = list(y_values) if y_values else []
+
+    def set_name(self, name):
+        """Update the name of the data series."""
+        self.data_series_dict["name"] = name
+
+    def set_uid(self, uid):
+        """Update the unique identifier (uid) of the data series."""
+        self.data_series_dict["uid"] = uid
 
     def set_trace_style(self, style):
         """Update the trace style (e.g., scatter, scatter_spline, scatter_line, bar)."""
         self.data_series_dict["trace_style"] = style
 
-    def update_new_terms_only(self, series_dict):
-        """Update instance attributes from a dictionary."""
-        self.data_series_dict.update(series_dict)
+    def set_marker_shape(self, shape):
+        """
+        Update the marker shape (symbol).
+
+        Supported marker shapes in Plotly:
+        - 'circle' (default)
+        - 'square'
+        - 'diamond'
+        - 'cross'
+        - 'x'
+        - 'triangle-up'
+        - 'triangle-down'
+        - 'triangle-left'
+        - 'triangle-right'
+        - 'pentagon'
+        - 'hexagon'
+        - 'star'
+        - 'hexagram'
+        - 'star-triangle-up'
+        - 'star-triangle-down'
+        - 'star-square'
+        - 'star-diamond'
+        - 'hourglass'
+        - 'bowtie'
+
+        :param shape: String representing the desired marker shape.
+        """
+        self.data_series_dict.setdefault("marker", {})["symbol"] = shape
 
     def add_data_point(self, x_val, y_val):
         """Append a new data point to the series."""
@@ -389,15 +441,40 @@ class DataSeries:
         self.data_series_dict["mode"] = mode
 
     def set_line_width(self, width):
-        """Update the line width."""
+        """Update the line width, should be a number, normally an integer."""
         self.data_series_dict["line_width"] = width
 
     def set_line_dash(self, dash_style):
-        """Update the line dash style (e.g., 'solid', 'dash', 'dot')."""
+        """
+        Update the line dash style.
+
+        Supported dash styles in Plotly:
+        - 'solid' (default) → Continuous solid line
+        - 'dot' → Dotted line
+        - 'dash' → Dashed line
+        - 'longdash' → Longer dashed line
+        - 'dashdot' → Dash-dot alternating pattern
+        - 'longdashdot' → Long dash-dot alternating pattern
+
+        :param dash_style: String representing the desired line style.
+        """
         self.data_series_dict["line_dash"] = dash_style
 
+    def set_transparency(self, transparency_value):
+        """
+        Update the transparency level by converting it to opacity.
+
+        Transparency ranges from:
+        - 0 (completely opaque) → opacity = 1
+        - 1 (fully transparent) → opacity = 0
+        - Intermediate values adjust partial transparency.
+
+        :param transparency_value: Float between 0 and 1, where 0 is opaque and 1 is transparent.
+        """
+        self.data_series_dict["opacity"] = 1 - transparency_value
+
     def set_opacity(self, opacity_value):
-        """Update the opacity level."""
+        """Update the opacity level between 0 and 1."""
         self.data_series_dict["opacity"] = opacity_value
 
     def set_visibility(self, is_visible):
@@ -565,7 +642,11 @@ class JSONGrapherRecord:
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
-        #Add to the class object's data list.
+
+        #make this a JSONGrapherDataSeries class object, that way a person can use functions to do things like change marker size etc. more easily.
+        JSONGrapher_data_series_object = JSONGrapherDataSeries()
+        JSONGrapher_data_series_object.update_new_terms_only(data_series_dict)
+        #Add to the JSONGrapherRecord class object's data list.
         self.fig_dict["data"].append(data_series_dict) #implied return.
         return data_series_dict
 
@@ -608,20 +689,25 @@ class JSONGrapherRecord:
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
-        #Add to the class object's data list.
-        self.fig_dict["data"].append(data_series_dict)
+        
+        #make this a JSONGrapherDataSeries class object, that way a person can use functions to do things like change marker size etc. more easily.
+        JSONGrapher_data_series_object = JSONGrapherDataSeries()
+        JSONGrapher_data_series_object.update_new_terms_only(data_series_dict)
+        #Add to the JSONGrapherRecord class object's data list.
+        self.fig_dict["data"].append(data_series_dict)  
+
+        #Now evaluate the equation as added, if requested. It does seem counterintuitive to do this "at the end",
+        #but the reason this happens at the end is that the evaluation *must* occur after being a fig_dict because we
+        #need to check the units coming out against the units in the layout. Otherwise we would not be able to convert units.
         new_data_series_index = len(self.fig_dict["data"])-1 
         if evaluate_equations_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
             try:
                 self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, new_data_series_index)
             except:
                 pass
-        ## Should consider adding "set_plot_type" for whole fig_dict, similar to what is in add_data_series
-
-
+        
     def change_data_series_name(self, series_index, series_name):
         self.fig_dict["data"][series_index]["name"] = series_name
-
 
     #this function forces the re-simulation of a particular dataseries.
     #The simulator link will be extracted from the record, by default.
@@ -2026,7 +2112,7 @@ def remove_trace_style_from_single_data_series(data_series):
     # **Define formatting fields to remove**
     formatting_fields = {
         "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
-        "legendgroup", "showlegend", "textposition", "textfont"
+        "legendgroup", "showlegend", "textposition", "textfont", "visible", "connectgaps", "cliponaxis", "showgrid"
     }
 
     # **Create a new data series excluding only formatting fields**

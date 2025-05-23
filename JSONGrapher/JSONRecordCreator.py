@@ -333,6 +333,7 @@ class JSONGrapherRecord:
     One can also use syntax like Record["comments"] = ...  as some 'magic' synchronizes fields directlyin the Record with fields in the fig_dict.
     However, developers should usually use the syntax like Record.fig_dict, internally, to avoid any referencing mistakes.
 
+
     Arguments & Attributes (all are optional):
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
         datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name.
@@ -1359,39 +1360,59 @@ def validate_JSONGrapher_record(record):
     else:
         return True, []
 
-def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
+def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_interpolated_points=3, adjust_edges=True):
     """
-    Applies a rolling polynomial regression with a specified window size and degree.
+    Applies a rolling polynomial regression with a specified window size and degree,
+    interpolates additional points, and optionally adjusts edge points for smoother transitions.
 
     Args:
         x_values (list): List of x coordinates.
         y_values (list): List of y coordinates.
         window_size (int): Number of points per rolling fit (default: 3).
         degree (int): Degree of polynomial to fit (default: 2).
+        num_interpolated_points (int): Number of interpolated points per segment (default: 3). Set to 0 to only return original points.
+        adjust_edges (bool): Whether to adjust edge cases based on window size (default: True).
 
     Returns:
         tuple: (smoothed_x, smoothed_y) lists for plotting.
     """
     import numpy as np
+
     smoothed_y = []
-    smoothed_x = x_values  # Keep x values unchanged
+    smoothed_x = []
 
     half_window = window_size // 2  # Number of points to take before & after
 
-    for i in range(len(y_values)):
-        # Handle edge cases: First and last points have fewer neighbors
+    for i in range(len(y_values) - 1):
+        # Handle edge cases dynamically based on window size
         left_bound = max(0, i - half_window)
         right_bound = min(len(y_values), i + half_window + 1)
+
+        if adjust_edges:
+            if i == 0:  # First point
+                right_bound = min(len(y_values), i + window_size)  # Expand to use more points near start
+            elif i == len(y_values) - 2:  # Last point
+                left_bound = max(0, i - (window_size - 1))  # Expand to include more points near end
 
         # Select the windowed data
         x_window = np.array(x_values[left_bound:right_bound])
         y_window = np.array(y_values[left_bound:right_bound])
 
+        # Adjust degree based on window size
+        adjusted_degree = degree if len(x_window) > 2 else 1  # Use linear fit if only two points are available
+
         # Fit polynomial & evaluate at current point
-        poly_coeffs = np.polyfit(x_window, y_window, deg=degree)
-        smoothed_y.append(np.polyval(poly_coeffs, x_values[i]))
+        poly_coeffs = np.polyfit(x_window, y_window, deg=adjusted_degree)
+
+        # Generate interpolated points between x_values[i] and x_values[i+1]
+        x_interp = np.linspace(x_values[i], x_values[i+1], num_interpolated_points + 2)  # Including endpoints
+        y_interp = np.polyval(poly_coeffs, x_interp)
+
+        smoothed_x.extend(x_interp)
+        smoothed_y.extend(y_interp)
 
     return smoothed_x, smoothed_y
+
 
 
 ## Start of Section of Code for Styles and Converting between plotly and matplotlib Fig objectss ##
@@ -1416,7 +1437,8 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
 def parse_plot_style(plot_style):
     """
     Parse the given plot style and return a structured dictionary for layout and data series styles.
-
+    If plot_style is missing a layout_style or trace_styles_collection then will set them as an empty string.
+    
     :param plot_style: None, str, list of two items, or a dictionary with at least one valid field.
     :return: dict with "layout_style" and "trace_styles_collection", ensuring defaults if missing.
     """
@@ -1431,15 +1453,17 @@ def parse_plot_style(plot_style):
             if "trace_style_collection" in plot_style:
                 print("Warning: plot_style has 'trace_style_collection', this key should be 'trace_styles_collection'.  The key is being used, but the spelling error should be fixed.")
                 plot_style["traces_styles_collection"] = plot_style["trace_style_collection"]
-            if "traces_style_collection" in plot_style:
+            elif "traces_style_collection" in plot_style:
                 print("Warning: plot_style has 'traces_style_collection', this key should be 'trace_styles_collection'.  The key is being used, but the spelling error should be fixed.")
                 plot_style["traces_styles_collection"] = plot_style["traces_style_collection"]
-
+            else:
+                plot_style.setdefault("trace_styles_collection", '')
+        if "layout_style" not in plot_style: 
+            plot_style.setdefault("layout_style", '')
         parsed_plot_style = {
             "layout_style": plot_style.get("layout_style", None),
             "trace_styles_collection": plot_style.get("trace_styles_collection", None),
         }
-        
     else:
         raise ValueError("Invalid plot style: Must be None, a string, a list of two items, or a dictionary with valid fields.")
     return parsed_plot_style
@@ -1453,13 +1477,15 @@ def parse_plot_style(plot_style):
 def apply_plot_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "trace_styles_collection":""}):
     #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "trace_styles_collection":"default"}
     plot_style = parse_plot_style(plot_style)
-    #Block for layout style.
+    plot_style.setdefault("layout_style",'') #fill with blank string if not present.
+    plot_style.setdefault("trace_styles_collection",'')  #fill with blank string if not present.
+    #Code logic for layout style.
     if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
         if plot_style["layout_style"] == '': #in this case, we're going to use the default.
             plot_style["layout_style"] = 'default'
         fig_dict = remove_layout_style_from_plotly_dict(fig_dict=fig_dict)
         fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=plot_style["layout_style"])
-    #Block for trace_styles_collection style.
+    #Code logic for trace_styles_collection style.
     if str(plot_style["trace_styles_collection"]).lower() != 'none': #take no action if received "None" or NoneType
         if plot_style["trace_styles_collection"] == '': #in this case, we're going to use the default.
             plot_style["trace_styles_collection"] = 'default'            
@@ -1493,32 +1519,44 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     fig, ax = plt.subplots()
 
     # Extract traces (data series)
+    #This section is now deprecated. It has not been completely updated after the trace_style field was created.
+    #There was old logic for trace_type which has been partially updated, but in fact the logic should be rewritten
+    #to better accommodate the existence of both "trace_style" and "type". It may be that there should be
+    #a helper function called 
     for trace in fig_dict.get("data", []):
-        trace_style = trace.get("type", None)
+        trace_style = trace.get("trace_style", '')
+        trace_type = trace.get("type", '')
+        if (trace_type == '') and (trace_style == ''):
+            trace_style = 'scatter_spline'
+        elif (trace_type == 'scatter') and (trace_style == ''):
+            trace_style = 'scatter_spline'
+        elif (trace_style == '') and (trace_type != ''):
+            trace_style = trace_type
         # If type is missing, but mode indicates lines and shape is spline, assume it's a spline
         if not trace_style and trace.get("mode") == "lines" and trace.get("line", {}).get("shape") == "spline":
             trace_style = "spline"
-
         x_values = trace.get("x", [])
         y_values = trace.get("y", [])
         trace_name = trace.get("name", "Data")
         if trace_style == "bar":
             ax.bar(x_values, y_values, label=trace_name)
-
         elif trace_style == "scatter":
             mode = trace.get("mode", "")
             ax.scatter(x_values, y_values, label=trace_name, alpha=0.7)
-
+        elif trace_style == "scatter_spline":
+            mode = trace.get("mode", "")
+            ax.scatter(x_values, y_values, label=trace_name, alpha=0.7)
             # Attempt to simulate spline behavior if requested
             if "lines" in mode or trace.get("line", {}).get("shape") == "spline":
                 print("Warning: Rolling polynomial approximation used instead of spline.")
                 x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
-                
+                print("line 1530", x_smooth, y_smooth, x_values, y_values)
                 # Add a label explicitly for the legend
                 ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
         elif trace_style == "spline":
             print("Warning: Using rolling polynomial approximation instead of true spline.")
             x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
+            print("line 1536", x_smooth, y_smooth, x_values, y_values)
             ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
 
     # Extract layout details

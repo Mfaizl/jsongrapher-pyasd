@@ -93,11 +93,11 @@ Record.plot_with_plotly()
 #Now let's try applying a predfined style!
 print("\n\n STEP 7: TRYING PREDIFINED STYLES")
 #There are two parts to a style: the layout_style and the trace_style. This is further described in a separate file about styles.
-science_plot_style = {"layout_style":"Science", "trace_styles_collection":"Science"}
+science_plot_style = {"layout_style":"Science", "trace_styles_collection":"default"}
 Record.apply_plot_style(plot_style=science_plot_style) #This command puts and applies style into the JSONgrapher record.  
 Record.plot_with_plotly()
 #we can also "temporarily" apply a style while plotting, without changing the record itself..
-nature_plot_style = {"layout_style":"Nature", "trace_styles_collection":"Nature"}
+nature_plot_style = {"layout_style":"Nature", "trace_styles_collection":"default"}
 Record.plot_with_plotly(plot_style=nature_plot_style)
 #So this plot will produce the "Science" style again:
 Record.plot_with_plotly()

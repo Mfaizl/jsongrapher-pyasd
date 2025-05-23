@@ -39,7 +39,7 @@ Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
 Record.set_x_axis_label_including_units(x_label_including_units)
 Record.set_y_axis_label_including_units(y_label_including_units)
-Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, trace_type="scatter_spline")
+Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, trace_style="scatter_spline")
 Record.set_graph_title("Pear Tree Growth Versus Time")
 
 print("\n\n STEP 4: EXPORTING TO FILE")
@@ -62,18 +62,19 @@ Record.print_to_inspect()
 
 #We can also plot the data with matplotlib, and can export to file as png. 
 print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB AND PLOTLY-PYTHON-MODULE")
+Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
+#Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
+
 Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")
 
-Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
-Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
 
 
 print("\n\n STEP 6: ADDING SERIES AND MERGING RECORDS")
 #Let's try adding in a second series which has tree heights that are 80% as tall as the first dataset.
 import numpy as np
 tree_heights_second_data_set = np.array(tree_heights)*0.80
-Record.add_data_series(series_name = "pear tree growth 2", x_values=time_in_years, y_values=tree_heights_second_data_set, trace_type="scatter_spline")
+Record.add_data_series(series_name = "pear tree growth 2", x_values=time_in_years, y_values=tree_heights_second_data_set, trace_style="scatter_spline")
 
 #Let's make a 3rd series using a second record, then merge it in.
 import copy
@@ -91,14 +92,17 @@ Record.plot_with_plotly()
 
 #Now let's try applying a predfined style!
 print("\n\n STEP 7: TRYING PREDIFINED STYLES")
-Record.apply_style("Science") #This command puts the style into the fig_dict record.
+#There are two parts to a style: the layout_style and the trace_style. This is further described in a separate file about styles.
+science_style = {"layout_style":"Science", "trace_style":"Science"}
+Record.apply_plot_style(science_style) #This command puts the style into the fig_dict record.  
 Record.plot_with_plotly()
 #we can also "temporarily" apply a style while plotting.
-Record.plot_with_plotly(style_to_apply="Nature")
+nature_style = {"layout_style":"Nature", "trace_style":"Nature"}
+Record.plot_with_plotly(plot_style=nature_style)
 #So this plot will produce the "Science" style again:
 Record.plot_with_plotly()
 #One can also remove styles, and produce the default style, again.
-Record.remove_style()
+Record.remove_plot_style()
 Record.plot_with_plotly()
 
 #Note: As of April 2025, the styles have not actually been made suitable for journals. However, the feature is here so that such styles can be made.

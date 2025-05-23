@@ -1,0 +1,10 @@
+{
+    "large_green": {
+        "type": "scatter",
+        "mode": "markers",
+        "marker": {
+            "size": 15,
+            "color": "green"
+        }
+    }
+}

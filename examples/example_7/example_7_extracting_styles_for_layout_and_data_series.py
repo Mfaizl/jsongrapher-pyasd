@@ -15,13 +15,13 @@ merged_record.plot()
 
 
 #Let's set the trace_style to "none" to see what happens.
-merged_record.apply_style(plot_style = {"layout_style":"default", "trace_style":"none"})
+merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_style":"none"})
 #When we plot this, we get the plotly 'default' settings which are different from JSONGrapher.
 #Additionally, the plotly settings are not consistent between data_series. Plotly changes how series are plotted based on the number of points.
 merged_record.plot() 
 
 #Now, let's go back to the JSONGrapher default, then something about one of the data_series. 
-merged_record.apply_style(plot_style = {"layout_style":"default", "trace_style":"default"})
+merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_style":"default"})
 merged_record.plot() 
 
 new_trace_style = merged_record.extract_trace_style_by_index(0, new_trace_style_name="test")
@@ -31,7 +31,7 @@ print('line 24', new_trace_style)
 #There are no 'commands' for formatting in JSONGrapher. Instead, we use formatting that is allowed for plotly.
 
 #Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series.
-merged_record.apply_style(plot_style = {"layout_style":"default", "trace_style":"none"})
+merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_style":"none"})
 
 #We will make the first data_series have marker size 15 and color of green.
 # We want to do something like this:
@@ -78,7 +78,7 @@ with open("large_markers.json", "r") as file:
     large_markers_trace_style = json.load(file)
 
 #Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series.
-merged_record.apply_style(plot_style = {"layout_style":"default", "trace_style":"none"})
+merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_style":"none"})
 
 print("Line 68!!!!!!!!!!!!!!!!!!!!!!!!!")
 #It is important to note that a trace_style typically has more than one trace_style.

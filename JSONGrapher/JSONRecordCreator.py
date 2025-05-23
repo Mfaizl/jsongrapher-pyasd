@@ -792,7 +792,7 @@ class JSONGrapherRecord:
         original_fig_dict = copy.deepcopy(self.fig_dict) 
         #before cleaning and validating, we'll apply styles.
         plot_style = parse_plot_style(plot_style=plot_style)
-        self.apply_style(plot_style=plot_style)
+        self.apply_plot_style(plot_style=plot_style)
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
@@ -872,7 +872,7 @@ class JSONGrapherRecord:
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
         #before cleaning and validating, we'll apply styles.
         plot_style = parse_plot_style(plot_style=plot_style)
-        self.apply_style(plot_style=plot_style)
+        self.apply_plot_style(plot_style=plot_style)
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record()
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style'])
@@ -964,16 +964,16 @@ class JSONGrapherRecord:
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
     # def apply_layout_style(self, layout_style_to_apply=''):
     #     self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
-    def apply_style(self, plot_style= {"layout_style":"", "trace_style":""}): 
+    def apply_plot_style(self, plot_style= {"layout_style":"", "trace_style":""}): 
         #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "trace_style":"default"} or a list of length two with those two items.
         #The plot_style dictionary can include a pair of dictionaries.
         #if apply style is called directly, we will first put the plot_style into the plot_style field
         #This way, the style will stay.
         self.fig_dict['plot_style'] = plot_style
-        self.fig_dict = apply_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
-    def remove_style(self):
+        self.fig_dict = apply_plot_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
+    def remove_plot_style(self):
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
-        self.fig_dict = remove_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
+        self.fig_dict = remove_plot_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
     def extract_layout_style(self):
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
@@ -1453,7 +1453,7 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
    If we get a list of two, we'll expect that to be in the order of layout_style then trace_style
    If we get a string that we can't find in the existing styles list, then we'll use the default. 
 (1) by default, export to json will *not* include plot_styles.  include_formatting will be an optional argument. 
-(2) There is an apply_style function which will first put the style into self.fig_dict['plot_style'] so it stays there, before applying the style.
+(2) There is an apply_plot_style function which will first put the style into self.fig_dict['plot_style'] so it stays there, before applying the style.
 (3) For the plotting functions, they will have plot_style = {"layout_style":"", "trace_style":""} or = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
     If somebody passes in a "None" type or the word none, then *no* style changes will be applied during plotting, relative to what the record already has.
     One can pass a style in for the plotting functions. In those cases, we'll use the remove style option, then apply.
@@ -1487,7 +1487,7 @@ def parse_plot_style(plot_style):
 #For example: style_to_apply = ['default', 'default'] or style_to_apply = 'science'.
 #IMPORTANT: This is the only function that will set a layout_style or trace_style that is an empty string into 'default'.
 # all other style applying functions (including parse_plot_style) will pass on the empty string or will do nothing if receiving an empty string.
-def apply_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "trace_style":""}):
+def apply_plot_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "trace_style":""}):
     #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "trace_style":"default"}
     plot_style = parse_plot_style(plot_style)
     #Block for layout style.
@@ -1504,7 +1504,7 @@ def apply_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "trace
         fig_dict = apply_trace_style_to_plotly_dict(fig_dict=fig_dict,trace_style_to_apply=plot_style["trace_style"])
     return fig_dict
 
-def remove_style_from_plotly_dict(fig_dict):
+def remove_plot_style_from_plotly_dict(fig_dict):
     """
     Remove both layout and data series styles from a Plotly figure dictionary.
 

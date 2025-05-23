@@ -983,6 +983,32 @@ class JSONGrapherRecord:
         data_series = apply_data_series_style_to_single_data_series(data_series, data_series_style_to_apply=data_series_style) #this is the 'external' function, not the one in the class.
         self.fig_dict["data"][data_series_index] = data_series
         return data_series
+    def extract_data_series_styles_collection(self, new_trace_styles_collection_name='', indices_of_data_series_to_extract_styles_from=[], new_trace_type_names_list = []):
+        fig_dict = self.fig_dict
+        new_trace_styles_collection_dictionary = {}
+        if new_trace_styles_collection_name == '':
+            new_trace_styles_collection_name = 'custom'
+        if indices_of_data_series_to_extract_styles_from == []:
+            indices_of_data_series_to_extract_styles_from = range(len(fig_dict["data"]))
+        if new_trace_type_names_list == []:
+            for data_series_index in indices_of_data_series_to_extract_styles_from:
+                data_series_dict = fig_dict["data"][data_series_index]
+                trace_type_name = data_series_dict.get('trace_type', '')  # return blank line if not there.
+                if trace_type_name == '':
+                    trace_type_name = 'custom' + str(data_series_index)
+                if trace_type_name not in new_trace_type_names_list:
+                    pass
+                else:
+                    trace_type_name = trace_type_name + str(data_series_index)
+                new_trace_type_names_list.append(trace_type_name)
+        if len(indices_of_data_series_to_extract_styles_from) != len(new_trace_type_names_list):
+            raise ValueError("Error: The input for indices_of_data_series_to_extract_styles_from is not compatible with the input for new_trace_type_names_list. There is a difference in lengths after the automatic parsing and filling that occurs.")
+        for index_to_extract_from in indices_of_data_series_to_extract_styles_from:
+            new_trace_type_name = new_trace_type_names_list[index_to_extract_from]
+            extracted_trace_style = extract_data_series_style_by_index(fig_dict, index_to_extract_from, new_trace_type_name=new_trace_type_names_list[index_to_extract_from])
+            new_trace_styles_collection_dictionary[new_trace_type_name] = extracted_trace_style
+        new_trace_styles_collection = {new_trace_styles_collection_name: new_trace_styles_collection_dictionary}
+        return new_trace_styles_collection
     def extract_data_series_style_by_index(self, data_series_index, new_trace_type_name=''):
         extracted_data_series_style = extract_data_series_style_by_index(self.fig_dict, data_series_index, new_trace_type_name=new_trace_type_name)
         return extracted_data_series_style

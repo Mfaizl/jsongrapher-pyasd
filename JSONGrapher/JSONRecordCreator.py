@@ -325,6 +325,91 @@ class SyncedDict(dict):
         setattr(self.owner, key, value)  # Sync with instance attribute
 
 
+class DataSeries:
+    def __init__(self, uid="", name="", trace_style="scatter", x=None, y=None, **kwargs):
+        """Initialize a data series with synced dictionary behavior."""
+        self.data_series_dict = SyncedDict(self)  # Use SyncedDict for auto-syncing
+
+        # Default trace properties
+        self.data_series_dict.update({
+            "uid": uid,
+            "name": name,
+            "trace_style": trace_style,
+            "x": list(x) if x else [],
+            "y": list(y) if y else [],
+            "mode": kwargs.get("mode", "lines"),
+            "marker_size": kwargs.get("marker_size", 6),
+            "marker_color": kwargs.get("marker_color", "blue"),
+            "line_width": kwargs.get("line_width", 2),
+            "line_dash": kwargs.get("line_dash", "solid"),
+            "opacity": kwargs.get("opacity", 1.0),
+            "visible": kwargs.get("visible", True),
+            "hoverinfo": kwargs.get("hoverinfo", "x+y"),
+            "legend_group": kwargs.get("legend_group", None),
+            "text": kwargs.get("text", None)
+        })
+
+    # The __getitem__ and __setitem__ functions allow the class instance to behave 'like' a dictionary without using super.
+    # The below functions allow the DataSeries object to populate the self.data_series_dict each time something is added inside.
+    # That is, if someone uses something like DataSeries["comments"] = "frog", it will also put that into self.data_series_dict
+    def __getitem__(self, key):
+        """Allow access to attributes via self[key]."""
+        return self.data_series_dict.get(key, None)
+    def __setitem__(self, key, value):
+        """Redirect modifications of self[key] to self.data_series_dict[key]."""
+        self.data_series_dict[key] = value
+
+    def get_data_series_dict(self):
+        """Return the dictionary representation of the trace."""
+        return dict(self.data_series_dict)
+
+    def set_trace_style(self, style):
+        """Update the trace style (e.g., scatter, scatter_spline, scatter_line, bar)."""
+        self.data_series_dict["trace_style"] = style
+
+    def update_new_terms_only(self, series_dict):
+        """Update instance attributes from a dictionary."""
+        self.data_series_dict.update(series_dict)
+
+    def add_data_point(self, x_val, y_val):
+        """Append a new data point to the series."""
+        self.data_series_dict["x"].append(x_val)
+        self.data_series_dict["y"].append(y_val)
+
+    def set_marker_size(self, size):
+        """Update the marker size."""
+        self.data_series_dict["marker_size"] = size
+
+    def set_marker_color(self, color):
+        """Update the marker color."""
+        self.data_series_dict["marker_color"] = color
+
+    def set_mode(self, mode):
+        """Update the mode (e.g., 'lines', 'markers', 'lines+markers')."""
+        self.data_series_dict["mode"] = mode
+
+    def set_line_width(self, width):
+        """Update the line width."""
+        self.data_series_dict["line_width"] = width
+
+    def set_line_dash(self, dash_style):
+        """Update the line dash style (e.g., 'solid', 'dash', 'dot')."""
+        self.data_series_dict["line_dash"] = dash_style
+
+    def set_opacity(self, opacity_value):
+        """Update the opacity level."""
+        self.data_series_dict["opacity"] = opacity_value
+
+    def set_visibility(self, is_visible):
+        """Update the visibility of the trace."""
+        self.data_series_dict["visible"] = is_visible
+
+    def set_hover_info(self, hover_format):
+        """Update hover information format."""
+        self.data_series_dict["hoverinfo"] = hover_format
+
+
+
 class JSONGrapherRecord:
     """
     This class enables making JSONGrapher records. Each instance represents a structured JSON record for a graph.
@@ -376,7 +461,7 @@ class JSONGrapherRecord:
         if y_axis_label_including_units:
             validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=False)
 
-        self.fig_dict = {
+        self.fig_dict.update( {
             "comments": comments,  # Top-level comments
             "datatype": datatype,  # Top-level datatype (datatype)
             "data": data_objects_list if data_objects_list else [],  # Data series list
@@ -384,8 +469,9 @@ class JSONGrapherRecord:
                 "title": {"text": graph_title},
                 "xaxis": {"title": {"text": x_axis_label_including_units}},
                 "yaxis": {"title": {"text": y_axis_label_including_units}}
-            }
-        }
+                   }
+                }
+            )
 
         if simulate_as_added:  # Will try to simulate, but because this is the default, will use a try-except rather than crash the program.
             try:

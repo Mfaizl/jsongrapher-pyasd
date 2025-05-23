@@ -1645,6 +1645,12 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
                 "line": {"shape": "spline", "width": 2},
                 "marker": {"size": 10},
             },
+            "scatter_line": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "linear", "width": 2},
+                "marker": {"size": 10},
+            },
             "scatter": {
                 "type": "scatter",
                 "mode": "markers",

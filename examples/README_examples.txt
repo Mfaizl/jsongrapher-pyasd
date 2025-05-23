@@ -12,5 +12,5 @@ example_5 shows an example where an equation with units is entered from python c
 
 example_6 shows an example where equations with units are loaded from JSONGrapher records and plotted alongside datapoints.
 
-example_7 shows an example of how to make, extract and use styles (both layout_style and data_series_style)
+example_7 shows an example of how to make, extract and use styles (both layout_style and trace_style)
 

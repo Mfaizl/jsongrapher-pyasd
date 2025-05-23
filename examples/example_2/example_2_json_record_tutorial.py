@@ -39,7 +39,7 @@ Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
 Record.set_x_axis_label_including_units(x_label_including_units)
 Record.set_y_axis_label_including_units(y_label_including_units)
-Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, trace_type="scatter_spline")
+Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, trace_style="scatter_spline")
 Record.set_graph_title("Pear Tree Growth Versus Time")
 
 print("\n\n STEP 4: EXPORTING TO FILE")
@@ -73,7 +73,7 @@ print("\n\n STEP 6: ADDING SERIES AND MERGING RECORDS")
 #Let's try adding in a second series which has tree heights that are 80% as tall as the first dataset.
 import numpy as np
 tree_heights_second_data_set = np.array(tree_heights)*0.80
-Record.add_data_series(series_name = "pear tree growth 2", x_values=time_in_years, y_values=tree_heights_second_data_set, trace_type="scatter_spline")
+Record.add_data_series(series_name = "pear tree growth 2", x_values=time_in_years, y_values=tree_heights_second_data_set, trace_style="scatter_spline")
 
 #Let's make a 3rd series using a second record, then merge it in.
 import copy
@@ -91,12 +91,12 @@ Record.plot_with_plotly()
 
 #Now let's try applying a predfined style!
 print("\n\n STEP 7: TRYING PREDIFINED STYLES")
-#There are two parts to a style: the layout_style and the data_series_style. This is further described in a separate file about styles.
-science_style = {"layout_style":"Science", "data_series_style":"Science"}
+#There are two parts to a style: the layout_style and the trace_style. This is further described in a separate file about styles.
+science_style = {"layout_style":"Science", "trace_style":"Science"}
 Record.apply_style(science_style) #This command puts the style into the fig_dict record.  
 Record.plot_with_plotly()
 #we can also "temporarily" apply a style while plotting.
-nature_style = {"layout_style":"Nature", "data_series_style":"Nature"}
+nature_style = {"layout_style":"Nature", "trace_style":"Nature"}
 Record.plot_with_plotly(plot_style=nature_style)
 #So this plot will produce the "Science" style again:
 Record.plot_with_plotly()

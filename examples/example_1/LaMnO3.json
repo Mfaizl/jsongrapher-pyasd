@@ -4,7 +4,7 @@
     "data": [
         {
             "name": "LaMnO3",
-            "trace_type": "scatter",
+            "trace_style": "scatter",
             "x": [
                 null,
                 0.27628,

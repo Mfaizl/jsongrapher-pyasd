@@ -19,7 +19,7 @@ example_record.plot()
 {
     "comments": " Data from Catalysis-hub.org, pubId=ComerUnraveling2022",
     "datatype": "DFT adsorption energies",
-    "plot_style": {"layout_style":"default", "data_series_style":"None"},
+    "plot_style": {"layout_style":"default", "trace_style":"None"},
     "data": [
         {
             "uid": "1234100",
@@ -79,7 +79,7 @@ example_record.plot()
 {
     "comments": " Data from Catalysis-hub.org, pubId=ComerUnraveling2022",
     "datatype": "DFT adsorption energies",
-    "plot_style": {"layout_style":"default", "data_series_style":"None"},
+    "plot_style": {"layout_style":"default", "trace_style":"None"},
     "data": [
         {
             "uid": "1234110",

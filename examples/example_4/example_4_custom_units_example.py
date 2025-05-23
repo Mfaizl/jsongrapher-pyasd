@@ -46,7 +46,7 @@ Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
 Record.set_x_axis_label_including_units(x_label_including_units)
 Record.set_y_axis_label_including_units(y_label_including_units)
-Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, trace_type="scatter_spline")
+Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years, y_values=tree_heights, trace_style="scatter_spline")
 Record.set_graph_title("Pear Tree Growth Versus Time")
 
 print("\n\n STEP 4: PLOT WITH PLOTLY")

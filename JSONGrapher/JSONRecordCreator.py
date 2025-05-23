@@ -94,7 +94,7 @@ def merge_JSONGrapherRecords(recordsList):
     merged_JSONGrapherRecord = create_new_JSONGrapherRecord()
     #first make a list of all the records as dictionaries.
     for record in recordsList:
-        if type(record) == type({}):
+        if isinstance(record, dict):#can't use type({}) or SyncedDict won't be included.
             recordsAsDictionariesList.append(record)
         elif type(record) == type("string"):
             new_record = create_new_JSONGrapherRecord()
@@ -295,7 +295,7 @@ def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y
     #iterate across the data objects inside, and change them.
     for data_index, dataseries in enumerate(scaled_fig_dict["data"]):
         dataseries = scale_dataseries_dict(dataseries, num_to_scale_x_values_by=num_to_scale_x_values_by, num_to_scale_y_values_by=num_to_scale_y_values_by)
-        scaled_fig_dict[data_index] = dataseries #this line shouldn't be needed due to mutable references, but adding for clarity and to be safe.
+        scaled_fig_dict["data"][data_index] = dataseries #this line shouldn't be needed due to mutable references, but adding for clarity and to be safe.
     return scaled_fig_dict
 
 
@@ -654,13 +654,14 @@ class JSONGrapherRecord:
         existing_JSONGrapher_record: A dictionary representing an existing JSONGrapher record.
         """
         #While we expect a dictionary, if a JSONGrapher ojbect is provided, we will simply pull the dictionary out of that.
-        if type(existing_JSONGrapher_record) != type({}):
-            existing_JSONGrapher_record = existing_JSONGrapher_record.fig_dict
-        if type(existing_JSONGrapher_record) == type({}):
+        if isinstance(existing_JSONGrapher_record, dict): 
             if "comments" in existing_JSONGrapher_record:   self.fig_dict["comments"] = existing_JSONGrapher_record["comments"]
             if "datatype" in existing_JSONGrapher_record:      self.fig_dict["datatype"] = existing_JSONGrapher_record["datatype"]
             if "data" in existing_JSONGrapher_record:       self.fig_dict["data"] = existing_JSONGrapher_record["data"]
             if "layout" in existing_JSONGrapher_record:     self.fig_dict["layout"] = existing_JSONGrapher_record["layout"]
+        else:
+            self.fig_dict = existing_JSONGrapher_record.fig_dict
+
 
     #the below function takes in existin JSONGrpher record, and merges the data in.
     #This requires scaling any data as needed, according to units.
@@ -1446,7 +1447,7 @@ def validate_JSONGrapher_record(record):
     else:
         return True, []
 
-def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_interpolated_points=3, adjust_edges=True):
+def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_interpolated_points=0, adjust_edges=True):
     """
     Applies a rolling polynomial regression with a specified window size and degree,
     interpolates additional points, and optionally adjusts edge points for smoother transitions.
@@ -1636,13 +1637,11 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
             if "lines" in mode or trace.get("line", {}).get("shape") == "spline":
                 print("Warning: Rolling polynomial approximation used instead of spline.")
                 x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
-                print("line 1530", x_smooth, y_smooth, x_values, y_values)
                 # Add a label explicitly for the legend
                 ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
         elif trace_style == "spline":
             print("Warning: Using rolling polynomial approximation instead of true spline.")
             x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
-            print("line 1536", x_smooth, y_smooth, x_values, y_values)
             ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
 
     # Extract layout details

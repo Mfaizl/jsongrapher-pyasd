@@ -312,6 +312,19 @@ def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_
 
 ### End of portion of the file that has functions for scaling data to the same units ###
 
+## This is a special dictionary class that will allow a dictionary
+## inside a main class object to be synchronized with the fields within it.
+class SyncedDict(dict):
+    """A dictionary that automatically updates instance attributes."""
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner  # Store reference to the class instance
+    def __setitem__(self, key, value):
+        """Update both dictionary and instance attribute."""
+        super().__setitem__(key, value)  # Set in the dictionary
+        setattr(self.owner, key, value)  # Sync with instance attribute
+
+
 class JSONGrapherRecord:
     """
     This class enables making JSONGrapher records. Each instance represents a structured JSON record for a graph.
@@ -338,22 +351,23 @@ class JSONGrapherRecord:
         export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
-    
+
     def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
             layout (dict): Layout dictionary to pre-populate the graph configuration.
             existing_JSONGrapher_record (dict): Existing JSONGrapher record to populate the instance.
-        """
-        # Default attributes for a new record.
-        # Initialize the main record dictionary
-        # the if statements check if something is empty and populates them if not. This is a special syntax in python that does not require a None object to work, empty also works.
-        
-        #if receiving a data_objects_list, validate it.
+        """  
+
+        # Assign self.fig_dict to by synchronized with the class instance.
+        self.fig_dict = SyncedDict(self)
+
+        # If receiving a data_objects_list, validate it.
         if data_objects_list:
-            validate_plotly_data_list(data_objects_list) #call a function from outside the class.
-        #if receiving axis labels, validate them.
+            validate_plotly_data_list(data_objects_list)  # Call a function from outside the class.
+
+        # If receiving axis labels, validate them.
         if x_axis_label_including_units:
             validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=False)
         if y_axis_label_including_units:
@@ -370,36 +384,45 @@ class JSONGrapherRecord:
             }
         }
 
-
-        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+        if simulate_as_added:  # Will try to simulate, but because this is the default, will use a try-except rather than crash the program.
             try:
                 self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
             except:
                 pass
 
-        if evaluate_equations_as_added:#will try to evaluate. But because this is the default, will use a try and except rather than crash program.
+        if evaluate_equations_as_added:  # Will try to evaluate, but because this is the default, will use a try-except rather than crash the program.
             try:
                 self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
             except:
                 pass
 
-        self.plot_type = plot_type #the plot_type is normally actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
+        self.plot_type = plot_type  # The plot_type is normally a series-level attribute.
+        # However, if somebody sets the plot_type at the record level, we will use that plot_type for all the individual series.
         if plot_type != "":
             self.fig_dict["plot_type"] = plot_type
 
-        # Populate attributes if an existing JSONGrapher record is provided, as a dictionary.
+        # Populate attributes if an existing JSONGrapher record is provided as a dictionary.
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
 
         # Initialize the hints dictionary, for use later, since the actual locations in the JSONRecord can be non-intuitive.
         self.hints_dictionary = {}
         # Adding hints. Here, the keys are the full field locations within the record.
-        self.hints_dictionary["['comments']"] = "Use Record.set_comments() to populate this field. Can be used to put in a general description or metadata related to the entire record. Can include citations and links. Goes into the record's top level comments field."
-        self.hints_dictionary["['datatype']"] = "Use Record.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name."
+        self.hints_dictionary["['comments']"] = "Use Record.set_comments() to populate this field. Can be used to put in a general description or metadata related to the entire record. Can include citations and links. Goes into the record's top-level comments field."
+        self.hints_dictionary["['datatype']"] = "Use Record.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. Avoid using double underscores '__' in this field unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field rather than a datatype name."
         self.hints_dictionary["['layout']['title']['text']"] = "Use Record.set_graph_title() to populate this field. This is the title for the graph."
-        self.hints_dictionary["['layout']['xaxis']['title']['text']"] = "Use Record.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."  # x-axis label
-        self.hints_dictionary["['layout']['yaxis']['title']['text']"] = "Use Record.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."
+        self.hints_dictionary["['layout']['xaxis']['title']['text']"] = "Use Record.set_x_axis_label() to populate this field. This is the x-axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets '< >'."  # x-axis label
+        self.hints_dictionary["['layout']['yaxis']['title']['text']"] = "Use Record.set_y_axis_label() to populate this field. This is the y-axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets '< >'."
 
+    #The __getitem__ and __setitem__ functions allow the class instance to behave 'like' a dictionary without using super.
+    #The below functions allow the JSONGrapherRecord to populate the self.fig_dict each time something is added inside.
+    #That is, if someone uses something like Record["comments"]="frog", it will also put that into self.fig_dict
+    def __getitem__(self, key):
+        """Allow access to attributes via self[key]"""
+        return self.fig_dict.get(key, None)
+    def __setitem__(self, key, value):
+        """Redirect modifications of self[key] to self.fig_dict[key]"""
+        self.fig_dict[key] = value
 
     #this function enables printing the current record.
     def __str__(self):
@@ -2029,7 +2052,7 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     if type(layout_style_to_apply) == type("string"):
         layout_style_to_apply_name = layout_style_to_apply
     else:
-        layout_style_to_apply_name = list(layout_style_to_appy.keys())[0]#if it is a dictionary, it will have one key which is its name.
+        layout_style_to_apply_name = list(layout_style_to_apply.keys())[0]#if it is a dictionary, it will have one key which is its name.
     if (layout_style_to_apply == '') or (str(layout_style_to_apply).lower() == 'none'):
         return fig_dict
 
@@ -2992,7 +3015,7 @@ if __name__ == "__main__":
         comments="Here is a description.",
         graph_title="Here Is The Graph Title Spot",
         data_objects_list=[
-            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
+            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "trace_type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     )
     x_label_including_units= "Time (years)" 

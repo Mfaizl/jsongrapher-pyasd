@@ -3,7 +3,7 @@
     "datatype": "Differential_Thermal_Analysis",
     "plot_style": {
         "layout_style": "default",
-        "trace_style": "None"
+        "trace_styles_collection": "None"
     },
     "data": [
         {

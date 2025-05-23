@@ -80,10 +80,10 @@ Record.add_data_series(series_name = "pear tree growth 2", x_values=time_in_year
 import copy
 Record2 = copy.deepcopy(Record)
 #This new copy has two datasets in it. Let's popout the second data set, which is index 1.
-Record2.fig_dict["data"].pop(1)
+Record2["data"].pop(1)
 #Let's manually overrite the y data inside the first series of this copy. 
-Record2.fig_dict["data"][0]["y"] = np.array(Record.fig_dict["data"][0]["y"])*0.60
-Record2.fig_dict["data"][0]["name"] = "pear tree growth 3"
+Record2["data"][0]["y"] = np.array(Record["data"][0]["y"])*0.60
+Record2["data"][0]["name"] = "pear tree growth 3"
 #now let's merge in the new record.
 Record.merge_in_JSONGrapherRecord(Record2)
 #Now plot the JSONGrapher object again. This time, there will be 3 series.
@@ -93,12 +93,12 @@ Record.plot_with_plotly()
 #Now let's try applying a predfined style!
 print("\n\n STEP 7: TRYING PREDIFINED STYLES")
 #There are two parts to a style: the layout_style and the trace_style. This is further described in a separate file about styles.
-science_style = {"layout_style":"Science", "trace_style":"Science"}
-Record.apply_plot_style(science_style) #This command puts the style into the fig_dict record.  
+science_plot_style = {"layout_style":"Science", "trace_styles_collection":"default"}
+Record.apply_plot_style(plot_style=science_plot_style) #This command puts and applies style into the JSONgrapher record.  
 Record.plot_with_plotly()
-#we can also "temporarily" apply a style while plotting.
-nature_style = {"layout_style":"Nature", "trace_style":"Nature"}
-Record.plot_with_plotly(plot_style=nature_style)
+#we can also "temporarily" apply a style while plotting, without changing the record itself..
+nature_plot_style = {"layout_style":"Nature", "trace_styles_collection":"default"}
+Record.plot_with_plotly(plot_style=nature_plot_style)
 #So this plot will produce the "Science" style again:
 Record.plot_with_plotly()
 #One can also remove styles, and produce the default style, again.

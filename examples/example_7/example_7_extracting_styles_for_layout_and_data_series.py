@@ -24,7 +24,7 @@ merged_record.plot()
 merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"default"})
 merged_record.plot() 
 
-#The syntax for adding things into a record is Record.fig_dict["data"][0]
+#The syntax for adding things into a record is Record["data"][0]
 #There are no 'commands' for formatting in JSONGrapher. Instead, we use formatting that is allowed for plotly.
 
 #Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series.
@@ -32,19 +32,19 @@ merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_st
 
 #We will make the first data_series have marker size 15 and color of green.
 # We want to do something like this:
-# merged_record.fig_dict["data"][0]["marker"]["size"] = 15 
+# merged_record["data"][0]["marker"]["size"] = 15 
 #let's first print out the data_series dictionary:
-print(merged_record.fig_dict["data"][0])
+print(merged_record["data"][0])
 
 #The marker field does not exis in the data_series, and in python, we must add missing fields, first.
-merged_record.fig_dict["data"][0]["marker"] = {}
-merged_record.fig_dict["data"][0]["marker"]["size"] = 15
-merged_record.fig_dict["data"][0]["marker"]["color"] = "green"
+merged_record["data"][0]["marker"] = {}
+merged_record["data"][0]["marker"]["size"] = 15
+merged_record["data"][0]["marker"]["color"] = "green"
 merged_record.plot() 
 #now, let's make the other markers large and purple.
-merged_record.fig_dict["data"][1]["marker"] = {}
-merged_record.fig_dict["data"][1]["marker"]["size"] = 15
-merged_record.fig_dict["data"][1]["marker"]["color"] = "purple"
+merged_record["data"][1]["marker"] = {}
+merged_record["data"][1]["marker"]["size"] = 15
+merged_record["data"][1]["marker"]["color"] = "purple"
 merged_record.plot() 
 
 #Let's save these two styles, so we can use them later. We also need to name these new styles.

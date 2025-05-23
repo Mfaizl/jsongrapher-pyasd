@@ -312,11 +312,27 @@ def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_
 
 ### End of portion of the file that has functions for scaling data to the same units ###
 
+## This is a special dictionary class that will allow a dictionary
+## inside a main class object to be synchronized with the fields within it.
+class SyncedDict(dict):
+    """A dictionary that automatically updates instance attributes."""
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner  # Store reference to the class instance
+    def __setitem__(self, key, value):
+        """Update both dictionary and instance attribute."""
+        super().__setitem__(key, value)  # Set in the dictionary
+        setattr(self.owner, key, value)  # Sync with instance attribute
+
+
 class JSONGrapherRecord:
     """
     This class enables making JSONGrapher records. Each instance represents a structured JSON record for a graph.
     One can optionally provide an existing JSONGrapher record during creation to pre-populate the object.
-    One can also manipulate the fig_dict inside, directly, using syntax like Record.fig_dict["comments"] = ...
+    One can manipulate the fig_dict inside, directly, using syntax like Record.fig_dict["comments"] = ...
+    One can also use syntax like Record["comments"] = ...  as some 'magic' synchronizes fields directlyin the Record with fields in the fig_dict.
+    However, developers should usually use the syntax like Record.fig_dict, internally, to avoid any referencing mistakes.
+
 
     Arguments & Attributes (all are optional):
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
@@ -338,22 +354,23 @@ class JSONGrapherRecord:
         export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
-    
+
     def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
             layout (dict): Layout dictionary to pre-populate the graph configuration.
             existing_JSONGrapher_record (dict): Existing JSONGrapher record to populate the instance.
-        """
-        # Default attributes for a new record.
-        # Initialize the main record dictionary
-        # the if statements check if something is empty and populates them if not. This is a special syntax in python that does not require a None object to work, empty also works.
-        
-        #if receiving a data_objects_list, validate it.
+        """  
+
+        # Assign self.fig_dict in a way that it will push any changes to it into the class instance.
+        self.fig_dict = SyncedDict(self)
+
+        # If receiving a data_objects_list, validate it.
         if data_objects_list:
-            validate_plotly_data_list(data_objects_list) #call a function from outside the class.
-        #if receiving axis labels, validate them.
+            validate_plotly_data_list(data_objects_list)  # Call a function from outside the class.
+
+        # If receiving axis labels, validate them.
         if x_axis_label_including_units:
             validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=False)
         if y_axis_label_including_units:
@@ -370,36 +387,45 @@ class JSONGrapherRecord:
             }
         }
 
-
-        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+        if simulate_as_added:  # Will try to simulate, but because this is the default, will use a try-except rather than crash the program.
             try:
                 self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
             except:
                 pass
 
-        if evaluate_equations_as_added:#will try to evaluate. But because this is the default, will use a try and except rather than crash program.
+        if evaluate_equations_as_added:  # Will try to evaluate, but because this is the default, will use a try-except rather than crash the program.
             try:
                 self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
             except:
                 pass
 
-        self.plot_type = plot_type #the plot_type is normally actually a series level attribute. However, if somebody sets the plot_type at the record level, then we will use that plot_type for all of the individual series.
+        self.plot_type = plot_type  # The plot_type is normally a series-level attribute.
+        # However, if somebody sets the plot_type at the record level, we will use that plot_type for all the individual series.
         if plot_type != "":
             self.fig_dict["plot_type"] = plot_type
 
-        # Populate attributes if an existing JSONGrapher record is provided, as a dictionary.
+        # Populate attributes if an existing JSONGrapher record is provided as a dictionary.
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
 
         # Initialize the hints dictionary, for use later, since the actual locations in the JSONRecord can be non-intuitive.
         self.hints_dictionary = {}
         # Adding hints. Here, the keys are the full field locations within the record.
-        self.hints_dictionary["['comments']"] = "Use Record.set_comments() to populate this field. Can be used to put in a general description or metadata related to the entire record. Can include citations and links. Goes into the record's top level comments field."
-        self.hints_dictionary["['datatype']"] = "Use Record.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name."
+        self.hints_dictionary["['comments']"] = "Use Record.set_comments() to populate this field. Can be used to put in a general description or metadata related to the entire record. Can include citations and links. Goes into the record's top-level comments field."
+        self.hints_dictionary["['datatype']"] = "Use Record.set_datatype() to populate this field. This is the datatype, like experiment type, and is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. Avoid using double underscores '__' in this field unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field rather than a datatype name."
         self.hints_dictionary["['layout']['title']['text']"] = "Use Record.set_graph_title() to populate this field. This is the title for the graph."
-        self.hints_dictionary["['layout']['xaxis']['title']['text']"] = "Use Record.set_x_axis_label() to populate this field. This is the x axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."  # x-axis label
-        self.hints_dictionary["['layout']['yaxis']['title']['text']"] = "Use Record.set_y_axis_label() to populate this field. This is the y axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets'< >'."
+        self.hints_dictionary["['layout']['xaxis']['title']['text']"] = "Use Record.set_x_axis_label() to populate this field. This is the x-axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets '< >'."  # x-axis label
+        self.hints_dictionary["['layout']['yaxis']['title']['text']"] = "Use Record.set_y_axis_label() to populate this field. This is the y-axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets '< >'."
 
+    #The __getitem__ and __setitem__ functions allow the class instance to behave 'like' a dictionary without using super.
+    #The below functions allow the JSONGrapherRecord to populate the self.fig_dict each time something is added inside.
+    #That is, if someone uses something like Record["comments"]="frog", it will also put that into self.fig_dict
+    def __getitem__(self, key):
+        """Allow access to attributes via self[key]"""
+        return self.fig_dict.get(key, None)
+    def __setitem__(self, key, value):
+        """Redirect modifications of self[key] to self.fig_dict[key]"""
+        self.fig_dict[key] = value
 
     #this function enables printing the current record.
     def __str__(self):
@@ -1334,39 +1360,59 @@ def validate_JSONGrapher_record(record):
     else:
         return True, []
 
-def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
+def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_interpolated_points=3, adjust_edges=True):
     """
-    Applies a rolling polynomial regression with a specified window size and degree.
+    Applies a rolling polynomial regression with a specified window size and degree,
+    interpolates additional points, and optionally adjusts edge points for smoother transitions.
 
     Args:
         x_values (list): List of x coordinates.
         y_values (list): List of y coordinates.
         window_size (int): Number of points per rolling fit (default: 3).
         degree (int): Degree of polynomial to fit (default: 2).
+        num_interpolated_points (int): Number of interpolated points per segment (default: 3). Set to 0 to only return original points.
+        adjust_edges (bool): Whether to adjust edge cases based on window size (default: True).
 
     Returns:
         tuple: (smoothed_x, smoothed_y) lists for plotting.
     """
     import numpy as np
+
     smoothed_y = []
-    smoothed_x = x_values  # Keep x values unchanged
+    smoothed_x = []
 
     half_window = window_size // 2  # Number of points to take before & after
 
-    for i in range(len(y_values)):
-        # Handle edge cases: First and last points have fewer neighbors
+    for i in range(len(y_values) - 1):
+        # Handle edge cases dynamically based on window size
         left_bound = max(0, i - half_window)
         right_bound = min(len(y_values), i + half_window + 1)
+
+        if adjust_edges:
+            if i == 0:  # First point
+                right_bound = min(len(y_values), i + window_size)  # Expand to use more points near start
+            elif i == len(y_values) - 2:  # Last point
+                left_bound = max(0, i - (window_size - 1))  # Expand to include more points near end
 
         # Select the windowed data
         x_window = np.array(x_values[left_bound:right_bound])
         y_window = np.array(y_values[left_bound:right_bound])
 
+        # Adjust degree based on window size
+        adjusted_degree = degree if len(x_window) > 2 else 1  # Use linear fit if only two points are available
+
         # Fit polynomial & evaluate at current point
-        poly_coeffs = np.polyfit(x_window, y_window, deg=degree)
-        smoothed_y.append(np.polyval(poly_coeffs, x_values[i]))
+        poly_coeffs = np.polyfit(x_window, y_window, deg=adjusted_degree)
+
+        # Generate interpolated points between x_values[i] and x_values[i+1]
+        x_interp = np.linspace(x_values[i], x_values[i+1], num_interpolated_points + 2)  # Including endpoints
+        y_interp = np.polyval(poly_coeffs, x_interp)
+
+        smoothed_x.extend(x_interp)
+        smoothed_y.extend(y_interp)
 
     return smoothed_x, smoothed_y
+
 
 
 ## Start of Section of Code for Styles and Converting between plotly and matplotlib Fig objectss ##
@@ -1391,7 +1437,8 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2):
 def parse_plot_style(plot_style):
     """
     Parse the given plot style and return a structured dictionary for layout and data series styles.
-
+    If plot_style is missing a layout_style or trace_styles_collection then will set them as an empty string.
+    
     :param plot_style: None, str, list of two items, or a dictionary with at least one valid field.
     :return: dict with "layout_style" and "trace_styles_collection", ensuring defaults if missing.
     """
@@ -1406,15 +1453,17 @@ def parse_plot_style(plot_style):
             if "trace_style_collection" in plot_style:
                 print("Warning: plot_style has 'trace_style_collection', this key should be 'trace_styles_collection'.  The key is being used, but the spelling error should be fixed.")
                 plot_style["traces_styles_collection"] = plot_style["trace_style_collection"]
-            if "traces_style_collection" in plot_style:
+            elif "traces_style_collection" in plot_style:
                 print("Warning: plot_style has 'traces_style_collection', this key should be 'trace_styles_collection'.  The key is being used, but the spelling error should be fixed.")
                 plot_style["traces_styles_collection"] = plot_style["traces_style_collection"]
-
+            else:
+                plot_style.setdefault("trace_styles_collection", '')
+        if "layout_style" not in plot_style: 
+            plot_style.setdefault("layout_style", '')
         parsed_plot_style = {
             "layout_style": plot_style.get("layout_style", None),
             "trace_styles_collection": plot_style.get("trace_styles_collection", None),
         }
-        
     else:
         raise ValueError("Invalid plot style: Must be None, a string, a list of two items, or a dictionary with valid fields.")
     return parsed_plot_style
@@ -1428,13 +1477,15 @@ def parse_plot_style(plot_style):
 def apply_plot_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "trace_styles_collection":""}):
     #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "trace_styles_collection":"default"}
     plot_style = parse_plot_style(plot_style)
-    #Block for layout style.
+    plot_style.setdefault("layout_style",'') #fill with blank string if not present.
+    plot_style.setdefault("trace_styles_collection",'')  #fill with blank string if not present.
+    #Code logic for layout style.
     if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
         if plot_style["layout_style"] == '': #in this case, we're going to use the default.
             plot_style["layout_style"] = 'default'
         fig_dict = remove_layout_style_from_plotly_dict(fig_dict=fig_dict)
         fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=plot_style["layout_style"])
-    #Block for trace_styles_collection style.
+    #Code logic for trace_styles_collection style.
     if str(plot_style["trace_styles_collection"]).lower() != 'none': #take no action if received "None" or NoneType
         if plot_style["trace_styles_collection"] == '': #in this case, we're going to use the default.
             plot_style["trace_styles_collection"] = 'default'            
@@ -1468,32 +1519,44 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     fig, ax = plt.subplots()
 
     # Extract traces (data series)
+    #This section is now deprecated. It has not been completely updated after the trace_style field was created.
+    #There was old logic for trace_type which has been partially updated, but in fact the logic should be rewritten
+    #to better accommodate the existence of both "trace_style" and "type". It may be that there should be
+    #a helper function called 
     for trace in fig_dict.get("data", []):
-        trace_style = trace.get("type", None)
+        trace_style = trace.get("trace_style", '')
+        trace_type = trace.get("type", '')
+        if (trace_type == '') and (trace_style == ''):
+            trace_style = 'scatter_spline'
+        elif (trace_type == 'scatter') and (trace_style == ''):
+            trace_style = 'scatter_spline'
+        elif (trace_style == '') and (trace_type != ''):
+            trace_style = trace_type
         # If type is missing, but mode indicates lines and shape is spline, assume it's a spline
         if not trace_style and trace.get("mode") == "lines" and trace.get("line", {}).get("shape") == "spline":
             trace_style = "spline"
-
         x_values = trace.get("x", [])
         y_values = trace.get("y", [])
         trace_name = trace.get("name", "Data")
         if trace_style == "bar":
             ax.bar(x_values, y_values, label=trace_name)
-
         elif trace_style == "scatter":
             mode = trace.get("mode", "")
             ax.scatter(x_values, y_values, label=trace_name, alpha=0.7)
-
+        elif trace_style == "scatter_spline":
+            mode = trace.get("mode", "")
+            ax.scatter(x_values, y_values, label=trace_name, alpha=0.7)
             # Attempt to simulate spline behavior if requested
             if "lines" in mode or trace.get("line", {}).get("shape") == "spline":
                 print("Warning: Rolling polynomial approximation used instead of spline.")
                 x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
-                
+                print("line 1530", x_smooth, y_smooth, x_values, y_values)
                 # Add a label explicitly for the legend
                 ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
         elif trace_style == "spline":
             print("Warning: Using rolling polynomial approximation instead of true spline.")
             x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
+            print("line 1536", x_smooth, y_smooth, x_values, y_values)
             ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
 
     # Extract layout details
@@ -1643,6 +1706,12 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
                 "type": "scatter",
                 "mode": "lines+markers",
                 "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
+            "scatter_line": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "linear", "width": 2},
                 "marker": {"size": 10},
             },
             "scatter": {
@@ -2023,7 +2092,7 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     if type(layout_style_to_apply) == type("string"):
         layout_style_to_apply_name = layout_style_to_apply
     else:
-        layout_style_to_apply_name = list(layout_style_to_appy.keys())[0]#if it is a dictionary, it will have one key which is its name.
+        layout_style_to_apply_name = list(layout_style_to_apply.keys())[0]#if it is a dictionary, it will have one key which is its name.
     if (layout_style_to_apply == '') or (str(layout_style_to_apply).lower() == 'none'):
         return fig_dict
 
@@ -2986,7 +3055,7 @@ if __name__ == "__main__":
         comments="Here is a description.",
         graph_title="Here Is The Graph Title Spot",
         data_objects_list=[
-            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
+            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "trace_type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     )
     x_label_including_units= "Time (years)" 

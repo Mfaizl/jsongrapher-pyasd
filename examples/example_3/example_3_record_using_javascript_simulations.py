@@ -18,10 +18,10 @@ print("The data has been simulated using a javascript function, with source code
 import copy
 adjusted_Record_with_simulate_field = copy.deepcopy(Record_with_simulate_field)
 #There is only a single data series, so it is index 0. We'll change the rate constant and sigma_max in the simulate field
-adjusted_Record_with_simulate_field.fig_dict["data"][0]["simulate"]["K_eq"] = "50.3 (1/bar)"
-adjusted_Record_with_simulate_field.fig_dict["data"][0]["simulate"]["sigma_max"] =  ".4267670459667 (mol/kg)"
+adjusted_Record_with_simulate_field["data"][0]["simulate"]["K_eq"] = "50.3 (1/bar)"
+adjusted_Record_with_simulate_field["data"][0]["simulate"]["sigma_max"] =  ".4267670459667 (mol/kg)"
 #Don't forget to change the name of the dataseries now that we have changed the data inside of it.
-adjusted_Record_with_simulate_field.fig_dict["data"][0]["name"] = "CO2 Adsorption, K_eq = 50.3 (1/bar)"
+adjusted_Record_with_simulate_field["data"][0]["name"] = "CO2 Adsorption, K_eq = 50.3 (1/bar)"
 #Now call a function to force re-simulation of the data series at index 0 for this new record.
 adjusted_Record_with_simulate_field.simulate_data_series_by_index(data_series_index=0)
 #Now plot the newly simulated series.

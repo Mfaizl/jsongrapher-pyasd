@@ -363,7 +363,7 @@ class JSONGrapherRecord:
             existing_JSONGrapher_record (dict): Existing JSONGrapher record to populate the instance.
         """  
 
-        # Assign self.fig_dict to by synchronized with the class instance.
+        # Assign self.fig_dict in a way that it will push any changes to it into the class instance.
         self.fig_dict = SyncedDict(self)
 
         # If receiving a data_objects_list, validate it.

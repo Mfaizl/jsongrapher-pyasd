@@ -93,7 +93,7 @@ Record.plot_with_plotly()
 print("\n\n STEP 7: TRYING PREDIFINED STYLES")
 #There are two parts to a style: the layout_style and the trace_style. This is further described in a separate file about styles.
 science_style = {"layout_style":"Science", "trace_style":"Science"}
-Record.apply_style(science_style) #This command puts the style into the fig_dict record.  
+Record.apply_plot_style(science_style) #This command puts the style into the fig_dict record.  
 Record.plot_with_plotly()
 #we can also "temporarily" apply a style while plotting.
 nature_style = {"layout_style":"Nature", "trace_style":"Nature"}
@@ -101,7 +101,7 @@ Record.plot_with_plotly(plot_style=nature_style)
 #So this plot will produce the "Science" style again:
 Record.plot_with_plotly()
 #One can also remove styles, and produce the default style, again.
-Record.remove_style()
+Record.remove_plot_style()
 Record.plot_with_plotly()
 
 #Note: As of April 2025, the styles have not actually been made suitable for journals. However, the feature is here so that such styles can be made.

@@ -94,7 +94,7 @@ def merge_JSONGrapherRecords(recordsList):
     merged_JSONGrapherRecord = create_new_JSONGrapherRecord()
     #first make a list of all the records as dictionaries.
     for record in recordsList:
-        if type(record) == type({}):
+        if isinstance(record, dict):#can't use type({}) or SyncedDict won't be included.
             recordsAsDictionariesList.append(record)
         elif type(record) == type("string"):
             new_record = create_new_JSONGrapherRecord()
@@ -139,8 +139,30 @@ def merge_JSONGrapherRecords(recordsList):
             #now, add the scaled data objects to the original one.
             #This is fairly easy using a list extend.
             merged_JSONGrapherRecord.fig_dict["data"].extend(scaled_fig_dict["data"])
+    merged_JSONGrapherRecord = convert_JSONGRapherRecord_data_list_to_class_objects(merged_JSONGrapherRecord)
     return merged_JSONGrapherRecord
 
+def convert_JSONGRapherRecord_data_list_to_class_objects(record):
+    #will also support receiving a fig_dict
+    if isinstance(record, dict):
+        fig_dict_received = True
+        fig_dict = record
+    else:
+        fig_dict_received = False
+        fig_dict = record.fig_dict
+    data_list = fig_dict["data"]
+    #Do the casting into data_series objects by creating a fresh JSONDataSeries object and populating it.
+    for data_series_index, data_series_received in enumerate(data_list):
+        JSONGrapher_data_series_object = JSONGrapherDataSeries()
+        JSONGrapher_data_series_object.update_while_preserving_old_terms(data_series_received)
+        data_list[data_series_index] = JSONGrapher_data_series_object
+    #Now prepare for return.
+    if fig_dict_received == True:
+        fig_dict["data"] = data_list
+        record = fig_dict
+    if fig_dict_received == False:
+        record.fig_dict["data"] = data_list
+    return record
 
 ### Start of portion of the file that has functions for scaling data to the same units ###
 #The below function takes two units strings, such as
@@ -295,7 +317,7 @@ def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y
     #iterate across the data objects inside, and change them.
     for data_index, dataseries in enumerate(scaled_fig_dict["data"]):
         dataseries = scale_dataseries_dict(dataseries, num_to_scale_x_values_by=num_to_scale_x_values_by, num_to_scale_y_values_by=num_to_scale_y_values_by)
-        scaled_fig_dict[data_index] = dataseries #this line shouldn't be needed due to mutable references, but adding for clarity and to be safe.
+        scaled_fig_dict["data"][data_index] = dataseries #this line shouldn't be needed due to mutable references, but adding for clarity and to be safe.
     return scaled_fig_dict
 
 
@@ -323,6 +345,188 @@ class SyncedDict(dict):
         """Update both dictionary and instance attribute."""
         super().__setitem__(key, value)  # Set in the dictionary
         setattr(self.owner, key, value)  # Sync with instance attribute
+
+
+class JSONGrapherDataSeries(dict): #inherits from dict.
+    def __init__(self, uid="", name="", trace_style="", x=None, y=None, **kwargs):
+        """Initialize a data series with synced dictionary behavior.
+        Here are some fields that can be included, with example values.
+
+        "uid": data_series_dict["uid"] = "123ABC",  # (string) a unique identifier
+        "name": data_series_dict["name"] = "Sample Data Series",  # (string) name of the data series
+        "trace_style": data_series_dict["trace_style"] = "scatter",  # (string) type of trace (e.g., scatter, bar)
+        "x": data_series_dict["x"] = [1, 2, 3, 4, 5],  # (list) x-axis values
+        "y": data_series_dict["y"] = [10, 20, 30, 40, 50],  # (list) y-axis values
+        "mode": data_series_dict["mode"] = "lines",  # (string) plot mode (e.g., "lines", "markers")
+        "marker_size": data_series_dict["marker"]["size"] = 6,  # (integer) marker size
+        "marker_color": data_series_dict["marker"]["color"] = "blue",  # (string) marker color
+        "marker_symbol": data_series_dict["marker"]["symbol"] = "circle",  # (string) marker shape/symbol
+        "line_width": data_series_dict["line"]["width"] = 2,  # (integer) line thickness
+        "line_dash": data_series_dict["line"]["dash"] = "solid",  # (string) line style (solid, dash, etc.)
+        "opacity": data_series_dict["opacity"] = 0.8,  # (float) transparency level (0-1)
+        "visible": data_series_dict["visible"] = True,  # (boolean) whether the trace is visible
+        "hoverinfo": data_series_dict["hoverinfo"] = "x+y",  # (string) format for hover display
+        "legend_group": data_series_dict["legend_group"] = None,  # (string or None) optional grouping for legend
+        "text": data_series_dict["text"] = "Data Point Labels",  # (string or None) optional text annotations
+
+        """
+        super().__init__()  # Initialize as a dictionary
+
+        # Default trace properties
+        self.update({
+            "uid": uid,
+            "name": name,
+            "trace_style": trace_style,
+            "x": list(x) if x else [],
+            "y": list(y) if y else []
+        })
+
+    def update_while_preserving_old_terms(self, series_dict):
+        """Update instance attributes from a dictionary. Overwrites existing terms and preserves other old terms."""
+        self.update(series_dict)
+
+    def get_data_series_dict(self):
+        """Return the dictionary representation of the trace."""
+        return dict(self)
+
+    def set_x_values(self, x_values):
+        """Update the x-axis values."""
+        self["x"] = list(x_values) if x_values else []
+
+    def set_y_values(self, y_values):
+        """Update the y-axis values."""
+        self["y"] = list(y_values) if y_values else []
+
+    def set_name(self, name):
+        """Update the name of the data series."""
+        self["name"] = name
+
+    def set_uid(self, uid):
+        """Update the unique identifier (uid) of the data series."""
+        self["uid"] = uid
+
+    def set_trace_style(self, style):
+        """Update the trace style (e.g., scatter, scatter_spline, scatter_line, bar)."""
+        self["trace_style"] = style
+
+    def set_marker_symbol(self, symbol):
+        self.set_marker_shape(shape=symbol)
+
+    def set_marker_shape(self, shape):
+        """
+        Update the marker shape (symbol).
+
+        Supported marker shapes in Plotly:
+        - 'circle' (default)
+        - 'square'
+        - 'diamond'
+        - 'cross'
+        - 'x'
+        - 'triangle-up'
+        - 'triangle-down'
+        - 'triangle-left'
+        - 'triangle-right'
+        - 'pentagon'
+        - 'hexagon'
+        - 'star'
+        - 'hexagram'
+        - 'star-triangle-up'
+        - 'star-triangle-down'
+        - 'star-square'
+        - 'star-diamond'
+        - 'hourglass'
+        - 'bowtie'
+
+        :param shape: String representing the desired marker shape.
+        """
+        self.setdefault("marker", {})["symbol"] = shape
+
+    def add_data_point(self, x_val, y_val):
+        """Append a new data point to the series."""
+        self["x"].append(x_val)
+        self["y"].append(y_val)
+
+    def set_marker_size(self, size):
+        """Update the marker size."""
+        self.setdefault("marker", {})["size"] = size
+
+    def set_marker_color(self, color):
+        """Update the marker color."""
+        self.setdefault("marker", {})["color"] = color
+
+    def set_mode(self, mode):
+        """Update the mode (options: 'lines', 'markers', 'text', 'lines+markers', 'lines+text', 'markers+text', 'lines+markers+text')."""
+        # Check if 'line' is in the mode but 'lines' is not. Then correct for user if needed.
+        if "line" in mode and "lines" not in mode:
+            mode = mode.replace("line", "lines")
+        self["mode"] = mode
+        print("line 463", self["mode"])
+
+    def set_annotations(self, text): #just a convenient wrapper.
+        self.set_text(text) 
+
+    def set_text(self, text):
+        #text should be a list of strings teh same length as the data series, one string per point.
+        """Update the annotations with a list of text as long as the number of data points."""
+        if text == type("string"): 
+            text = [text] * len(self["x"])  # Repeat the text to match x-values length
+        else:
+            text = text            
+        self["text"] = text
+
+
+    def set_line_width(self, width):
+        """Update the line width, should be a number, normally an integer."""
+        line = self.setdefault("line", {})
+        line.setdefault("width", width)  # Ensure width is set
+
+    def set_line_dash(self, dash_style):
+        """
+        Update the line dash style.
+
+        Supported dash styles in Plotly:
+        - 'solid' (default) → Continuous solid line
+        - 'dot' → Dotted line
+        - 'dash' → Dashed line
+        - 'longdash' → Longer dashed line
+        - 'dashdot' → Dash-dot alternating pattern
+        - 'longdashdot' → Long dash-dot alternating pattern
+
+        :param dash_style: String representing the desired line style.
+        """
+        self.setdefault("line", {})["dash"] = dash_style
+
+    def set_transparency(self, transparency_value):
+        """
+        Update the transparency level by converting it to opacity.
+
+        Transparency ranges from:
+        - 0 (completely opaque) → opacity = 1
+        - 1 (fully transparent) → opacity = 0
+        - Intermediate values adjust partial transparency.
+
+        :param transparency_value: Float between 0 and 1, where 0 is opaque and 1 is transparent.
+        """
+        self["opacity"] = 1 - transparency_value
+
+    def set_opacity(self, opacity_value):
+        """Update the opacity level between 0 and 1."""
+        self["opacity"] = opacity_value
+
+    def set_visible(self, is_visible):
+        """Update the visibility of the trace.
+            "True" → The trace is fully visible.
+            "False" → The trace is completely hidden.
+            "legendonly" → The trace is hidden from the plot but still appears in the legend.
+        
+        """
+        
+        self["visible"] = is_visible
+
+    def set_hoverinfo(self, hover_format):
+        """Update hover information format."""
+        self["hoverinfo"] = hover_format
+
 
 
 class JSONGrapherRecord:
@@ -376,7 +580,7 @@ class JSONGrapherRecord:
         if y_axis_label_including_units:
             validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=False)
 
-        self.fig_dict = {
+        self.fig_dict.update( {
             "comments": comments,  # Top-level comments
             "datatype": datatype,  # Top-level datatype (datatype)
             "data": data_objects_list if data_objects_list else [],  # Data series list
@@ -384,8 +588,9 @@ class JSONGrapherRecord:
                 "title": {"text": graph_title},
                 "xaxis": {"title": {"text": x_axis_label_including_units}},
                 "yaxis": {"title": {"text": y_axis_label_including_units}}
-            }
-        }
+                   }
+                }
+            )
 
         if simulate_as_added:  # Will try to simulate, but because this is the default, will use a try-except rather than crash the program.
             try:
@@ -479,7 +684,11 @@ class JSONGrapherRecord:
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
-        #Add to the class object's data list.
+
+        #make this a JSONGrapherDataSeries class object, that way a person can use functions to do things like change marker size etc. more easily.
+        JSONGrapher_data_series_object = JSONGrapherDataSeries()
+        JSONGrapher_data_series_object.update_while_preserving_old_terms(data_series_dict)
+        #Add to the JSONGrapherRecord class object's data list.
         self.fig_dict["data"].append(data_series_dict) #implied return.
         return data_series_dict
 
@@ -522,20 +731,25 @@ class JSONGrapherRecord:
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
-        #Add to the class object's data list.
-        self.fig_dict["data"].append(data_series_dict)
+        
+        #make this a JSONGrapherDataSeries class object, that way a person can use functions to do things like change marker size etc. more easily.
+        JSONGrapher_data_series_object = JSONGrapherDataSeries()
+        JSONGrapher_data_series_object.update_while_preserving_old_terms(data_series_dict)
+        #Add to the JSONGrapherRecord class object's data list.
+        self.fig_dict["data"].append(data_series_dict)  
+
+        #Now evaluate the equation as added, if requested. It does seem counterintuitive to do this "at the end",
+        #but the reason this happens at the end is that the evaluation *must* occur after being a fig_dict because we
+        #need to check the units coming out against the units in the layout. Otherwise we would not be able to convert units.
         new_data_series_index = len(self.fig_dict["data"])-1 
         if evaluate_equations_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
             try:
                 self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, new_data_series_index)
             except:
                 pass
-        ## Should consider adding "set_plot_type" for whole fig_dict, similar to what is in add_data_series
-
-
+        
     def change_data_series_name(self, series_index, series_name):
         self.fig_dict["data"][series_index]["name"] = series_name
-
 
     #this function forces the re-simulation of a particular dataseries.
     #The simulator link will be extracted from the record, by default.
@@ -568,13 +782,14 @@ class JSONGrapherRecord:
         existing_JSONGrapher_record: A dictionary representing an existing JSONGrapher record.
         """
         #While we expect a dictionary, if a JSONGrapher ojbect is provided, we will simply pull the dictionary out of that.
-        if type(existing_JSONGrapher_record) != type({}):
-            existing_JSONGrapher_record = existing_JSONGrapher_record.fig_dict
-        if type(existing_JSONGrapher_record) == type({}):
+        if isinstance(existing_JSONGrapher_record, dict): 
             if "comments" in existing_JSONGrapher_record:   self.fig_dict["comments"] = existing_JSONGrapher_record["comments"]
             if "datatype" in existing_JSONGrapher_record:      self.fig_dict["datatype"] = existing_JSONGrapher_record["datatype"]
             if "data" in existing_JSONGrapher_record:       self.fig_dict["data"] = existing_JSONGrapher_record["data"]
             if "layout" in existing_JSONGrapher_record:     self.fig_dict["layout"] = existing_JSONGrapher_record["layout"]
+        else:
+            self.fig_dict = existing_JSONGrapher_record.fig_dict
+
 
     #the below function takes in existin JSONGrpher record, and merges the data in.
     #This requires scaling any data as needed, according to units.
@@ -1360,7 +1575,7 @@ def validate_JSONGrapher_record(record):
     else:
         return True, []
 
-def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_interpolated_points=3, adjust_edges=True):
+def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_interpolated_points=0, adjust_edges=True):
     """
     Applies a rolling polynomial regression with a specified window size and degree,
     interpolates additional points, and optionally adjusts edge points for smoother transitions.
@@ -1520,18 +1735,18 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
 
     # Extract traces (data series)
     #This section is now deprecated. It has not been completely updated after the trace_style field was created.
-    #There was old logic for trace_type which has been partially updated, but in fact the logic should be rewritten
+    #There was old logic for plotly_trace_type which has been partially updated, but in fact the logic should be rewritten
     #to better accommodate the existence of both "trace_style" and "type". It may be that there should be
     #a helper function called 
     for trace in fig_dict.get("data", []):
         trace_style = trace.get("trace_style", '')
-        trace_type = trace.get("type", '')
-        if (trace_type == '') and (trace_style == ''):
+        plotly_trace_types = trace.get("type", '')
+        if (plotly_trace_types == '') and (trace_style == ''):
             trace_style = 'scatter_spline'
-        elif (trace_type == 'scatter') and (trace_style == ''):
+        elif (plotly_trace_types == 'scatter') and (trace_style == ''):
             trace_style = 'scatter_spline'
-        elif (trace_style == '') and (trace_type != ''):
-            trace_style = trace_type
+        elif (trace_style == '') and (plotly_trace_types != ''):
+            trace_style = plotly_trace_types
         # If type is missing, but mode indicates lines and shape is spline, assume it's a spline
         if not trace_style and trace.get("mode") == "lines" and trace.get("line", {}).get("shape") == "spline":
             trace_style = "spline"
@@ -1550,13 +1765,11 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
             if "lines" in mode or trace.get("line", {}).get("shape") == "spline":
                 print("Warning: Rolling polynomial approximation used instead of spline.")
                 x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
-                print("line 1530", x_smooth, y_smooth, x_values, y_values)
                 # Add a label explicitly for the legend
                 ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
         elif trace_style == "spline":
             print("Warning: Using rolling polynomial approximation instead of true spline.")
             x_smooth, y_smooth = rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2)
-            print("line 1536", x_smooth, y_smooth, x_values, y_values)
             ax.plot(x_smooth, y_smooth, linestyle="-", label=f"{trace_name} Spline")
 
     # Extract layout details
@@ -1635,7 +1848,7 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
 
     return fig
 
-def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collection="default", trace_style_to_apply="default"):
+def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collection="", trace_style_to_apply=""):
     """
     Iterates over all traces in the `data` list of a Plotly figure dictionary 
     and applies styles to each one.
@@ -1665,7 +1878,7 @@ def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collecti
 # The logic in JSONGrapher is to apply the style information but to treat "type" differently 
 # Accordingly, we use 'trace_styles_collection' as a field in JSONGrapher for each data_series.
 # compared to how plotly treats 'type' for a data series. So later in the process, when actually plotting with plotly, the 'type' field will get overwritten.
-def apply_trace_style_to_single_data_series(data_series, trace_styles_collection="default", trace_style_to_apply="default"):
+def apply_trace_style_to_single_data_series(data_series, trace_styles_collection="", trace_style_to_apply=""):
     """
     Applies predefined styles to a single Plotly data series while preserving relevant fields.
 
@@ -1676,21 +1889,42 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     Returns:
         dict: Updated data series with style applied.
     """
-    if (trace_styles_collection == '') or (str(trace_styles_collection).lower() == 'none'):
-        return data_series    
     if not isinstance(data_series, dict):
         return data_series  # Return unchanged if the data series is invalid.
+    if isinstance(trace_style_to_apply, dict):#in this case, we'll set the data_series trace_style to match.
+        data_series["trace_style"] = trace_style_to_apply
+    if str(trace_style_to_apply) != str(''): #if we received a non-empty string (or dictionary), we'll put it into the data_series object.
+        data_series["trace_style"] = trace_style_to_apply
+    elif str(trace_style_to_apply) == str(''): #If we received an empty string for the trace_style_to apply (default JSONGrapher flow), we'll check in the data_series object.   
+        #first see if there is a trace_style in the data_series.
+        trace_style = data_series.get("trace_style", "")
+        #If it's "none", then we'll return the data series unchanged.
+        #We consider it that for every trace_styles_collection, that "none" means to make no change.
+        if str(trace_style).lower() == "none":
+            return data_series
+        #if we find a dictionary, we will set the trace_style_to_apply to that, to ensure we skip other string checks to use the dictionary.
+        if isinstance(trace_style,dict):
+            trace_style_to_apply = trace_style
+    #if the trace_style_to_apply is a string and we have not received a trace_styles collection, then we have nothing
+    #to use, so will return the data_series unchanged.
+    if type(trace_style_to_apply) == type("string"):
+        if (trace_styles_collection == '') or (str(trace_styles_collection).lower() == 'none'):
+            return data_series    
+    #if the trace_style_to_apply is "none", we will return the series unchanged.
+    if str(trace_style_to_apply).lower() == str("none"):
+            return data_series
+    #Add a couple of hardcoded cases.
     if type(trace_style_to_apply) == type("string"):
         if (trace_style_to_apply.lower() == "nature") or (trace_style_to_apply.lower() == "science"):
             trace_style_to_apply = "default"
     # -------------------------------
-    # Predefined data series styles
+    # Predefined trace_styles_collection
     # -------------------------------
-    # Each style is defined as a dictionary containing multiple plot types.
-    # Users can select a style preset (e.g., "default", "minimalist", "bold"),
-    # and the function will apply appropriate settings for the given plot type.
+    # Each trace_styles_collection is defined as a dictionary containing multiple trace_styles.
+    # Users can select a style preset trace_styles_collection (e.g., "default", "minimalist", "bold"),
+    # and this function will apply appropriate settings for the given trace_style.
     #
-    # Supported plot types:
+    # Examples of Supported trace_styles:
     # - "scatter_spline" (default when type is not specified)
     # - "scatter"
     # - "spline"
@@ -1702,6 +1936,12 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     
     styles_available = {
         "default": {
+            "default": {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "line": {"shape": "spline", "width": 2},
+                "marker": {"size": 10},
+            },
             "scatter_spline": {
                 "type": "scatter",
                 "mode": "lines+markers",
@@ -1711,6 +1951,18 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             "scatter_line": {
                 "type": "scatter",
                 "mode": "lines+markers",
+                "line": {"shape": "linear", "width": 2},
+                "marker": {"size": 10},
+            },
+            "line": {
+                "type": "scatter",
+                "mode": "lines",
+                "line": {"shape": "linear", "width": 2},
+                "marker": {"size": 10},
+            },
+            "lines": {
+                "type": "scatter",
+                "mode": "lines",
                 "line": {"shape": "linear", "width": 2},
                 "marker": {"size": 10},
             },
@@ -1888,17 +2140,24 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     else:
         styles_collection_dict = styles_available.get(trace_styles_collection, {})
         if not styles_collection_dict:  # Check if it's an empty dictionary
-            print(f"Warning: Style named '{trace_styles_collection}' not found for individual data series. Using 'default' trace_styles_collection instead.")
+            print(f"Warning: trace_styles_collection named '{trace_styles_collection}' not found. Using 'default' trace_styles_collection instead.")
             styles_collection_dict = styles_available.get("default", {})
     # Determine the trace_style, defaulting to the first item in a given style if none is provided.
     trace_style = data_series.get("trace_style", "")
     if trace_style == "":
         trace_style = list(styles_collection_dict.keys())[0] #take the first trace_style name in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
-    
     # Retrieve the specific style for the plot type
-    trace_style = styles_collection_dict.get(trace_style, {})
+
+    if trace_style in styles_collection_dict:
+        trace_style = styles_collection_dict.get(trace_style)
+    elif trace_style not in styles_collection_dict:  # Check if it's an empty dictionary
+        print(f"Warning: trace_style named '{trace_style}' not found in trace_styles_collection '{trace_styles_collection}'. Using the first trace_style in in trace_styles_collection '{trace_styles_collection}'.")
+        trace_style = list(styles_collection_dict.keys())[0] #take the first trace_style name in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
+        trace_style = styles_collection_dict.get(trace_style)
+
     # Apply type and other predefined settings
-    data_series["type"] = trace_style.get("type", data_series.get("type", trace_style))
+    data_series["type"] = trace_style.get("type")
+    
     # Apply other attributes while preserving existing values
     for key, value in trace_style.items():
         if key not in ["type"]:
@@ -1906,6 +2165,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
                 data_series.setdefault(key, {}).update(value)
             else:
                 data_series[key] = value  # Direct assignment for non-dictionary values
+
     return data_series
 
 def remove_trace_styles_collection_from_plotly_dict(fig_dict):
@@ -1915,8 +2175,19 @@ def remove_trace_styles_collection_from_plotly_dict(fig_dict):
     :param fig_dict: dict, Plotly style fig_dict
     :return: dict, Updated Plotly style fig_dict with default formatting.
     """
+    #will remove formatting from the individual data_series, but will not remove formatting from any that have trace_style of "none".
     if isinstance(fig_dict, dict) and "data" in fig_dict and isinstance(fig_dict["data"], list):
-        fig_dict["data"] = [remove_trace_style_from_single_data_series(trace) for trace in fig_dict["data"]]
+        updated_data = []  # Initialize an empty list to store processed traces
+        for trace in fig_dict["data"]:
+            # Check if the trace has a "trace_style" field and if its value is "none" (case-insensitive)
+            if trace.get("trace_style", "").lower() == "none":
+                updated_data.append(trace)  # Skip modification and keep the trace unchanged
+            else:
+                # Apply the function to modify the trace before adding it to the list
+                updated_data.append(remove_trace_style_from_single_data_series(trace))
+        # Update the "data" field with the processed traces
+        fig_dict["data"] = updated_data
+
 
     #If being told to remove the style, should also pop it from fig_dict.
     if "plot_style" in fig_dict:
@@ -1941,13 +2212,15 @@ def remove_trace_style_from_single_data_series(data_series):
     # **Define formatting fields to remove**
     formatting_fields = {
         "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
-        "legendgroup", "showlegend", "textposition", "textfont"
+        "legendgroup", "showlegend", "textposition", "textfont", "visible", "connectgaps", "cliponaxis", "showgrid"
     }
 
     # **Create a new data series excluding only formatting fields**
     cleaned_data_series = {key: value for key, value in data_series.items() if key not in formatting_fields}
-
-    return cleaned_data_series
+    #make the new data series into a JSONGrapherDataSeries object.
+    new_data_series_object = JSONGrapherDataSeries()
+    new_data_series_object.update_while_preserving_old_terms(cleaned_data_series)
+    return new_data_series_object
 
 def extract_trace_style_by_index(fig_dict, data_series_index, new_trace_style_name=''):
     data_series_dict = fig_dict["data"][data_series_index]
@@ -2032,7 +2305,7 @@ def export_trace_styles_collection(trace_styles_collection, trace_styles_collect
             trace_styles_collection_name: trace_styles_collection
         }
     }
-    print("line 1964", json_structure)
+
     with open(filename, "w") as file:
         json.dump(json_structure, file, indent=4)
 
@@ -2607,7 +2880,6 @@ def update_title_field(fig_dict, depth=1, max_depth=10):
             fig_dict[key] = update_title_field(value, depth + 1, max_depth)
         elif isinstance(value, list):  # Lists can contain nested dictionaries
             fig_dict[key] = [update_title_field(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
-    
     return fig_dict
 
 def remove_extra_information_field(fig_dict, depth=1, max_depth=10):
@@ -3022,25 +3294,31 @@ def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, 
 
     # Create a copy for processing implicit series separately
     fig_dict_for_implicit = copy.deepcopy(fig_dict)
+    #first check if any data_series have an equatinon or simulation field. If not, we'll skip.
+    #initialize with false:
+    implicit_series_present = False
 
-    
-    if adjust_implicit_data_ranges:
-        # Retrieve ranges from data series that are not equation-based or simulation-based.
-        fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(fig_dict, skip_equations=True, skip_simulations=True)
-        # Apply the extracted ranges to implicit data series before simulation or equation evaluation.
-        fig_dict_for_implicit = update_implicit_data_series_x_ranges(fig_dict, fig_dict_ranges)
+    for data_series in fig_dict["data"]:
+        if ("equation" in data_series) or ("simulate" in data_series):
+            implicit_series_present = True
+    if implicit_series_present == True:
+        if adjust_implicit_data_ranges:
+            # Retrieve ranges from data series that are not equation-based or simulation-based.
+            fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(fig_dict, skip_equations=True, skip_simulations=True)
+            # Apply the extracted ranges to implicit data series before simulation or equation evaluation.
+            fig_dict_for_implicit = update_implicit_data_series_x_ranges(fig_dict, fig_dict_ranges)
 
-    if simulate_all_series:
-        # Perform simulations for applicable series
-        fig_dict_for_implicit = simulate_as_needed_in_fig_dict(fig_dict_for_implicit)
-        # Copy data back to fig_dict, ensuring ranges remain unchanged
-        fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
+        if simulate_all_series:
+            # Perform simulations for applicable series
+            fig_dict_for_implicit = simulate_as_needed_in_fig_dict(fig_dict_for_implicit)
+            # Copy data back to fig_dict, ensuring ranges remain unchanged
+            fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
 
-    if evaluate_all_equations:
-        # Evaluate equations that require computation
-        fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
-        # Copy results back without overwriting the ranges
-        fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
+        if evaluate_all_equations:
+            # Evaluate equations that require computation
+            fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
+            # Copy results back without overwriting the ranges
+            fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
 
     return fig_dict
 
@@ -3055,7 +3333,7 @@ if __name__ == "__main__":
         comments="Here is a description.",
         graph_title="Here Is The Graph Title Spot",
         data_objects_list=[
-            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "trace_type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
+            {"comments": "Initial data series.", "uid": "123", "name": "Series A", "trace_style": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     )
     x_label_including_units= "Time (years)" 

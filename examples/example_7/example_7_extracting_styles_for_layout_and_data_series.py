@@ -45,8 +45,10 @@ merged_record["data"][1].set_marker_color("purple")
 merged_record.plot() #plot 5
 
 #Let's save these two styles, so we can use them later. We also need to name these new styles.
-style_with_large_green_trace_style = merged_record.extract_trace_style_by_index(0, new_trace_style_name="large_green")
-style_with_large_purple_trace_style = merged_record.extract_trace_style_by_index(1, new_trace_style_name="large_purple")
+#Normally, we intentionally do not include colors in each trace_style since a person wants automatic coloring.
+#however, here, we will turn extraction of colors on so that we include the colors in each trace_style 
+style_with_large_green_trace_style = merged_record.extract_trace_style_by_index(0, new_trace_style_name="large_green", extract_colors=True)
+style_with_large_purple_trace_style = merged_record.extract_trace_style_by_index(1, new_trace_style_name="large_purple", extract_colors=True)
 
 #A data_series style normally consists of multiple trace_styles. Let's put both of these in a new style.
 large_markers_trace_styles_collection = {}
@@ -85,6 +87,6 @@ merged_record.apply_trace_style_by_index(data_series_index=0, trace_styles_colle
 merged_record.apply_trace_style_by_index(data_series_index=1, trace_styles_collection=large_markers_trace_styles_collection, trace_style="large_green")
 merged_record.plot() #plot 6
 
-#Let's export this style.
-merged_record.export_trace_styles_collection(new_trace_styles_collection_name="exported_large_markers_trace_styles_collection")
-
+#Let's export this style, including the colors, which is not typical. The below command extracts the styles from all traces that are present.
+#We have extract_colors set to True. The default for extract_colors is False.
+merged_record.export_trace_styles_collection(new_trace_styles_collection_name="exported_large_markers_trace_styles_collection", extract_colors=True)

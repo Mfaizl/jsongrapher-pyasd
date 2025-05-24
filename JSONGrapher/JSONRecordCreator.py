@@ -48,21 +48,22 @@ def add_records_to_global_records_list_and_plot(all_selected_file_paths, newly_a
 #This ia JSONGrapher specific wrapper function to drag_and_drop_gui create_and_launch.
 #This launches the python based JSONGrapher GUI.
 def launch():
-    #Check if we have the module we need. First try with package, then locally.
     try:
         import JSONGrapher.drag_and_drop_gui as drag_and_drop_gui
-    except:
-        #if the package is not present, or does not have it, try getting the module locally.
-        import drag_and_drop_gui
-    selected_files = drag_and_drop_gui.create_and_launch(app_name = "JSONGrapher", function_for_after_file_addition=add_records_to_global_records_list_and_plot)
-    #We will not return the selected_files, and instead will return the global_records_list.
+    except ImportError:
+        try:
+            import drag_and_drop_gui  # Attempt local import
+        except ImportError as exc:
+            raise ImportError("Module 'drag_and_drop_gui' could not be found locally or in JSONGrapher.") from exc
+    _selected_files = drag_and_drop_gui.create_and_launch(app_name = "JSONGrapher", function_for_after_file_addition=add_records_to_global_records_list_and_plot)
+    #We will not return the _selected_files, and instead will return the global_records_list.
     return global_records_list
 
 ## End of the portion of the code for the GUI##
 
 
 #the function create_new_JSONGrapherRecord is intended to be "like" a wrapper function for people who find it more
-# intuitive to create class objects that way, this variable is actually just a reference 
+# intuitive to create class objects that way, this variable is actually just a reference
 # so that we don't have to map the arguments.
 def create_new_JSONGrapherRecord(hints=False):
     #we will create a new record. While we could populate it with the init,
@@ -201,23 +202,22 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
         #While it may be possible to find a way using the "Q" objects directly, this is the way I found so far, which converts the U object into a Q object.
         units_object_converted = 1*unitpy.U(units_string_1)
         ratio_with_units_object = units_object_converted.to(units_string_2)
-    except: #the above can fail if there are reciprocal units like 1/bar rather than (bar)**(-1), so we have an except statement that tries "that" fix if there is a failure.
+    #the above can fail if there are reciprocal units like 1/bar rather than (bar)**(-1), so we have an except statement that tries "that" fix if there is a failure.
+    except Exception as general_exception: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
         units_string_1 = convert_inverse_units(units_string_1)
         units_string_2 = convert_inverse_units(units_string_2)
         units_object_converted = 1*unitpy.U(units_string_1)
         try:
             ratio_with_units_object = units_object_converted.to(units_string_2)
-        except KeyError as e:
-            import sys
-            print(f"Error during unit converion in get_units_scaling_ratio: Missing key {e}. Ensure all unit definitions are correctly set.", "Unit 1:", units_string_1, "Unit 2:", units_string_2)
+        except KeyError as e: 
+            raise KeyError(f"Error during unit conversion in get_units_scaling_ratio: Missing key {e}. Ensure all unit definitions are correctly set. Unit 1: {units_string_1}, Unit 2: {units_string_2}") from e
         except ValueError as e:
-            import sys
-            print(f"Error during unit conversion in get_units_scaling_ratio: {e}. Make sure unit values are valid and properly formatted.", "Unit 1:", units_string_1, "Unit 2:", units_string_2)
-        except Exception as e:
-            import sys
-            print(f"An unexpected error occurred in in get_units_scaling_ratio when trying to convert units: {e}. Double-check that your records have the same units.", "Unit 1:", units_string_1, "Unit 2:",units_string_2)
+            raise ValueError(f"Error during unit conversion in get_units_scaling_ratio: {e}. Make sure unit values are valid and properly formatted. Unit 1: {units_string_1}, Unit 2: {units_string_2}") from e       
+        except Exception as e:  # pylint: disable=broad-except
+            raise RuntimeError(f"An unexpected error occurred in get_units_scaling_ratio when trying to convert units: {e}. Double-check that your records have the same units. Unit 1: {units_string_1}, Unit 2: {units_string_2}") from e
 
     ratio_with_units_string = str(ratio_with_units_object)
+
     ratio_only = ratio_with_units_string.split(' ')[0] #what comes out may look like 1000 gram/(meter second), so we split and take first part.
     ratio_only = float(ratio_only)
     return ratio_only #function returns ratio only. If function is later changed to return more, then units_strings may need further replacements.
@@ -279,7 +279,7 @@ def add_custom_unit_to_unitpy(unit_string):
     # and for the new entry, it will also return a special NoneType that we can't easy check.
     # the structer unitpy.ledger.units is a list, but unitpy.ledger._lookup is a dictionary we can use
     # to check if the key for the new unit is added or not.
-    if unit_string not in unitpy.ledger._lookup:
+    if unit_string not in unitpy.ledger._lookup:  #This comment is so the VS code pylint does not flag this line. pylint: disable=protected-access
         unitpy.ledger.add_unit(new_entry) #implied return is here. No return needed.
 
 def extract_tagged_strings(text):
@@ -345,6 +345,20 @@ class SyncedDict(dict):
         """Update both dictionary and instance attribute."""
         super().__setitem__(key, value)  # Set in the dictionary
         setattr(self.owner, key, value)  # Sync with instance attribute
+    def __delitem__(self, key):
+        super().__delitem__(key)  # Remove from dict
+        if hasattr(self.owner, key):
+            delattr(self.owner, key)  # Sync removal from instance
+    def pop(self, key, *args):
+        """Remove item from dictionary and instance attributes."""
+        value = super().pop(key, *args)  # Remove from dictionary
+        if hasattr(self.owner, key):
+            delattr(self.owner, key)  # Remove from instance attributes
+        return value
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)  # Update dict
+        for key, value in self.items():
+            setattr(self.owner, key, value)  # Sync attributes
 
 
 class JSONGrapherDataSeries(dict): #inherits from dict.
@@ -380,6 +394,9 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
             "x": list(x) if x else [],
             "y": list(y) if y else []
         })
+
+        # Include any extra keyword arguments passed in
+        self.update(kwargs)
 
     def update_while_preserving_old_terms(self, series_dict):
         """Update instance attributes from a dictionary. Overwrites existing terms and preserves other old terms."""
@@ -460,7 +477,6 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         if "line" in mode and "lines" not in mode:
             mode = mode.replace("line", "lines")
         self["mode"] = mode
-        print("line 463", self["mode"])
 
     def set_annotations(self, text): #just a convenient wrapper.
         self.set_text(text) 
@@ -471,7 +487,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         if text == type("string"): 
             text = [text] * len(self["x"])  # Repeat the text to match x-values length
         else:
-            text = text            
+            pass #use text directly    
         self["text"] = text
 
 
@@ -559,13 +575,15 @@ class JSONGrapherRecord:
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
 
-    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_style ="", layout=None, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
             layout (dict): Layout dictionary to pre-populate the graph configuration.
             existing_JSONGrapher_record (dict): Existing JSONGrapher record to populate the instance.
         """  
+        if layout == None: #it's bad to have an empty dictionary or list as a python argument.
+            layout = {}
 
         # Assign self.fig_dict in a way that it will push any changes to it into the class instance.
         self.fig_dict = SyncedDict(self)
@@ -592,23 +610,21 @@ class JSONGrapherRecord:
                 }
             )
 
+        if plot_style !="":
+            self.fig_dict["plot_style"] = plot_style
         if simulate_as_added:  # Will try to simulate, but because this is the default, will use a try-except rather than crash the program.
             try:
                 self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
-            except:
-                pass
+            except KeyError:
+                pass  # Handle missing key issues gracefully
+            except Exception as e: # This is so VS code pylint does not flag this line: pylint: disable=broad-except
+                print(f"Unexpected error: {e}")  # Logs any unhandled errors
 
         if evaluate_equations_as_added:  # Will try to evaluate, but because this is the default, will use a try-except rather than crash the program.
             try:
                 self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
-            except:
-                pass
-
-        self.plot_type = plot_type  # The plot_type is normally a series-level attribute.
-        # However, if somebody sets the plot_type at the record level, we will use that plot_type for all the individual series.
-        if plot_type != "":
-            self.fig_dict["plot_type"] = plot_type
-
+            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
+                pass 
         # Populate attributes if an existing JSONGrapher record is provided as a dictionary.
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
@@ -622,6 +638,7 @@ class JSONGrapherRecord:
         self.hints_dictionary["['layout']['xaxis']['title']['text']"] = "Use Record.set_x_axis_label() to populate this field. This is the x-axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets '< >'."  # x-axis label
         self.hints_dictionary["['layout']['yaxis']['title']['text']"] = "Use Record.set_y_axis_label() to populate this field. This is the y-axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets '< >'."
 
+    ##Start of section of class code that allows class to behave like a dictionary and synchronize with fig_dict ##
     #The __getitem__ and __setitem__ functions allow the class instance to behave 'like' a dictionary without using super.
     #The below functions allow the JSONGrapherRecord to populate the self.fig_dict each time something is added inside.
     #That is, if someone uses something like Record["comments"]="frog", it will also put that into self.fig_dict
@@ -631,6 +648,24 @@ class JSONGrapherRecord:
     def __setitem__(self, key, value):
         """Redirect modifications of self[key] to self.fig_dict[key]"""
         self.fig_dict[key] = value
+    def __delitem__(self, key):
+        """Safely remove fig_dict keys while preserving other attributes."""
+        if key in self.fig_dict:
+            del self.fig_dict[key]  # Remove only from dictionary
+        if hasattr(self, key):
+            delattr(self, key)  # Remove from instance attributes
+    def pop(self, key, *args):
+        """Remove item from fig_dict and instance attributes, returning the value."""
+        value = self.fig_dict.pop(key, *args)  # Remove from dictionary
+        if hasattr(self, key):
+            delattr(self, key)  # Remove from instance attributes
+        return value
+    def update(self, *args, **kwargs):
+        """Update multiple items in fig_dict and sync them with instance attributes."""
+        self.fig_dict.update(*args, **kwargs)  # Update dictionary
+        for key, value in self.fig_dict.items():
+            setattr(self, key, value)  # Sync attributes
+    ##End of section of class code that allows class to behave like a dictionary and synchronize with fig_dict ##
 
     #this function enables printing the current record.
     def __str__(self):
@@ -641,7 +676,7 @@ class JSONGrapherRecord:
         return json.dumps(self.fig_dict, indent=4)
 
 
-    def add_data_series(self, series_name, x_values=[], y_values=[], simulate={}, simulate_as_added = True, comments="", trace_style="",  uid="", line="", extra_fields=None):
+    def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
         """
         This is the normal way of adding an x,y data series.
         """
@@ -655,6 +690,14 @@ class JSONGrapherRecord:
         # line: Dictionary describing line properties (e.g., shape, width).
         # uid: Optional unique identifier for the series (e.g., a DOI).
         # extra_fields: Dictionary containing additional fields to add to the series.
+        #Should not have mutable objects initialized as defaults, so putting them in below.
+        if x_values is None:
+            x_values = []
+        if y_values is None:
+            y_values = []
+        if simulate is None:
+            simulate = {}
+
         x_values = list(x_values)
         y_values = list(y_values)
 
@@ -679,7 +722,7 @@ class JSONGrapherRecord:
         if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
             try:
                 data_series_dict = simulate_data_series(data_series_dict)
-            except:
+            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
                 pass
         # Add extra fields if provided, they will be added.
         if extra_fields:
@@ -692,7 +735,7 @@ class JSONGrapherRecord:
         self.fig_dict["data"].append(data_series_dict) #implied return.
         return data_series_dict
 
-    def add_data_series_as_equation(self, series_name, x_values=[], y_values=[], equation_dict={}, evaluate_equations_as_added = True, comments="", trace_style="",  uid="", line="", extra_fields=None):
+    def add_data_series_as_equation(self, series_name, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
         """
         This is a way to add an equation that would be used to fill an x,y data series.
         The equation will be a equation_dict of the json_equationer type
@@ -707,6 +750,14 @@ class JSONGrapherRecord:
         # line: Dictionary describing line properties (e.g., shape, width).
         # uid: Optional unique identifier for the series (e.g., a DOI).
         # extra_fields: Dictionary containing additional fields to add to the series.
+        #Should not have mutable objects initialized as defaults, so putting them in below.
+        if x_values is None:
+            x_values = []
+        if y_values is None:
+            y_values = []
+        if equation_dict is None:
+            equation_dict = {}
+
         x_values = list(x_values)
         y_values = list(y_values)
 
@@ -745,7 +796,7 @@ class JSONGrapherRecord:
         if evaluate_equations_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
             try:
                 self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, new_data_series_index)
-            except:
+            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
                 pass
         
     def change_data_series_name(self, series_index, series_name):
@@ -757,15 +808,12 @@ class JSONGrapherRecord:
         self.fig_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index, simulator_link=simulator_link, verbose=verbose)
         data_series_dict = self.fig_dict["data"][data_series_index] #implied return
         return data_series_dict #Extra regular return
-    
-
     #this function returns the current record.
     def get_record(self):
         """
         Returns a JSON-dict string of the record
         """
         return self.fig_dict
-
     #The update_and_validate function will clean for plotly.
     def print_to_inspect(self, update_and_validate=True, validate=True, remove_remaining_hints=False):
         if remove_remaining_hints == True:
@@ -854,25 +902,6 @@ class JSONGrapherRecord:
             self.fig_dict = json_filename_or_object
             return self.fig_dict
 
-    def set_trace_style_one_data_series(self, data_series_index, trace_style):
-         self.fig_dict['data'][data_series_index]["trace_style"] = trace_style
-         return self.fig_dict['data'][data_series_index]
-
-    def set_trace_styles_collection(self, trace_styles_collection):
-        """
-        Sets the plot_type field for the all data series.
-        options are: scatter, spline, scatter_spline
-        """
-        self.plot_type["trace_styles_collection"] = trace_styles_collection
-
-    def set_trace_style_all_series(self, trace_style):
-        """
-        Sets the plot_type field for the all data series.
-        options are: scatter, spline, scatter_spline
-        """
-        for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
-            self.set_trace_style_one_data_series(data_series_index, trace_style)
-  
     def set_datatype(self, datatype):
         """
         Sets the datatype field used as the experiment type or schema identifier.
@@ -901,7 +930,7 @@ class JSONGrapherRecord:
         """
         if "xaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("xaxis"), dict):
             self.fig_dict['layout']["xaxis"] = {}  # Initialize x-axis as a dictionary if it doesn't exist.
-        validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)
+        _validation_result, _warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)
         self.fig_dict['layout']["xaxis"]["title"]['text'] = x_axis_label_including_units
 
     def set_y_axis_label_including_units(self, y_axis_label_including_units, remove_plural_units=True):
@@ -912,17 +941,17 @@ class JSONGrapherRecord:
         if "yaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("yaxis"), dict):
             self.fig_dict['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
         
-        validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
+        _validation_result, _warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
         self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
     
     #function to set the min and max of the x axis in plotly way.
-    def set_x_axis_range(self, min, max):
-        self.fig_dict["layout"]["xaxis"][0] = min
-        self.fig_dict["layout"]["xaxis"][1] = max
+    def set_x_axis_range(self, min_value, max_value):
+        self.fig_dict["layout"]["xaxis"][0] = min_value
+        self.fig_dict["layout"]["xaxis"][1] = max_value
     #function to set the min and max of the y axis in plotly way.
-    def set_y_axis_range(self, min, max):
-        self.fig_dict["layout"]["yaxis"][0] = min
-        self.fig_dict["layout"]["yaxis"][1] = max
+    def set_y_axis_range(self, min_value, max_value):
+        self.fig_dict["layout"]["yaxis"][0] = min_value
+        self.fig_dict["layout"]["yaxis"][1] = max_value
 
     #function to scale the values in the data series by arbitrary amounts.
     def scale_record(self, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
@@ -936,8 +965,8 @@ class JSONGrapherRecord:
         # yaxis_title: Title of the y-axis, including units.
         # yaxis_comments: Comments related to the y-axis.  Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         
-        validation_result, warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)              
-        validation_result, warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
+        _validation_result, _warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)              
+        _validation_result, _warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
         self.fig_dict['layout']["title"]['text'] = graph_title
         self.fig_dict['layout']["xaxis"]["title"]['text'] = x_axis_label_including_units
         self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
@@ -986,7 +1015,7 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, plot_style = {"layout_style":"", "trace_styles_collection":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_plotly_fig(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         """
         Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
         By default, it will apply the default still hard coded into jsongrapher.
@@ -1001,10 +1030,13 @@ class JSONGrapherRecord:
         Returns:
             plotly Figure: A validated Plotly figure object based on fig_dict.
         """
+        if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
+            plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
+        
         import plotly.io as pio
         import copy
         if plot_style == {"layout_style":"", "trace_styles_collection":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
-            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "trace_styles_collection":""}) #retrieve from self.fig_dict, and use defualt if not there.
+            plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "trace_styles_collection":""}) #retrieve from self.fig_dict, and use default if not there.
         #This code *does not* simply modify self.fig_dict. It creates a deepcopy and then puts the final x y data back in.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
@@ -1025,11 +1057,15 @@ class JSONGrapherRecord:
         return fig
 
     #Just a wrapper aroudn plot_with_plotly.
-    def plot(self, plot_style = {"layout_style":"", "trace_styles_collection":""}, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def plot(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
+            plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         return self.plot_with_plotly(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
 
     #simulate all series will simulate any series as needed. If changing this function's arguments, also change those for self.plot()
-    def plot_with_plotly(self, plot_style = {"layout_style":"", "trace_styles_collection":""}, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def plot_with_plotly(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
+            plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         fig = self.get_plotly_fig(plot_style=plot_style,
                                   simulate_all_series=simulate_all_series, 
                                   update_and_validate=update_and_validate, 
@@ -1056,7 +1092,7 @@ class JSONGrapherRecord:
         def export():
             try:
                 fig.write_image(filename, engine="kaleido")
-            except Exception as e:
+            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except
                 print(f"Export failed: {e}")
 
         import threading
@@ -1069,7 +1105,7 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, plot_style = {"layout_style":"", "trace_styles_collection":""}, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
 
@@ -1082,6 +1118,8 @@ class JSONGrapherRecord:
         Returns:
             plotly Figure: A validated matplotlib figure object based on fig_dict.
         """
+        if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
+            plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         import copy
         if plot_style == {"layout_style":"", "trace_styles_collection":""}: #if the plot_style received is the default, we'll check if the fig_dict has a plot_style.
             plot_style = self.fig_dict.get("plot_style", {"layout_style":"", "trace_styles_collection":""})
@@ -1183,19 +1221,25 @@ class JSONGrapherRecord:
                     if current_field.get(current_path_key, "") == hint_text:
                         current_field[current_path_key] = ""
 
-    #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
-    # def apply_layout_style(self, layout_style_to_apply=''):
-    #     self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
-    def apply_plot_style(self, plot_style= {"layout_style":"", "trace_styles_collection":""}): 
+    ## Start of section of JSONGRapher class functions related to styles ##
+
+    def apply_plot_style(self, plot_style= None): 
         #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "trace_styles_collection":"default"} or a list of length two with those two items.
         #The plot_style dictionary can include a pair of dictionaries.
         #if apply style is called directly, we will first put the plot_style into the plot_style field
         #This way, the style will stay.
+        if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
+            plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         self.fig_dict['plot_style'] = plot_style
         self.fig_dict = apply_plot_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
     def remove_plot_style(self):
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
         self.fig_dict = remove_plot_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
+    def set_layout_style(self, layout_style):
+        self.fig_dict["plot_style"]["layout_style"] = layout_style
+    def remove_layout_style_setting(self):
+        if "layout_style" in self.fig_dict["plot_style"]:
+            self.fig_dict["plot_style"].pop("layout_style")
     def extract_layout_style(self):
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
@@ -1208,9 +1252,40 @@ class JSONGrapherRecord:
         data_series = apply_trace_style_to_single_data_series(data_series, trace_styles_collection=trace_styles_collection, trace_style_to_apply=trace_style) #this is the 'external' function, not the one in the class.
         self.fig_dict["data"][data_series_index] = data_series
         return data_series
-    def extract_trace_styles_collection(self, new_trace_styles_collection_name='', indices_of_data_series_to_extract_styles_from=[], new_trace_style_names_list = []):
+    def set_trace_style_one_data_series(self, data_series_index, trace_style):
+        self.fig_dict['data'][data_series_index]["trace_style"] = trace_style
+        return self.fig_dict['data'][data_series_index]
+    def set_trace_styles_collection(self, trace_styles_collection):
+        """
+        Sets the plot_style["trace_styles_collection"] field for the all data series.
+        options are: scatter, spline, scatter_spline
+        """
+        self.fig_dict["plot_style"]["trace_styles_collection"] = trace_styles_collection
+    def remove_trace_styles_collection_setting(self):
+        if "trace_styles_collection" in self.fig_dict["plot_style"]:
+            self.fig_dict["plot_style"].pop("trace_styles_collection")
+    def set_trace_style_all_series(self, trace_style):
+        """
+        Sets the trace_style field for the all data series.
+        options are: scatter, spline, scatter_spline
+        """
+        for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
+            self.set_trace_style_one_data_series(data_series_index, trace_style)
+    def extract_trace_styles_collection(self, new_trace_styles_collection_name='', 
+                                    indices_of_data_series_to_extract_styles_from=None, 
+                                    new_trace_style_names_list=None, extract_colors=False):
+        """
+        Extracts trace style collection 
+        :param new_trace_styles_collection_name: str, Name of the new collection.
+        :param indices_of_data_series_to_extract_styles_from: list, Indices of series to extract styles from.
+        :param new_trace_style_names_list: list, Names for the new trace styles.
+        """
+        if indices_of_data_series_to_extract_styles_from is None:  # should not initialize mutable objects in arguments line, so doing here.
+            indices_of_data_series_to_extract_styles_from = []  
+        if new_trace_style_names_list is None:  # should not initialize mutable objects in arguments line, so doing here.
+            new_trace_style_names_list = []
         fig_dict = self.fig_dict
-        new_trace_styles_collection_dictionary = {}
+        new_trace_styles_collection_dictionary_without_name = {}
         if new_trace_styles_collection_name == '':
             new_trace_styles_collection_name = 'replace_this_with_your_trace_styles_collection_name'
         if indices_of_data_series_to_extract_styles_from == []:
@@ -1230,27 +1305,44 @@ class JSONGrapherRecord:
             raise ValueError("Error: The input for indices_of_data_series_to_extract_styles_from is not compatible with the input for new_trace_style_names_list. There is a difference in lengths after the automatic parsing and filling that occurs.")
         for index_to_extract_from in indices_of_data_series_to_extract_styles_from:
             new_trace_style_name = new_trace_style_names_list[index_to_extract_from]
-            extracted_trace_style = extract_trace_style_by_index(fig_dict, index_to_extract_from, new_trace_style_name=new_trace_style_names_list[index_to_extract_from])
-            new_trace_styles_collection_dictionary[new_trace_style_name] = extracted_trace_style[new_trace_style_name]
-        new_trace_styles_collection = {new_trace_styles_collection_name: new_trace_styles_collection_dictionary}
-        return new_trace_styles_collection
-    def export_trace_styles_collection(self, new_trace_styles_collection_name='', indices_of_data_series_to_extract_styles_from=[], new_trace_style_names_list = [], filename=''):
-        new_trace_styles_collection = self.extract_trace_styles_collection(new_trace_styles_collection_name=new_trace_styles_collection_name, indices_of_data_series_to_extract_styles_from=indices_of_data_series_to_extract_styles_from, new_trace_style_names_list = new_trace_style_names_list)
+            extracted_trace_style = extract_trace_style_by_index(fig_dict, index_to_extract_from, new_trace_style_name=new_trace_style_names_list[index_to_extract_from], extract_colors=extract_colors)
+            new_trace_styles_collection_dictionary_without_name[new_trace_style_name] = extracted_trace_style[new_trace_style_name]
+        return new_trace_styles_collection_name, new_trace_styles_collection_dictionary_without_name
+    def export_trace_styles_collection(self, new_trace_styles_collection_name='', 
+                                    indices_of_data_series_to_extract_styles_from=None, 
+                                    new_trace_style_names_list=None, filename='', extract_colors=False):
+        """
+        Exports trace style collection while ensuring proper handling of mutable default arguments.
+        
+        :param new_trace_styles_collection_name: str, Name of the new collection.
+        :param indices_of_data_series_to_extract_styles_from: list, Indices of series to extract styles from.
+        :param new_trace_style_names_list: list, Names for the new trace styles.
+        :param filename: str, Name of the file to export to.
+        """
+        if indices_of_data_series_to_extract_styles_from is None:  # should not initialize mutable objects in arguments line, so doing here.
+            indices_of_data_series_to_extract_styles_from = []
+        if new_trace_style_names_list is None:  # should not initialize mutable objects in arguments line, so doing here.
+            new_trace_style_names_list = []
+        auto_new_trace_styles_collection_name, new_trace_styles_collection_dictionary_without_name = self.extract_trace_styles_collection(new_trace_styles_collection_name=new_trace_styles_collection_name, indices_of_data_series_to_extract_styles_from=indices_of_data_series_to_extract_styles_from, new_trace_style_names_list = new_trace_style_names_list, extract_colors=extract_colors)
         if new_trace_styles_collection_name == '':
-            new_trace_styles_collection_name = list(new_trace_styles_collection.keys())[0] #the first key will contain the collection name.
+            new_trace_styles_collection_name = auto_new_trace_styles_collection_name
         if filename == '':
             filename = new_trace_styles_collection_name
-        export_trace_styles_collection(trace_styles_collection=new_trace_styles_collection, trace_styles_collection_name=new_trace_styles_collection_name, filename=filename)
-    def extract_trace_style_by_index(self, data_series_index, new_trace_style_name=''):
-        extracted_trace_style = extract_trace_style_by_index(self.fig_dict, data_series_index, new_trace_style_name=new_trace_style_name)
+        write_trace_styles_collection_to_file(trace_styles_collection=new_trace_styles_collection_dictionary_without_name, trace_styles_collection_name=new_trace_styles_collection_name, filename=filename)
+        return new_trace_styles_collection_name, new_trace_styles_collection_dictionary_without_name
+    def extract_trace_style_by_index(self, data_series_index, new_trace_style_name='', extract_colors=False):
+        extracted_trace_style = extract_trace_style_by_index(self.fig_dict, data_series_index, new_trace_style_name=new_trace_style_name, extract_colors=extract_colors)
         return extracted_trace_style
-    def export_trace_style_by_index(self, data_series_index, new_trace_style_name='', filename=''):
-        extracted_trace_style = extract_trace_style_by_index(self.fig_dict, data_series_index, new_trace_style_name=new_trace_style_name)
+    def export_trace_style_by_index(self, data_series_index, new_trace_style_name='', filename='', extract_colors=False):
+        extracted_trace_style = extract_trace_style_by_index(self.fig_dict, data_series_index, new_trace_style_name=new_trace_style_name, extract_colors=extract_colors)
         new_trace_style_name = list(extracted_trace_style.keys())[0] #the extracted_trace_style will have a single key which is the style name.
         if filename == '': 
             filename = new_trace_style_name
-        export_trace_style(trace_style_dict=extracted_trace_style[new_trace_style_name],trace_style_name=new_trace_style_name, filename=filename)
+        write_trace_style_to_file(trace_style_dict=extracted_trace_style[new_trace_style_name],trace_style_name=new_trace_style_name, filename=filename)
         return extracted_trace_style       
+    ## End of section of JSONGRapher class functions related to styles ##
+
+    #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -1314,16 +1406,16 @@ def units_plural_removal(units_to_check):
               - "changed" (Boolean): True, or False, where True means the string was changed to remove an "s" at the end.
               - "singularized" (string): The units parsed to be singular, if needed.
     """
-    #Check if we have the module we need. If not, return with no change.
+    # Check if we have the module we need. If not, return with no change.
     try:
         import JSONGrapher.units_list as units_list
-    except:
-        #if JSONGrapher is not present, try getting the units_list file locally.
+    except ImportError:
         try:
-            import units_list
-        except:#if still not present, give up and avoid crashing.
+            from . import units_list  # Attempt local import
+        except ImportError as exc:  # If still not present, give up and avoid crashing
             units_changed_flag = False
-            return units_changed_flag, units_to_check #return None if there was no test.
+            print(f"Module import failed: {exc}")  # Log the error for debugging
+            return units_changed_flag, units_to_check  # Return unchanged values
 
     #First try to check if units are blank or ends with "s" is in the units list. 
     if (units_to_check == "") or (units_to_check[-1] != "s"):
@@ -1341,6 +1433,9 @@ def units_plural_removal(units_to_check):
             else: #No change if the truncated string isn't found.
                 units_changed_flag = False
                 units_singularized = units_to_check
+    else:
+        units_changed_flag = False
+        units_singularized = units_to_check  #if it's outside of ourknown logic, we just return unchanged.
     return units_changed_flag, units_singularized
 
 
@@ -1628,23 +1723,20 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_inte
 
 
 ## Start of Section of Code for Styles and Converting between plotly and matplotlib Fig objectss ##
-
-'''
-#There are a few things to know about the styles logic of JSONGrapher:
-(1) There are actually two parts to the plot_style: a layout_style for the graph and a trace_styles_collection which will get applied to the individual dataseries.
-   So the plot_style is really supposed to be a dictionary with {"layout_style":"default", "trace_styles_collection":"default"} that way it is JSON compatible and avoids ambiguity. 
-   A person can pass in dictionaries for layout_style and for trace_styles_collection and thereby create custom styles.
-   There are helper functions to extract style dictionaries once a person has a JSONGrapher record which they're happy with.
-(2) We parse what the person provides as a style, so we accept things other than the ideal plot_style dictionary format.  
-   If someone provides a single string, we'll use it for both layout_style and trace_styles_collection.
-   If we get a list of two, we'll expect that to be in the order of layout_style then trace_styles_collection
-   If we get a string that we can't find in the existing styles list, then we'll use the default. 
-(1) by default, export to json will *not* include plot_styles.  include_formatting will be an optional argument. 
-(2) There is an apply_plot_style function which will first put the style into self.fig_dict['plot_style'] so it stays there, before applying the style.
-(3) For the plotting functions, they will have plot_style = {"layout_style":"", "trace_styles_collection":""} or = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
-    If somebody passes in a "None" type or the word none, then *no* style changes will be applied during plotting, relative to what the record already has.
-    One can pass a style in for the plotting functions. In those cases, we'll use the remove style option, then apply.
-'''
+# #There are a few things to know about the styles logic of JSONGrapher:
+# (1) There are actually two parts to the plot_style: a layout_style for the graph and a trace_styles_collection which will get applied to the individual dataseries.
+#    So the plot_style is really supposed to be a dictionary with {"layout_style":"default", "trace_styles_collection":"default"} that way it is JSON compatible and avoids ambiguity. 
+#    A person can pass in dictionaries for layout_style and for trace_styles_collection and thereby create custom styles.
+#    There are helper functions to extract style dictionaries once a person has a JSONGrapher record which they're happy with.
+# (2) We parse what the person provides as a style, so we accept things other than the ideal plot_style dictionary format.  
+#    If someone provides a single string, we'll use it for both layout_style and trace_styles_collection.
+#    If we get a list of two, we'll expect that to be in the order of layout_style then trace_styles_collection
+#    If we get a string that we can't find in the existing styles list, then we'll use the default. 
+# (1) by default, export to json will *not* include plot_styles.  include_formatting will be an optional argument. 
+# (2) There is an apply_plot_style function which will first put the style into self.fig_dict['plot_style'] so it stays there, before applying the style.
+# (3) For the plotting functions, they will have plot_style = {"layout_style":"", "trace_styles_collection":""} or = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
+#     If somebody passes in a "None" type or the word none, then *no* style changes will be applied during plotting, relative to what the record already has.
+#     One can pass a style in for the plotting functions. In those cases, we'll use the remove style option, then apply.
 
 def parse_plot_style(plot_style):
     """
@@ -1686,7 +1778,9 @@ def parse_plot_style(plot_style):
 #For example: style_to_apply = ['default', 'default'] or style_to_apply = 'science'.
 #IMPORTANT: This is the only function that will set a layout_style or trace_styles_collection that is an empty string into 'default'.
 # all other style applying functions (including parse_plot_style) will pass on the empty string or will do nothing if receiving an empty string.
-def apply_plot_style_to_plotly_dict(fig_dict, plot_style = {"layout_style":"", "trace_styles_collection":""}):
+def apply_plot_style_to_plotly_dict(fig_dict, plot_style=None):
+    if plot_style is None:  # should not initialize mutable objects in arguments line, so doing here.
+        plot_style = {"layout_style": {}, "trace_styles_collection": {}}  # Fresh dictionary per function call
     #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "trace_styles_collection":"default"}
     plot_style = parse_plot_style(plot_style)
     plot_style.setdefault("layout_style",'') #fill with blank string if not present.
@@ -1909,7 +2003,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             return data_series    
     #if the trace_style_to_apply is "none", we will return the series unchanged.
     if str(trace_style_to_apply).lower() == str("none"):
-            return data_series
+        return data_series
     #Add a couple of hardcoded cases.
     if type(trace_style_to_apply) == type("string"):
         if (trace_style_to_apply.lower() == "nature") or (trace_style_to_apply.lower() == "science"):
@@ -2044,7 +2138,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
                 "colorscale": "Jet",
             }
         },
-                "scatter": { #this style forces all traces into scatter.
+        "scatter": { #this style forces all traces into scatter.
             "scatter_spline": {
                 "type": "scatter",
                 "mode": "markers",
@@ -2063,36 +2157,6 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             "bar": {
                 "type": "scatter",
                 "mode": "markers",
-                "marker": {"size": 10},
-            },
-            "heatmap": {
-                "type": "heatmap",
-                "colorscale": "Viridis",
-            }
-        },
-        "scatter_spline": { #this style forces all traces into scatter_spline
-            "scatter_spline": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 10},
-            },
-            "scatter": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 10},
-            },
-            "spline": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 10},
-            },
-            "bar": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
                 "marker": {"size": 10},
             },
             "heatmap": {
@@ -2219,13 +2283,12 @@ def remove_trace_style_from_single_data_series(data_series):
     new_data_series_object.update_while_preserving_old_terms(cleaned_data_series)
     return new_data_series_object
 
-def extract_trace_style_by_index(fig_dict, data_series_index, new_trace_style_name=''):
+def extract_trace_style_by_index(fig_dict, data_series_index, new_trace_style_name='', extract_colors=False):
     data_series_dict = fig_dict["data"][data_series_index]
-    extracted_trace_style = extract_trace_style_from_data_series_dict(data_series_dict=data_series_dict, new_trace_style_name=new_trace_style_name)
+    extracted_trace_style = extract_trace_style_from_data_series_dict(data_series_dict=data_series_dict, new_trace_style_name=new_trace_style_name, extract_colors=extract_colors)
     return extracted_trace_style
 
-
-def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_name=''):
+def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_name='', additional_attributes_to_extract=None, extract_colors=False):
     """
     Extract formatting attributes from a given Plotly data series.
 
@@ -2240,7 +2303,6 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
     - "colorscale"
     - "opacity"
     - "fill"
-    - "fillcolor"
     - "legendgroup"
     - "showlegend"
     - "textposition"
@@ -2249,29 +2311,52 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
     :param data_series_dict: dict, A dictionary representing a single Plotly data series.
     :param trace_style: string, the key name for what user wants to call the trace_style in the style, after extraction.
     :return: dict, A dictionary containing only the formatting attributes.
-    """
+    """  
+    if additional_attributes_to_extract is None: #in python, it's not good to make an empty list a default argument.
+        additional_attributes_to_extract = []
 
     if new_trace_style_name=='':
-        data_series_dict.get("trace_style", "") #keep blank if not present.
+        new_trace_style_name = data_series_dict.get("trace_style", "") #keep blank if not present.
     if new_trace_style_name=='':
         new_trace_style_name = "custom"
 
     if not isinstance(data_series_dict, dict):
         return {}  # Return an empty dictionary if input is invalid.
 
-    # Define known formatting attributes
+    # Define known formatting attributes. This is a set (not a dictionary, not a list)
     formatting_fields = {
-        "type", "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
-        "legendgroup", "showlegend", "textposition", "textfont"
+        "type", "mode", "line", "marker", "opacity", "fill", "fillcolor",
+        "legendgroup", "showlegend", "textposition", "textfont", "colorscale"
     }
 
+    formatting_fields.update(additional_attributes_to_extract)
     # Extract only formatting-related attributes
     trace_style_dict = {key: value for key, value in data_series_dict.items() if key in formatting_fields}
+
+    #Pop out colors if we are not extracting them.
+    if extract_colors == False:
+        if "marker" in trace_style_dict:
+            if "color" in trace_style_dict["marker"]:
+                trace_style_dict["marker"].pop("color")
+        if "line" in trace_style_dict:
+            if "color" in trace_style_dict["line"]:
+                trace_style_dict["line"].pop("color")
+        if "colorscale" in trace_style_dict:  # Handles top-level colorscale for heatmaps, choropleths
+            trace_style_dict.pop("colorscale")
+        if "fillcolor" in trace_style_dict:  # Handles fill colors
+            trace_style_dict.pop("fillcolor")
+        if "textfont" in trace_style_dict:
+            if "color" in trace_style_dict["textfont"]:  # Handles text color
+                trace_style_dict["textfont"].pop("color")
+        if "legendgrouptitle" in trace_style_dict and isinstance(trace_style_dict["legendgrouptitle"], dict):
+            if "font" in trace_style_dict["legendgrouptitle"] and isinstance(trace_style_dict["legendgrouptitle"]["font"], dict):
+                if "color" in trace_style_dict["legendgrouptitle"]["font"]:
+                    trace_style_dict["legendgrouptitle"]["font"].pop("color")
     extracted_trace_style = {new_trace_style_name : trace_style_dict} #this is a trace_style dict.
     return extracted_trace_style #this is a trace_style dict.
 
 #export a single trace_style dictionary to .json.
-def export_trace_style(trace_style_dict, trace_style_name, filename):
+def write_trace_style_to_file(trace_style_dict, trace_style_name, filename):
     # Ensure the filename ends with .json
     if not filename.lower().endswith(".json"):
         filename += ".json"
@@ -2285,11 +2370,12 @@ def export_trace_style(trace_style_dict, trace_style_name, filename):
         }
     }
 
-    with open(filename, "w") as file:
+    with open(filename, "w", encoding="utf-8") as file:  # Specify UTF-8 encoding for compatibility
         json.dump(json_structure, file, indent=4)
 
-#export an entire trace_styles_collection to .json. THe trace_styles_collection is dict.
-def export_trace_styles_collection(trace_styles_collection, trace_styles_collection_name, filename):
+
+#export an entire trace_styles_collection to .json. The trace_styles_collection is dict.
+def write_trace_styles_collection_to_file(trace_styles_collection, trace_styles_collection_name, filename):   
     if "trace_styles_collection" in trace_styles_collection: #We may receive a traces_style collection in a container. If so, we pull the traces_style_collection out.
         trace_styles_collection = trace_styles_collection[trace_styles_collection["name"]] 
     # Ensure the filename ends with .json
@@ -2303,8 +2389,10 @@ def export_trace_styles_collection(trace_styles_collection, trace_styles_collect
         }
     }
 
-    with open(filename, "w") as file:
+    with open(filename, "w", encoding="utf-8") as file:  # Specify UTF-8 encoding for compatibility
         json.dump(json_structure, file, indent=4)
+
+
 
 #export an entire trace_styles_collection from .json. THe trace_styles_collection is dict.
 def import_trace_styles_collection(filename):
@@ -2312,7 +2400,7 @@ def import_trace_styles_collection(filename):
     if not filename.lower().endswith(".json"):
         filename += ".json"
 
-    with open(filename, "r") as file:
+    with open(filename, "r", encoding="utf-8") as file:  # Specify UTF-8 encoding for compatibility
         data = json.load(file)
 
     # Validate JSON structure
@@ -2334,7 +2422,7 @@ def import_trace_style(filename):
     if not filename.lower().endswith(".json"):
         filename += ".json"
 
-    with open(filename, "r") as file:
+    with open(filename, "r", encoding="utf-8") as file:  # Specify UTF-8 encoding for compatibility
         data = json.load(file)
 
     # Validate JSON structure
@@ -2774,14 +2862,14 @@ def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
         if "equation" in data_series:
             if skip_equations:
                 implicit_data_series_to_extract_from = None
-                pass  # Skip processing, but still append None values
+                # Will Skip processing, but still append None values
             else:
                 implicit_data_series_to_extract_from = data_series["equation"]
         
         elif "simulate" in data_series:
             if skip_simulations:
                 implicit_data_series_to_extract_from = None
-                pass  # Skip processing, but still append None values
+                # Will Skip processing, but still append None values
             else:
                 implicit_data_series_to_extract_from = data_series["simulate"]
         
@@ -2865,8 +2953,8 @@ def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
 
 def update_title_field(fig_dict, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting
-    which is necessary to do things like change the font, and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
-    """ Recursively checks for 'title' fields and converts them to dictionary format. """
+    which is necessary to do things like change the font, and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects.
+    Recursively checks for 'title' fields and converts them to dictionary format. """
     if depth > max_depth or not isinstance(fig_dict, dict):
         return fig_dict
     
@@ -2881,8 +2969,8 @@ def update_title_field(fig_dict, depth=1, max_depth=10):
 
 def remove_extra_information_field(fig_dict, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
-    """Recursively checks for 'extraInformation' fields and removes them."""
+     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects.
+    Recursively checks for 'extraInformation' fields and removes them."""
     if depth > max_depth or not isinstance(fig_dict, dict):
         return fig_dict
 
@@ -2902,8 +2990,8 @@ def remove_extra_information_field(fig_dict, depth=1, max_depth=10):
 
 def remove_nested_comments(data, top_level=True):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. """
-    """Removes 'comments' fields that are not at the top level of the JSON-dict. Starts with 'top_level = True' when dict is first passed in then becomes false after that. """
+     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. 
+    Removes 'comments' fields that are not at the top level of the JSON-dict. Starts with 'top_level = True' when dict is first passed in then becomes false after that. """
     if not isinstance(data, dict):
         return data
     # Process nested structures
@@ -2946,14 +3034,17 @@ def remove_custom_units_chevrons(json_fig_dict):
     json_fig_dict['layout']['yaxis']['title']['text'] = json_fig_dict['layout']['yaxis']['title']['text'].replace('<','').replace('>','')
     return json_fig_dict
 
-def clean_json_fig_dict(json_fig_dict, fields_to_update=["title_field", "extraInformation", "nested_comments"]):
+def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
      and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. 
+     fields_to_update should be a list.
      This function can also remove the 'simulate' field from data series. However, that is not the default behavior
      because one would not want to do that by mistake before simulation is performed.
      This function can also remove the 'equation' field from data series. However, that is not the default behavior
      because one would not want to do that by mistake before the equation is evaluated.
      """
+    if fields_to_update is None:  # should not initialize mutable objects in arguments line, so doing here.
+        fields_to_update = ["title_field", "extraInformation", "nested_comments"]
     fig_dict = json_fig_dict
     #unmodified_data = copy.deepcopy(data)
     if "title_field" in fields_to_update:
@@ -3003,7 +3094,7 @@ def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbo
     """
     import requests
     import subprocess
-    import json
+    #import json
     import os
 
     # Convert to raw GitHub URL only if "raw" is not in the original URL
@@ -3018,14 +3109,14 @@ def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbo
     js_filename = os.path.basename(javascript_simulator_url)
 
     # Download the JavaScript file
-    response = requests.get(javascript_simulator_url)
+    response = requests.get(javascript_simulator_url, timeout=300)
 
     if response.status_code == 200:
-        with open(js_filename, "w") as file:
+        with open(js_filename, "w", encoding="utf-8") as file:  # Specify UTF-8 encoding for compatibility
             file.write(response.text)
 
         # Append the export statement to the JavaScript file
-        with open(js_filename, "a") as file:
+        with open(js_filename, "a", encoding="utf-8") as file:  # Specify UTF-8 encoding for compatibility
             file.write("\nmodule.exports = { simulate };")
 
         # Convert input dictionary to a JSON string
@@ -3037,7 +3128,7 @@ def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbo
         console.log(JSON.stringify(simulator.simulate({input_json_str})));
         """
 
-        result = subprocess.run(["node", "-e", js_command], capture_output=True, text=True)
+        result = subprocess.run(["node", "-e", js_command], capture_output=True, text=True, check=True)
 
         # Print output and errors if verbose
         if verbose:
@@ -3102,8 +3193,8 @@ def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
             return None
         return simulation_return.get("data", None)
 
-    except Exception as e:
-        print(f"Exception occurred: {e}")
+    except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except
+        print(f"Exception occurred in simulate_data_series function of JSONRecordCreator.py: {e}")
         return None
 
 #Function that goes through a fig_dict data series and simulates each data series as needed.
@@ -3157,12 +3248,17 @@ def evaluate_equations_as_needed_in_fig_dict(fig_dict):
 
 def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose=False):   
     try:
-        import json_equationer.equation_evaluator as equation_evaluator
-        import json_equationer.equation_creator  as equation_creator
-    except:
-        from . import equation_evaluator
-        from . import equation_creator
+        # Attempt to import from the json_equationer package
+        import json_equationer.equation_creator as equation_creator
+    except ImportError:
+        try:
+            # Fallback: attempt local import
+            from . import equation_creator
+        except ImportError as exc:
+            # Log the failure and handle gracefully
+            print(f"Failed to import equation_creator: {exc}")
     import copy
+    verbose # Not yet used. The remainder of this comment is to avoid vs code pylint flagging. pylint: disable=pointless-statement
     data_dicts_list = fig_dict['data']
     data_dict = data_dicts_list[data_series_index]
     if 'equation' in data_dict:
@@ -3224,7 +3320,7 @@ def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_
     if modify_target_directly == False:
         import copy  # Import inside function to limit scope   
         updated_fig_dict =  copy.deepcopy(target_fig_dict)  # Deep copy to avoid modifying original
-    if modify_target_directly == True:
+    else:
         updated_fig_dict = target_fig_dict
 
     target_data_series = updated_fig_dict.get("data", [])
@@ -3302,6 +3398,7 @@ def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, 
         if adjust_implicit_data_ranges:
             # Retrieve ranges from data series that are not equation-based or simulation-based.
             fig_dict_ranges, data_series_ranges = get_fig_dict_ranges(fig_dict, skip_equations=True, skip_simulations=True)
+            data_series_ranges # Variable not used. The remainder of this comment is to avoid vs code pylint flagging. pylint: disable=pointless-statement
             # Apply the extracted ranges to implicit data series before simulation or equation evaluation.
             fig_dict_for_implicit = update_implicit_data_series_x_ranges(fig_dict, fig_dict_ranges)
 
@@ -3346,14 +3443,14 @@ if __name__ == "__main__":
     print(Record)
 
     # Example of creating a record from an existing dictionary.
-    existing_JSONGrapher_record = {
+    example_existing_JSONGrapher_record = {
         "comments": "Existing record description.",
         "graph_title": "Existing Graph",
         "data": [
             {"comments": "Data series 1", "uid": "123", "name": "Series A", "type": "spline", "x": [1, 2, 3], "y": [4, 5, 8]}
         ],
     }
-    Record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=existing_JSONGrapher_record)
+    Record_from_existing = JSONGrapherRecord(existing_JSONGrapher_record=example_existing_JSONGrapher_record)
     x_label_including_units= "Time (years)" 
     y_label_including_units = "Height (cm)"
     Record_from_existing.set_comments("Tree Growth Data collected from the US National Arboretum")

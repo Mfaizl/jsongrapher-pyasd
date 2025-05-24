@@ -2,22 +2,20 @@
     "trace_styles_collection": {
         "name": "exported_large_markers_trace_styles_collection",
         "exported_large_markers_trace_styles_collection": {
-            "exported_large_markers_trace_styles_collection": {
-                "large_purple": {
-                    "type": "scatter",
-                    "mode": "markers",
-                    "marker": {
-                        "size": 15,
-                        "color": "purple"
-                    }
-                },
-                "large_green": {
-                    "type": "scatter",
-                    "mode": "markers",
-                    "marker": {
-                        "size": 15,
-                        "color": "green"
-                    }
+            "large_purple": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {
+                    "size": 15,
+                    "color": "purple"
+                }
+            },
+            "large_green": {
+                "type": "scatter",
+                "mode": "markers",
+                "marker": {
+                    "size": 15,
+                    "color": "green"
                 }
             }
         }

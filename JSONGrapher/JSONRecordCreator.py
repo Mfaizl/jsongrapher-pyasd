@@ -942,7 +942,6 @@ class JSONGrapherRecord:
         self.fig_dict['layout']["xaxis"]["title"]['text'] = x_axis_label_including_units
         self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
         
-
         #populate any optional fields, if provided:
         if len(comments) > 0:
             self.fig_dict['layout']["comments"] = comments
@@ -950,8 +949,6 @@ class JSONGrapherRecord:
             self.fig_dict['layout']["xaxis"]["comments"] = x_axis_comments
         if len(y_axis_comments) > 0:
             self.fig_dict['layout']["yaxis"]["comments"] = y_axis_comments     
-
-
         return self.fig_dict['layout']
     
     #This function validates the output before exporting, and also has an option of removing hints.

@@ -554,7 +554,7 @@ class JSONGrapherRecord:
     Methods:
         add_data_series: Adds a new data series to the record.
         add_data_series_as_equation: Adds a new equation to plot, which will be evaluated on the fly.
-        set_layout: Updates the layout configuration for the graph.
+        set_layout_fields: Updates the layout configuration for the graph.
         export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
@@ -928,7 +928,7 @@ class JSONGrapherRecord:
     def scale_record(self, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
         self.fig_dict = scale_fig_dict_values(self.fig_dict, num_to_scale_x_values_by=num_to_scale_x_values_by, num_to_scale_y_values_by=num_to_scale_y_values_by)
 
-    def set_layout(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
+    def set_layout_fields(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
         # comments: General comments about the layout. Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         # graph_title: Title of the graph.
         # xaxis_title: Title of the x-axis, including units.

@@ -112,6 +112,8 @@ merged_record["data"][0].set_uid("456DEF")
 
 #let's change one of series 1 abit
 merged_record["data"][1].set_mode('lines+markers')  
+#For a lines+markers plot, plotly requires is to set the marker color (not the line color)
+merged_record["data"][1].set_marker_color('green')  
 #When we try to plot it, we see no change:
 merged_record.plot()
 
@@ -140,11 +142,11 @@ merged_record["data"][1].set_name("Changed Series 1")
 merged_record.plot()
 
 # Here is how we change the opacity of a series, bound between 0 and 1.
-merged_record["data"][0].set_opacity(0.3)  
-# merged_record["data"][0]["opacity"] = 0.3
+merged_record["data"][0].set_opacity(0.6)  
+# merged_record["data"][0]["opacity"] = 0.6
 #one can also use the word transparency if using the builtin functions.
 #Transparency is converted to opacity by opacity = 1-transparency.
-#merged_record["data"][0].set_transparency(0.7)
+#merged_record["data"][0].set_transparency(0.4)
 merged_record["data"][0].set_name("Series 0 After Opacity Change")  
 # Now let's plot it to look:
 merged_record.plot()

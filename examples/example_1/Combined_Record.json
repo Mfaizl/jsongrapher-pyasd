@@ -8,12 +8,8 @@
     "data": [
         {
             "uid": "45c0a40",
-            "line": {
-                "shape": "spline",
-                "width": 5
-            },
             "name": "6.4 bar",
-            "type": "scatter",
+            "trace_style": "",
             "x": [
                 null,
                 200.1,
@@ -4729,16 +4725,17 @@
                 6,
                 6,
                 6
-            ]
-        },
-        {
-            "uid": "45c0a40",
+            ],
             "line": {
                 "shape": "spline",
                 "width": 5
             },
+            "type": "scatter"
+        },
+        {
+            "uid": "45c0a40",
             "name": "8.5 bar",
-            "type": "scatter",
+            "trace_style": "",
             "x": [
                 null,
                 200,
@@ -9678,7 +9675,12 @@
                 17,
                 17,
                 17
-            ]
+            ],
+            "line": {
+                "shape": "spline",
+                "width": 5
+            },
+            "type": "scatter"
         }
     ],
     "layout": {

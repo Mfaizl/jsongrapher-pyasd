@@ -11,19 +11,18 @@ import JSONGrapher
 # First, we will load two example records and plot them with the default settings of JSONGrapher.
 
 merged_record = JSONGrapher.load_JSONGrapherRecords(["LaMnO3.json", "LaFeO3.json"])
-merged_record.plot()
+merged_record.plot() #plot 1
 
 
 #Let's set the trace_styles_collection to "none" to see what happens.
 merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"none"})
 #When we plot this, we get the plotly 'default' settings which are different from JSONGrapher.
 #Additionally, the plotly settings are not consistent between data_series. Plotly changes how series are plotted based on the number of points.
-merged_record.plot() 
+merged_record.plot() #plot 2
 
 #Now, let's go back to the JSONGrapher default, then something about one of the data_series. 
 merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"default"})
-merged_record.plot() 
-
+merged_record.plot() #plot 3
 #The syntax for adding things into a record is Record["data"][0]
 #There are no 'commands' for formatting in JSONGrapher. Instead, we use formatting that is allowed for plotly.
 
@@ -34,18 +33,16 @@ merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_st
 # We want to do something like this:
 # merged_record["data"][0]["marker"]["size"] = 15 
 #let's first print out the data_series dictionary:
-print(merged_record["data"][0])
 
 #The marker field does not exis in the data_series, and in python, we must add missing fields, first.
 merged_record["data"][0]["marker"] = {}
 merged_record["data"][0]["marker"]["size"] = 15
 merged_record["data"][0]["marker"]["color"] = "green"
-merged_record.plot() 
-#now, let's make the other markers large and purple.
-merged_record["data"][1]["marker"] = {}
-merged_record["data"][1]["marker"]["size"] = 15
-merged_record["data"][1]["marker"]["color"] = "purple"
-merged_record.plot() 
+merged_record.plot() #plot 4
+#now, let's make the other series markers large and purple, but we'll use the built in function way.
+merged_record["data"][1].set_marker_size(15)
+merged_record["data"][1].set_marker_color("purple")
+merged_record.plot() #plot 5
 
 #Let's save these two styles, so we can use them later. We also need to name these new styles.
 style_with_large_green_trace_style = merged_record.extract_trace_style_by_index(0, new_trace_style_name="large_green")
@@ -86,7 +83,7 @@ merged_record.set_trace_style_one_data_series(1,"large_green")
 
 merged_record.apply_trace_style_by_index(data_series_index=0, trace_styles_collection=large_markers_trace_styles_collection, trace_style="large_purple")
 merged_record.apply_trace_style_by_index(data_series_index=1, trace_styles_collection=large_markers_trace_styles_collection, trace_style="large_green")
-merged_record.plot()
+merged_record.plot() #plot 6
 
 #Let's export this style.
 merged_record.export_trace_styles_collection(new_trace_styles_collection_name="exported_large_markers_trace_styles_collection")

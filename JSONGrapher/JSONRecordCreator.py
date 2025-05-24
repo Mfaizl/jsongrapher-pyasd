@@ -345,6 +345,20 @@ class SyncedDict(dict):
         """Update both dictionary and instance attribute."""
         super().__setitem__(key, value)  # Set in the dictionary
         setattr(self.owner, key, value)  # Sync with instance attribute
+    def __delitem__(self, key):
+        super().__delitem__(key)  # Remove from dict
+        if hasattr(self.owner, key):
+            delattr(self.owner, key)  # Sync removal from instance
+    def pop(self, key, *args):
+        """Remove item from dictionary and instance attributes."""
+        value = super().pop(key, *args)  # Remove from dictionary
+        if hasattr(self.owner, key):
+            delattr(self.owner, key)  # Remove from instance attributes
+        return value
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)  # Update dict
+        for key, value in self.items():
+            setattr(self.owner, key, value)  # Sync attributes
 
 
 class JSONGrapherDataSeries(dict): #inherits from dict.
@@ -460,7 +474,6 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         if "line" in mode and "lines" not in mode:
             mode = mode.replace("line", "lines")
         self["mode"] = mode
-        print("line 463", self["mode"])
 
     def set_annotations(self, text): #just a convenient wrapper.
         self.set_text(text) 
@@ -559,7 +572,7 @@ class JSONGrapherRecord:
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
 
-    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_type ="", layout={}, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_style ="", layout={}, existing_JSONGrapher_record=None):
         """
         Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
 
@@ -592,6 +605,9 @@ class JSONGrapherRecord:
                 }
             )
 
+        if plot_style !="":
+            self.fig_dict["plot_style"] = plot_style
+
         if simulate_as_added:  # Will try to simulate, but because this is the default, will use a try-except rather than crash the program.
             try:
                 self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
@@ -603,12 +619,7 @@ class JSONGrapherRecord:
                 self.fig_dict = evaluate_equations_as_needed_in_fig_dict(self.fig_dict)
             except:
                 pass
-
-        self.plot_type = plot_type  # The plot_type is normally a series-level attribute.
-        # However, if somebody sets the plot_type at the record level, we will use that plot_type for all the individual series.
-        if plot_type != "":
-            self.fig_dict["plot_type"] = plot_type
-
+        
         # Populate attributes if an existing JSONGrapher record is provided as a dictionary.
         if existing_JSONGrapher_record:
             self.populate_from_existing_record(existing_JSONGrapher_record)
@@ -622,6 +633,7 @@ class JSONGrapherRecord:
         self.hints_dictionary["['layout']['xaxis']['title']['text']"] = "Use Record.set_x_axis_label() to populate this field. This is the x-axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets '< >'."  # x-axis label
         self.hints_dictionary["['layout']['yaxis']['title']['text']"] = "Use Record.set_y_axis_label() to populate this field. This is the y-axis label and should have units in parentheses. The units can include multiplication '*', division '/' and parentheses '( )'. Scientific and imperial units are recommended. Custom units can be contained in pointy brackets '< >'."
 
+    ##Start of section of class code that allows class to behave like a dictionary and synchronize with fig_dict ##
     #The __getitem__ and __setitem__ functions allow the class instance to behave 'like' a dictionary without using super.
     #The below functions allow the JSONGrapherRecord to populate the self.fig_dict each time something is added inside.
     #That is, if someone uses something like Record["comments"]="frog", it will also put that into self.fig_dict
@@ -631,6 +643,24 @@ class JSONGrapherRecord:
     def __setitem__(self, key, value):
         """Redirect modifications of self[key] to self.fig_dict[key]"""
         self.fig_dict[key] = value
+    def __delitem__(self, key):
+        """Safely remove fig_dict keys while preserving other attributes."""
+        if key in self.fig_dict:
+            del self.fig_dict[key]  # Remove only from dictionary
+        if hasattr(self, key):
+            delattr(self, key)  # Remove from instance attributes
+    def pop(self, key, *args):
+        """Remove item from fig_dict and instance attributes, returning the value."""
+        value = self.fig_dict.pop(key, *args)  # Remove from dictionary
+        if hasattr(self, key):
+            delattr(self, key)  # Remove from instance attributes
+        return value
+    def update(self, *args, **kwargs):
+        """Update multiple items in fig_dict and sync them with instance attributes."""
+        self.fig_dict.update(*args, **kwargs)  # Update dictionary
+        for key, value in self.fig_dict.items():
+            setattr(self, key, value)  # Sync attributes
+    ##End of section of class code that allows class to behave like a dictionary and synchronize with fig_dict ##
 
     #this function enables printing the current record.
     def __str__(self):
@@ -703,7 +733,7 @@ class JSONGrapherRecord:
         # equation_dict: This is the field for the equation_dict of json_equationer type
         # evaluate_equations_as_added: Boolean for evaluating equations immediately.
         # comments: Optional description of the data series.
-        # plot_type: Type of the data (e.g., scatter, line).
+        # trace_style: Type of the data (e.g., scatter, line).
         # line: Dictionary describing line properties (e.g., shape, width).
         # uid: Optional unique identifier for the series (e.g., a DOI).
         # extra_fields: Dictionary containing additional fields to add to the series.
@@ -854,25 +884,7 @@ class JSONGrapherRecord:
             self.fig_dict = json_filename_or_object
             return self.fig_dict
 
-    def set_trace_style_one_data_series(self, data_series_index, trace_style):
-         self.fig_dict['data'][data_series_index]["trace_style"] = trace_style
-         return self.fig_dict['data'][data_series_index]
-
-    def set_trace_styles_collection(self, trace_styles_collection):
-        """
-        Sets the plot_type field for the all data series.
-        options are: scatter, spline, scatter_spline
-        """
-        self.plot_type["trace_styles_collection"] = trace_styles_collection
-
-    def set_trace_style_all_series(self, trace_style):
-        """
-        Sets the plot_type field for the all data series.
-        options are: scatter, spline, scatter_spline
-        """
-        for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
-            self.set_trace_style_one_data_series(data_series_index, trace_style)
-  
+ 
     def set_datatype(self, datatype):
         """
         Sets the datatype field used as the experiment type or schema identifier.
@@ -1183,9 +1195,8 @@ class JSONGrapherRecord:
                     if current_field.get(current_path_key, "") == hint_text:
                         current_field[current_path_key] = ""
 
-    #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
-    # def apply_layout_style(self, layout_style_to_apply=''):
-    #     self.fig_dict = apply_layout_style_to_plotly_dict(self.fig_dict, layout_style_to_apply=layout_style_to_apply)
+
+    ## Start of section of JSONGRapher class functions related to styles ##
     def apply_plot_style(self, plot_style= {"layout_style":"", "trace_styles_collection":""}): 
         #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "trace_styles_collection":"default"} or a list of length two with those two items.
         #The plot_style dictionary can include a pair of dictionaries.
@@ -1196,6 +1207,11 @@ class JSONGrapherRecord:
     def remove_plot_style(self):
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
         self.fig_dict = remove_plot_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
+    def set_layout_style(self, layout_style):
+        self.fig_dict["plot_style"]["layout_style"] = layout_style
+    def remove_layout_style_setting(self):
+        if "layout_style" in self.fig_dict["plot_style"]:
+            self.fig_dict["plot_style"].pop("layout_style")
     def extract_layout_style(self):
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
@@ -1208,6 +1224,25 @@ class JSONGrapherRecord:
         data_series = apply_trace_style_to_single_data_series(data_series, trace_styles_collection=trace_styles_collection, trace_style_to_apply=trace_style) #this is the 'external' function, not the one in the class.
         self.fig_dict["data"][data_series_index] = data_series
         return data_series
+    def set_trace_style_one_data_series(self, data_series_index, trace_style):
+         self.fig_dict['data'][data_series_index]["trace_style"] = trace_style
+         return self.fig_dict['data'][data_series_index]
+    def set_trace_styles_collection(self, trace_styles_collection):
+        """
+        Sets the plot_style["trace_styles_collection"] field for the all data series.
+        options are: scatter, spline, scatter_spline
+        """
+        self.fig_dict["plot_style"]["trace_styles_collection"] = trace_styles_collection
+    def remove_trace_styles_collection_setting(self):
+        if "trace_styles_collection" in self.fig_dict["plot_style"]:
+            self.fig_dict["plot_style"].pop("trace_styles_collection")
+    def set_trace_style_all_series(self, trace_style):
+        """
+        Sets the trace_style field for the all data series.
+        options are: scatter, spline, scatter_spline
+        """
+        for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
+            self.set_trace_style_one_data_series(data_series_index, trace_style)
     def extract_trace_styles_collection(self, new_trace_styles_collection_name='', indices_of_data_series_to_extract_styles_from=[], new_trace_style_names_list = []):
         fig_dict = self.fig_dict
         new_trace_styles_collection_dictionary = {}
@@ -1251,6 +1286,9 @@ class JSONGrapherRecord:
             filename = new_trace_style_name
         export_trace_style(trace_style_dict=extracted_trace_style[new_trace_style_name],trace_style_name=new_trace_style_name, filename=filename)
         return extracted_trace_style       
+    ## End of section of JSONGRapher class functions related to styles ##
+
+    #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self):
@@ -2225,7 +2263,7 @@ def extract_trace_style_by_index(fig_dict, data_series_index, new_trace_style_na
     return extracted_trace_style
 
 
-def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_name=''):
+def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_name='', additional_attributes_to_extract=[]):
     """
     Extract formatting attributes from a given Plotly data series.
 
@@ -2240,7 +2278,6 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
     - "colorscale"
     - "opacity"
     - "fill"
-    - "fillcolor"
     - "legendgroup"
     - "showlegend"
     - "textposition"
@@ -2259,12 +2296,12 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
     if not isinstance(data_series_dict, dict):
         return {}  # Return an empty dictionary if input is invalid.
 
-    # Define known formatting attributes
+    # Define known formatting attributes. This is a set (not a dictionary, not a list)
     formatting_fields = {
-        "type", "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
+        "type", "mode", "line", "marker", "colorscale", "opacity", "fill", 
         "legendgroup", "showlegend", "textposition", "textfont"
     }
-
+    formatting_fields.update(additional_attributes_to_extract)
     # Extract only formatting-related attributes
     trace_style_dict = {key: value for key, value in data_series_dict.items() if key in formatting_fields}
     extracted_trace_style = {new_trace_style_name : trace_style_dict} #this is a trace_style dict.

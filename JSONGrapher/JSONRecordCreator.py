@@ -815,6 +815,7 @@ class JSONGrapherRecord:
         """
         return self.fig_dict
     #The update_and_validate function will clean for plotly.
+    #TODO: the internal recommending "print_to_inspect" function should, by default, exclude printing the full dictionaries of the layout_style and the trace_collection_style.
     def print_to_inspect(self, update_and_validate=True, validate=True, remove_remaining_hints=False):
         if remove_remaining_hints == True:
             self.remove_hints()
@@ -2229,6 +2230,9 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
 
     return data_series
 
+#TODO: This logic should be changed in the future. There should be a separated function to remove formatting
+# versus just removing the current setting of "trace_styles_collection"
+# So the main class function will also be broken into two and/or need to take an optional argument in
 def remove_trace_styles_collection_from_plotly_dict(fig_dict):
     """
     Remove applied data series styles from a Plotly figure dictionary.
@@ -2569,6 +2573,9 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     fig_dict["plot_style"]["layout_style"] = layout_style_to_apply_name
     return fig_dict
 
+#TODO: This logic should be changed in the future. There should be a separated function to remove formatting
+# versus just removing the current setting of "layout_style"
+# So the main class function will also be broken into two and/or need to take an optional argument in
 def remove_layout_style_from_plotly_dict(fig_dict):
     """
     Remove applied layout styles from a Plotly figure dictionary while preserving essential content.

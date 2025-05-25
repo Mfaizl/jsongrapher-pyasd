@@ -1078,7 +1078,6 @@ class JSONGrapherRecord:
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style', 'scene_axes'])
-        print("line 1058", self.fig_dict)
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
@@ -3022,7 +3021,6 @@ def convert_to_3d_layout(layout):
         }
 
 def update_scene_axes(fig_dict):
-    print(fig_dict)
     if "zaxis" in fig_dict["layout"]:
         fig_dict['layout'] = convert_to_3d_layout(fig_dict['layout'])
         for data_series_index, data_series in enumerate(fig_dict["data"]):
@@ -3329,30 +3327,31 @@ def evaluate_equations_as_needed_in_fig_dict(fig_dict):
             fig_dict = evaluate_equation_for_data_series_by_index(fig_dict, data_dict_index)
     return fig_dict
 
-def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose=False):   
+def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose="auto"):   
     try:
         # Attempt to import from the json_equationer package
         import json_equationer.equation_creator as equation_creator
     except ImportError:
         try:
-            # Fallback: attempt local import
+             # Fallback: attempt local import
             from . import equation_creator
         except ImportError as exc:
-            # Log the failure and handle gracefully
+             # Log the failure and handle gracefully
             print(f"Failed to import equation_creator: {exc}")
     import copy
-    verbose # Not yet used. The remainder of this comment is to avoid vs code pylint flagging. pylint: disable=pointless-statement
     data_dicts_list = fig_dict['data']
     data_dict = data_dicts_list[data_series_index]
     if 'equation' in data_dict:
         equation_object = equation_creator.Equation(data_dict['equation'])
-        equation_dict_evaluated = equation_object.evaluate_equation(verbose=True)
+        if verbose == "auto":
+            equation_dict_evaluated = equation_object.evaluate_equation()
+        else:
+            equation_dict_evaluated = equation_object.evaluate_equation(verbose=verbose)
         if "graphical_dimensionality" in equation_dict_evaluated:
             graphical_dimensionality = equation_dict_evaluated["graphical_dimensionality"]
         else:
             graphical_dimensionality = 2
         data_dict_filled = copy.deepcopy(data_dict)
-        print("line 3324", data_dict)
         data_dict_filled['equation'] = equation_dict_evaluated
         data_dict_filled['x_label'] = data_dict_filled['equation']['x_variable'] 
         data_dict_filled['y_label'] = data_dict_filled['equation']['y_variable'] 
@@ -3364,7 +3363,6 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
         #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
         if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)):
             #first, get the units that are in the layout of fig_dict so we know what to convert to.
-            print("line 3293", fig_dict)
             existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
             existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
             existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]

@@ -586,7 +586,7 @@ class JSONGrapherRecord:
             layout = {}
 
         # Assign self.fig_dict in a way that it will push any changes to it into the class instance.
-        self.fig_dict = SyncedDict(self)
+        self.fig_dict = {}
 
         # If receiving a data_objects_list, validate it.
         if data_objects_list:
@@ -642,29 +642,39 @@ class JSONGrapherRecord:
     #The __getitem__ and __setitem__ functions allow the class instance to behave 'like' a dictionary without using super.
     #The below functions allow the JSONGrapherRecord to populate the self.fig_dict each time something is added inside.
     #That is, if someone uses something like Record["comments"]="frog", it will also put that into self.fig_dict
+
     def __getitem__(self, key):
-        """Allow access to attributes via self[key]"""
-        return self.fig_dict.get(key, None)
+        return self.fig_dict[key]  # Direct access
+
     def __setitem__(self, key, value):
-        """Redirect modifications of self[key] to self.fig_dict[key]"""
-        self.fig_dict[key] = value
+        self.fig_dict[key] = value  # Direct modification
+
     def __delitem__(self, key):
-        """Safely remove fig_dict keys while preserving other attributes."""
-        if key in self.fig_dict:
-            del self.fig_dict[key]  # Remove only from dictionary
-        if hasattr(self, key):
-            delattr(self, key)  # Remove from instance attributes
-    def pop(self, key, *args):
-        """Remove item from fig_dict and instance attributes, returning the value."""
-        value = self.fig_dict.pop(key, *args)  # Remove from dictionary
-        if hasattr(self, key):
-            delattr(self, key)  # Remove from instance attributes
-        return value
+        del self.fig_dict[key]  # Support for deletion
+
+    def __iter__(self):
+        return iter(self.fig_dict)  # Allow iteration
+
+    def __len__(self):
+        return len(self.fig_dict)  # Support len()
+
+    def pop(self, key, default=None):
+        return self.fig_dict.pop(key, default)  # Implement pop()
+
+    def keys(self):
+        return self.fig_dict.keys()  # Dictionary-like keys()
+
+    def values(self):
+        return self.fig_dict.values()  # Dictionary-like values()
+
+    def items(self):
+        return self.fig_dict.items()  # Dictionary-like items()
+    
     def update(self, *args, **kwargs):
-        """Update multiple items in fig_dict and sync them with instance attributes."""
-        self.fig_dict.update(*args, **kwargs)  # Update dictionary
-        for key, value in self.fig_dict.items():
-            setattr(self, key, value)  # Sync attributes
+        """Updates the dictionary with multiple key-value pairs."""
+        self.fig_dict.update(*args, **kwargs)
+
+
     ##End of section of class code that allows class to behave like a dictionary and synchronize with fig_dict ##
 
     #this function enables printing the current record.
@@ -932,7 +942,8 @@ class JSONGrapherRecord:
         if "xaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("xaxis"), dict):
             self.fig_dict['layout']["xaxis"] = {}  # Initialize x-axis as a dictionary if it doesn't exist.
         _validation_result, _warnings_list, x_axis_label_including_units = validate_JSONGrapher_axis_label(x_axis_label_including_units, axis_name="x", remove_plural_units=remove_plural_units)
-        self.fig_dict['layout']["xaxis"]["title"]['text'] = x_axis_label_including_units
+        #setdefault avoids problems for missing fields.
+        self.fig_dict.setdefault("layout", {}).setdefault("xaxis", {}).setdefault("title", {})["text"] = x_axis_label_including_units 
 
     def set_y_axis_label_including_units(self, y_axis_label_including_units, remove_plural_units=True):
         """
@@ -940,11 +951,23 @@ class JSONGrapherRecord:
         yaxis_title (str): The new title to set for the y-axis.
         """
         if "yaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("yaxis"), dict):
-            self.fig_dict['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
-        
+            self.fig_dict['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.       
         _validation_result, _warnings_list, y_axis_label_including_units = validate_JSONGrapher_axis_label(y_axis_label_including_units, axis_name="y", remove_plural_units=remove_plural_units)
-        self.fig_dict['layout']["yaxis"]["title"]['text'] = y_axis_label_including_units
-    
+        #setdefault avoids problems for missing fields.
+        self.fig_dict.setdefault("layout", {}).setdefault("yaxis", {}).setdefault("title", {})["text"] = y_axis_label_including_units
+
+    def set_z_axis_label_including_units(self, z_axis_label_including_units, remove_plural_units=True):
+        """
+        Updates the title of the z-axis in the layout dictionary.
+        zaxis_title (str): The new title to set for the z-axis.
+        """
+        if "zaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("zaxis"), dict):
+            self.fig_dict['layout']["zaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
+            self.fig_dict['layout']["zaxis"]["title"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
+        _validation_result, _warnings_list, z_axis_label_including_units = validate_JSONGrapher_axis_label(z_axis_label_including_units, axis_name="z", remove_plural_units=remove_plural_units)
+        #setdefault avoids problems for missing fields.
+        self.fig_dict.setdefault("layout", {}).setdefault("zaxis", {}).setdefault("title", {})["text"] = z_axis_label_including_units
+
     #function to set the min and max of the x axis in plotly way.
     def set_x_axis_range(self, min_value, max_value):
         self.fig_dict["layout"]["xaxis"][0] = min_value
@@ -984,7 +1007,8 @@ class JSONGrapherRecord:
     #This function validates the output before exporting, and also has an option of removing hints.
     #The update_and_validate function will clean for plotly.
     #simulate all series will simulate any series as needed.
-    def export_to_json_file(self, filename, update_and_validate=True, validate=True, simulate_all_series = True, remove_simulate_fields= False, remove_remaining_hints=False):
+    #TODO: need to add an "include_formatting" option
+    def export_to_json_file(self, filename, update_and_validate=True, validate=True, simulate_all_series = True, remove_simulate_fields= False, remove_equation_fields= False, remove_remaining_hints=False):
         """
         writes the json to a file
         returns the json as a dictionary.
@@ -998,6 +1022,8 @@ class JSONGrapherRecord:
             self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
         if remove_simulate_fields == True:
             self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
+        if remove_equation_fields == True:
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['equation'])
         if remove_remaining_hints == True:
             self.remove_hints()
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -1051,7 +1077,8 @@ class JSONGrapherRecord:
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style', 'scene_axes'])
+        print("line 1058", self.fig_dict)
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
@@ -1237,6 +1264,8 @@ class JSONGrapherRecord:
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
         self.fig_dict = remove_plot_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
     def set_layout_style(self, layout_style):
+        if "plot_style" not in self.fig_dict: #create it not present.
+            self.fig_dict["plot_style"] = {}  # Initialize if missing
         self.fig_dict["plot_style"]["layout_style"] = layout_style
     def remove_layout_style_setting(self):
         if "layout_style" in self.fig_dict["plot_style"]:
@@ -1733,7 +1762,7 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_inte
 #    If someone provides a single string, we'll use it for both layout_style and trace_styles_collection.
 #    If we get a list of two, we'll expect that to be in the order of layout_style then trace_styles_collection
 #    If we get a string that we can't find in the existing styles list, then we'll use the default. 
-# (1) by default, export to json will *not* include plot_styles.  include_formatting will be an optional argument. 
+# (1) by default, exporting a JSONGRapher record to file will *not* include plot_styles.  include_formatting will be an optional argument. 
 # (2) There is an apply_plot_style function which will first put the style into self.fig_dict['plot_style'] so it stays there, before applying the style.
 # (3) For the plotting functions, they will have plot_style = {"layout_style":"", "trace_styles_collection":""} or = '' as their default argument value, which will result in checking if plot_style exists in the self.fig_dict already. If so, it will be used. 
 #     If somebody passes in a "None" type or the word none, then *no* style changes will be applied during plotting, relative to what the record already has.
@@ -2529,6 +2558,7 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
         "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
         "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
         "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
+        "zaxis.title.text": fig_dict.get("layout", {}).get("zaxis", {}).get("title", {}).get("text", None),
         "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
         "annotations.text": [
             annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])
@@ -2552,6 +2582,9 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
 
     if non_cosmetic_fields["yaxis.title.text"]:
         new_layout.setdefault("yaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["yaxis.title.text"]
+
+    if non_cosmetic_fields["zaxis.title.text"]:
+        new_layout.setdefault("zaxis", {}).setdefault("title", {})["text"] = non_cosmetic_fields["zaxis.title.text"]
 
     if non_cosmetic_fields["legend.title.text"]:
         new_layout.setdefault("legend", {}).setdefault("title", {})["text"] = non_cosmetic_fields["legend.title.text"]
@@ -2591,6 +2624,7 @@ def remove_layout_style_from_plotly_dict(fig_dict):
             "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
             "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
             "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
+            "zaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
             "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
             "annotations.text": [annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])],
             "updatemenus.buttons.label": [
@@ -2605,7 +2639,7 @@ def remove_layout_style_from_plotly_dict(fig_dict):
             fig_dict["layout"]["title"] = {"text": non_cosmetic_fields["title.text"]} if non_cosmetic_fields["title.text"] is not None else {}
 
         # Preserve axis titles while stripping font styles
-        for axis in ["xaxis", "yaxis"]:
+        for axis in ["xaxis", "yaxis", "zaxis"]:
             if axis in fig_dict["layout"] and isinstance(fig_dict["layout"][axis], dict):
                 if "title" in fig_dict["layout"][axis] and isinstance(fig_dict["layout"][axis]["title"], dict):
                     fig_dict["layout"][axis]["title"] = {"text": non_cosmetic_fields[f"{axis}.title.text"]} if non_cosmetic_fields[f"{axis}.title.text"] is not None else {}
@@ -2974,6 +3008,36 @@ def update_title_field(fig_dict, depth=1, max_depth=10):
             fig_dict[key] = [update_title_field(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
     return fig_dict
 
+
+#This helper function turns a layout dictionary into a "scene" dictionary
+def convert_to_3d_layout(layout):
+    # Convert xaxis, yaxis, zaxis to a scene structure within layout
+    return {
+        "title": layout.get("title", {}),
+        "scene": {
+            "xaxis": layout.get("xaxis", {}),
+            "yaxis": layout.get("yaxis", {}),
+            "zaxis": layout.get("zaxis", {})
+            }
+        }
+
+def update_scene_axes(fig_dict):
+    print(fig_dict)
+    if "zaxis" in fig_dict["layout"]:
+        fig_dict['layout'] = convert_to_3d_layout(fig_dict['layout'])
+        for data_series_index, data_series in enumerate(fig_dict["data"]):
+            if data_series["type"] == "scatter3d":
+                if "z_matrix" in data_series: #for this one, we don't want the z_matrix.
+                    data_series.pop("z_matrix")
+            if data_series["type"] == "mesh3d":
+                if "z_matrix" in data_series: #for this one, we don't want the z_matrix.
+                    data_series.pop("z_matrix")
+            if data_series["type"] == "surface":
+                if "z_matrix" in data_series: #for this one, we want the z_matrix so we pop z if we have the z_matrix..
+                    data_series.pop("z")
+                print(" The Surface type of 3D plot has not been implemented yet. It requires replacing z with the z_matrix after the equation has been evaluated.")
+    return fig_dict
+
 def remove_extra_information_field(fig_dict, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
      and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects.
@@ -3037,8 +3101,18 @@ def remove_trace_style_field(json_fig_dict):
     return json_fig_dict
 
 def remove_custom_units_chevrons(json_fig_dict):
-    json_fig_dict['layout']['xaxis']['title']['text'] = json_fig_dict['layout']['xaxis']['title']['text'].replace('<','').replace('>','')
-    json_fig_dict['layout']['yaxis']['title']['text'] = json_fig_dict['layout']['yaxis']['title']['text'].replace('<','').replace('>','')
+    try:
+        json_fig_dict['layout']['xaxis']['title']['text'] = json_fig_dict['layout']['xaxis']['title']['text'].replace('<','').replace('>','')
+    except KeyError:
+        pass
+    try:
+        json_fig_dict['layout']['yaxis']['title']['text'] = json_fig_dict['layout']['yaxis']['title']['text'].replace('<','').replace('>','')
+    except KeyError:
+        pass
+    try:
+        json_fig_dict['layout']['zaxis']['title']['text'] = json_fig_dict['layout']['zaxis']['title']['text'].replace('<','').replace('>','')
+    except KeyError:
+        pass
     return json_fig_dict
 
 def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
@@ -3068,6 +3142,8 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
         fig_dict = remove_custom_units_chevrons(fig_dict)
     if "trace_style" in fields_to_update:
         fig_dict = remove_trace_style_field(fig_dict)
+    if "scene_axes" in fields_to_update: #This is for 3D plots
+        fig_dict = update_scene_axes(fig_dict)
 
     return fig_dict
 
@@ -3270,16 +3346,25 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
     data_dict = data_dicts_list[data_series_index]
     if 'equation' in data_dict:
         equation_object = equation_creator.Equation(data_dict['equation'])
-        equation_dict_evaluated = equation_object.evaluate_equation()
+        equation_dict_evaluated = equation_object.evaluate_equation(verbose=True)
+        if "graphical_dimensionality" in equation_dict_evaluated:
+            graphical_dimensionality = equation_dict_evaluated["graphical_dimensionality"]
+        else:
+            graphical_dimensionality = 2
         data_dict_filled = copy.deepcopy(data_dict)
+        print("line 3324", data_dict)
         data_dict_filled['equation'] = equation_dict_evaluated
         data_dict_filled['x_label'] = data_dict_filled['equation']['x_variable'] 
         data_dict_filled['y_label'] = data_dict_filled['equation']['y_variable'] 
         data_dict_filled['x'] = equation_dict_evaluated['x_points']
         data_dict_filled['y'] = equation_dict_evaluated['y_points']
+        if graphical_dimensionality == 3:
+            data_dict_filled['z_label'] = data_dict_filled['equation']['z_variable'] 
+            data_dict_filled['z'] = equation_dict_evaluated['z_points']
         #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
         if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)):
             #first, get the units that are in the layout of fig_dict so we know what to convert to.
+            print("line 3293", fig_dict)
             existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
             existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
             existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]
@@ -3297,7 +3382,11 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
             #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
             data_dict_filled.pop("x_label", None)
             data_dict_filled.pop("y_label", None)
-        data_dict_filled['type'] = 'spline'
+        if "type" not in data_dict:
+            if graphical_dimensionality == 2:
+                data_dict_filled['type'] = 'spline'
+            elif graphical_dimensionality == 3:
+                data_dict_filled['type'] = 'mesh3d'
         data_dicts_list[data_series_index] = data_dict_filled
     fig_dict['data'] = data_dicts_list
     return fig_dict
@@ -3339,6 +3428,8 @@ def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_
             if ("equation" in target_series) or ("simulate" in target_series):
                 target_series["x"] = source_series.get("x", [])  # Extract and apply "x" values
                 target_series["y"] = source_series.get("y", [])  # Extract and apply "y" values
+                if "z" in source_series:
+                    target_series["z"] = source_series.get("z", [])  # Extract and apply "z" values                    
     else:
         # Match by name when parallel_structure=False or lengths differ
         source_data_dict = {series["name"]: series for series in source_data_series if "name" in series}
@@ -3346,12 +3437,13 @@ def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_
         for target_series in target_data_series:
             if ("equation" in target_series) or ("simulate" in target_series):
                 target_name = target_series.get("name")
-                
+               
                 if target_name in source_data_dict:
                     source_series = source_data_dict[target_name]
                     target_series["x"] = source_series.get("x", [])  # Extract and apply "x" values
                     target_series["y"] = source_series.get("y", [])  # Extract and apply "y" values
-
+                    if "z" in source_series:
+                        target_series["z"] = source_series.get("z", [])  # Extract and apply "z" values                    
     return updated_fig_dict
 
 

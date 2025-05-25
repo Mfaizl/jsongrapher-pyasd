@@ -1,7 +1,6 @@
 import json
-import JSONGrapher.styles.layout_styles_collection_library
+import JSONGrapher.styles.layout_styles_library
 import JSONGrapher.styles.trace_styles_collection_library
-
 #TODO: put an option to suppress warnings from JSONRecordCreator
 
 

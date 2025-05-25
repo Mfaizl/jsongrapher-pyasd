@@ -59,6 +59,9 @@ Record.set_x_axis_label_including_units(example_equation_dict['x_variable'])
 Record.set_y_axis_label_including_units(example_equation_dict['y_variable'])
 Record.set_z_axis_label_including_units(example_equation_dict['z_variable'])
 
+#This equation will take a few minutes to evaluate the number of points to plot.
+#So we will set this equation_dict to being verbose.
+example_equation_dict["verbose"] = True
 
 Record.add_data_series_as_equation(series_name="Arrhenius Example 2",equation_dict=example_equation_dict, evaluate_equations_as_added=False)
 Record.set_trace_style_one_data_series(0,"none")

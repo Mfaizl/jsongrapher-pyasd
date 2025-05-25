@@ -1,4 +1,7 @@
 import json
+import JSONGrapher.styles.layout_styles_collection_library
+import JSONGrapher.styles.trace_styles_collection_library
+
 #TODO: put an option to suppress warnings from JSONRecordCreator
 
 
@@ -2054,7 +2057,6 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     # Note: Colors are intentionally omitted to allow users to define their own.
     # However, predefined colorscales are applied for heatmaps.
     
-    import JSONGrapher.styles.trace_styles_collection_library
     styles_available = JSONGrapher.styles.trace_styles_collection_library.styles_library
 
     # Get the appropriate style dictionary
@@ -2323,7 +2325,7 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     if (layout_style_to_apply.lower() == "minimalist") or (layout_style_to_apply.lower() == "bold"):
         layout_style_to_apply = "default"
 
-    import JSONGrapher.styles.layout_styles_collection_library
+
     styles_available = JSONGrapher.styles.layout_styles_collection_library.styles_library
 
 

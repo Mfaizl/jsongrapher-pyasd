@@ -2054,176 +2054,9 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     # Note: Colors are intentionally omitted to allow users to define their own.
     # However, predefined colorscales are applied for heatmaps.
     
-    styles_available = {
-        "default": {
-            "default": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 10},
-            },
-            "scatter_spline": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 10},
-            },
-            "scatter_line": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "linear", "width": 2},
-                "marker": {"size": 10},
-            },
-            "line": {
-                "type": "scatter",
-                "mode": "lines",
-                "line": {"shape": "linear", "width": 2},
-                "marker": {"size": 10},
-            },
-            "lines": {
-                "type": "scatter",
-                "mode": "lines",
-                "line": {"shape": "linear", "width": 2},
-                "marker": {"size": 10},
-            },
-            "scatter": {
-                "type": "scatter",
-                "mode": "markers",
-                "marker": {"size": 10},
-            },
-            "spline": {
-                "type": "scatter",
-                "mode": "lines",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 0},  # Hide markers for smooth curves
-            },
-            "bar": {
-                "type": "bar",
-                "marker": {
-                                "color": "blue",
-                                "opacity": 0.8,
-                                "line": {
-                                    "color": "black",
-                                    "width": 2
-                                }
-                            },
-            },
-            "heatmap": {
-                "type": "heatmap",
-                "colorscale": "Viridis",
-            }
-        },
-        "minimalist": {
-            "scatter_spline": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 1},
-                "marker": {"size": 6},
-            },
-            "scatter": {
-                "type": "scatter",
-                "mode": "lines",
-                "line": {"shape": "linear", "width": 1},
-                "marker": {"size": 0},
-            },
-            "spline": {
-                "type": "scatter",
-                "mode": "lines",
-                "line": {"shape": "spline", "width": 1},
-                "marker": {"size": 0},
-            },
-            "bar": {
-                "type": "bar",
-            },
-            "heatmap": {
-                "type": "heatmap",
-                "colorscale": "Greys",
-            }
-        },
-        "bold": {
-            "scatter_spline": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 4},
-                "marker": {"size": 10},
-            },
-            "scatter": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 4},
-                "marker": {"size": 12},
-            },
-            "spline": {
-                "type": "scatter",
-                "mode": "lines",
-                "line": {"shape": "spline", "width": 4},
-                "marker": {"size": 0},
-            },
-            "bar": {
-                "type": "bar",
-            },
-            "heatmap": {
-                "type": "heatmap",
-                "colorscale": "Jet",
-            }
-        },
-        "scatter": { #this style forces all traces into scatter.
-            "scatter_spline": {
-                "type": "scatter",
-                "mode": "markers",
-                "marker": {"size": 10},
-            },
-            "scatter": {
-                "type": "scatter",
-                "mode": "markers",
-                "marker": {"size": 10},
-            },
-            "spline": {
-                "type": "scatter",
-                "mode": "markers",
-                "marker": {"size": 10},
-            },
-            "bar": {
-                "type": "scatter",
-                "mode": "markers",
-                "marker": {"size": 10},
-            },
-            "heatmap": {
-                "type": "heatmap",
-                "colorscale": "Viridis",
-            }
-        },
-        "scatter_spline": { #this style forces all traces into spline only
-            "scatter_spline": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 0},
-            },
-            "scatter": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 0},
-            },
-            "spline": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 0},
-            },
-            "bar": {
-                "type": "scatter",
-                "mode": "lines+markers",
-                "line": {"shape": "spline", "width": 2},
-                "marker": {"size": 0},
-            },
-            "heatmap": {
-                "type": "heatmap",
-                "colorscale": "Viridis",
-            }
-        }
-    }
+    import JSONGrapher.styles.trace_styles_collection_library
+    styles_available = JSONGrapher.styles.trace_styles_collection_library.styles_library
+
     # Get the appropriate style dictionary
     if isinstance(trace_styles_collection, dict):
         styles_collection_dict = trace_styles_collection  # Use custom style directly
@@ -2490,55 +2323,9 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     if (layout_style_to_apply.lower() == "minimalist") or (layout_style_to_apply.lower() == "bold"):
         layout_style_to_apply = "default"
 
-    styles_available = {
-        "default": {
-            "layout": {
-                "title": {"font": {"size": 32}, "x": 0.5},
-                "xaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
-                "yaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
-                "legend": {
-                    "title": {"font": {"size": 22}},
-                    "font": {"size": 22}
-                }
-            }
-        },
-        "Nature": {
-            "layout": {
-                "title": {"font": {"size": 32, "family": "Times New Roman", "color": "black"}},
-                "font": {"size": 25, "family": "Times New Roman"},
-                "paper_bgcolor": "white",
-                "plot_bgcolor": "white",
-                "xaxis": {
-                    "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
-                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
-                    "tickwidth": 2, "tickcolor": "black"
-                },
-                "yaxis": {
-                    "showgrid": True, "gridcolor": "#ddd", "gridwidth": 1,
-                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
-                    "tickwidth": 2, "tickcolor": "black"
-                }
-            }
-        },
-        "Science": {
-            "layout": {
-                "title": {"font": {"size": 32, "family": "Arial", "color": "black"}},
-                "font": {"size": 25, "family": "Arial"},
-                "paper_bgcolor": "white",
-                "plot_bgcolor": "white",
-                "xaxis": {
-                    "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
-                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
-                    "tickwidth": 2, "tickcolor": "black"
-                },
-                "yaxis": {
-                    "showgrid": True, "gridcolor": "#ccc", "gridwidth": 1,
-                    "linecolor": "black", "linewidth": 2, "ticks": "outside",
-                    "tickwidth": 2, "tickcolor": "black"
-                }
-            }
-        }
-    }
+    import JSONGrapher.styles.layout_styles_collection_library
+    styles_available = JSONGrapher.styles.layout_styles_collection_library.styles_library
+
 
     # Use or get the style specified, or use default if not found
     if isinstance(layout_style_to_apply, dict):
@@ -3558,5 +3345,6 @@ if __name__ == "__main__":
     
     print("NOW WILL MERGE THE RECORDS, AND USE THE SECOND ONE TWICE (AS A JSONGrapher OBJECT THEN JUST THE FIG_DICT)")
     print(merge_JSONGrapherRecords([Record, Record_from_existing, Record_from_existing.fig_dict]))
+
 
 

@@ -74,41 +74,63 @@ Record_3D.set_x_axis_label_including_units(example_equation_dict['x_variable'])
 Record_3D.set_y_axis_label_including_units(example_equation_dict['y_variable'])
 Record_3D.set_z_axis_label_including_units(example_equation_dict['z_variable'])
 
-Record_3D.add_data_series_as_equation(series_name="Arrhenius Example 3D plot",equation_dict=example_equation_dict, evaluate_equations_as_added=False)
+Record_3D.add_data_series_as_equation(series_name="Arrhenius Example 3D plot",equation_dict=example_equation_dict, evaluate_equations_as_added=True)
 Record_3D.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="mesh3d")
 #we have already evaluated the equations, so we don't need to evaluate them again.
-Record_3D.plot_with_plotly(evaluate_all_equations=True)
-#We can change the color.
-#We have formatting from an existing style applied, so now we can set the trace_style to none to avoid reverting to the default color of that trace_style.
+#After we plot the data, we can hover to see specific values.
+Record_3D.plot_with_plotly(evaluate_all_equations=False)
+
+#We can change to a single color. If we want to change the formatting, we should first set the style to "none" to prevent the automatic formatting.
 Record_3D["data"][0]["trace_style"] = "none"
-Record_3D["data"][0]["color"] = "pink"
+#To change to a single color, we set the colorscale, which runs from 0 to 1,  to run from one color to itself.
+Record_3D["data"][0]["colorscale"] = [[0,"pink"],[1, "pink"]]
+Record_3D["data"][0]["showscale"] = False #we will also turn of showing the scale, since it would be a single colored bar.
+#Alternatively, we could have instead done the following. We would have had to pop out the intensity.
+# Record_3D["data"][0]["color"] = "pink"
+# Record_3D["data"][0].pop("colorscale")
+# Record_3D["data"][0].pop("intensity")
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
 
 #We can use a built in colorscale.
 #We have formatting from an existing style applied, so now we can set the trace_style to none to avoid reverting to the default color of that trace_style.
 Record_3D["data"][0]["trace_style"] = "none"
-Record_3D["data"][0]["intensity"] = Record_3D['data'][0]["z"]
 Record_3D["data"][0]["colorscale"] = "tropic" #https://plotly.com/python/builtin-colorscales/
+Record_3D["data"][0]["showscale"] = True
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
 
 #Let's now make the plot a scatter3d plot, which is just a style change, then plot again.
 #We don't need to evaluate the equations again.
+#After we plot the data, we can hover to see specific values.
 Record_3D.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="scatter3d")
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
-#We can change the color. For a scatter plot with markers, we need to color within the marker field.
+
+#We can change the color. For a scatter plot with markers, we need to color within the marker field, and that is also where we turn the colorscale bar on and off.
 #We have formatting from an existing style applied, so now we can set the trace_style to none to avoid reverting to the default color of that trace_style.
 Record_3D["data"][0]["trace_style"] = "none" 
-Record_3D["data"][0].set_marker_color("darkred")
+Record_3D["data"][0]["marker"]["color"] = "darkred"
+Record_3D["data"][0]["marker"]["showscale"] = False
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
 
 #Colorscales:
-#It's possible to use some colorscales with the 3D plots, using plotly json syntax. 
-#For the scatter3d case, it is a little easier compared to mesh3d.
-#First, we turn off the trace_style so that we don't revert the color.
-#Then we set the colors to be determined by the same list of values as "z" (or some other list)
-#Then we choose a colorscale and plot.
+#Let's go back to using the data as the colorscale.
 Record_3D["data"][0]["trace_style"] = "none" 
 Record_3D["data"][0]["marker"]["color"] = Record_3D['data'][0]["z"]
 Record_3D["data"][0]["marker"]["colorscale"] = "rainbow" #https://plotly.com/python/builtin-colorscales/
+Record_3D["data"][0]["marker"]["showscale"] = True 
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
 
+#We can also change the colorscale to depend on a different variable.
+#For this example, the "x" axis is temperature, so we can make a colorscale that depends on the temperature.
+Record_3D["data"][0]["trace_style"] = "none" 
+Record_3D["data"][0]["marker"]["color"] = Record_3D['data'][0]["x"]
+Record_3D["data"][0]["marker"]["colorscale"] = "rainbow" #https://plotly.com/python/builtin-colorscales/
+Record_3D["data"][0]["marker"]["showscale"] = True 
+Record_3D.plot_with_plotly(evaluate_all_equations=False)
+
+#We can similarly make the colorscale depend on the y axis, which is Ea, in this example. 
+#Let's reverse the colors with "_r" in the colorscale name, so that lower activation energy is more red.
+Record_3D["data"][0]["trace_style"] = "none" 
+Record_3D["data"][0]["marker"]["color"] = Record_3D['data'][0]["y"]
+Record_3D["data"][0]["marker"]["colorscale"] = "rainbow_r" #https://plotly.com/python/builtin-colorscales/
+Record_3D["data"][0]["marker"]["showscale"] = True 
+Record_3D.plot_with_plotly(evaluate_all_equations=False)

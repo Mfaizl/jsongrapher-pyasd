@@ -14,3 +14,7 @@ example_6 shows an example where equations with units are loaded from JSONGraphe
 
 example_7 shows an example of how to make, extract and use styles (both layout_style and trace_style)
 
+example_8 shows an example of how to further customize the formatting of individual traces, which can be used to make styles.
+
+example_9 shows an example of 3D plots (both scatter3d and mesh3d, which is a surface plot)
+

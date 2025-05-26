@@ -445,7 +445,7 @@ def split_at_first_delimiter(string, delimter=" "):
 #Although there is lots of conversion between different object types to support the units format flexiblity that this function has,
 #I would still expect the optimzed code to be an order of magnitude faster. So it may be worth finding the slow steps.
 #One possibility might be to use "re.compile()"
-def evaluate_equation_dict(equation_dict):
+def evaluate_equation_dict(equation_dict, verbose=False):
     #First a block of code to extract the x_points needed
     # Extract each dictionary key as a local variable
     equation_string = equation_dict['equation_string']
@@ -456,7 +456,8 @@ def evaluate_equation_dict(equation_dict):
         equation_dict['graphical_dimensionality'] = 2
         graphical_dimensionality_added = True
         graphical_dimensionality = 2
-        
+    if 'verbose' in equation_dict:
+        verbose = equation_dict["verbose"]
     # We don't need the below variables, because they are in the equation_dict.
     # x_variable = equation_dict['x_variable']
     # y_variable = equation_dict['y_variable']
@@ -556,6 +557,7 @@ def evaluate_equation_dict(equation_dict):
             independent_variables_dict[y_variable_extracted_dict["label"]] = str(current_point[1]) + " " + y_variable_extracted_dict["units"]
         #if graphical_dimensionality is 2D, dependent_variable_solutions is y_solutions. 
         #if graphical_dimensionality is 3D, dependent_variable_solutions is z_solutions. 
+        if verbose: print("json_equationer > equation_evaluator > evaluate_equation_dict > current_point:", current_point)
         dependent_variable_solutions = solve_equation(equation_string, independent_variables_values_and_units=independent_variables_dict, dependent_variable=dependent_variable)
         if dependent_variable_solutions:
             for dependent_variable_point_with_units in dependent_variable_solutions:

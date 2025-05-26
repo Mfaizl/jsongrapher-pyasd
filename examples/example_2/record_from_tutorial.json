@@ -3,7 +3,9 @@
     "datatype": "Tree_Growth_Curve",
     "data": [
         {
+            "uid": "",
             "name": "pear tree growth",
+            "trace_style": "scatter_spline",
             "x": [
                 0,
                 1,
@@ -17,8 +19,7 @@
                 0.86,
                 1.19,
                 1.45
-            ],
-            "trace_style": "scatter_spline"
+            ]
         }
     ],
     "layout": {

@@ -90,3 +90,15 @@ merged_record.plot() #plot 6
 #Let's export this style, including the colors, which is not typical. The below command extracts the styles from all traces that are present.
 #We have extract_colors set to True. The default for extract_colors is False.
 merged_record.export_trace_styles_collection(new_trace_styles_collection_name="exported_large_markers_trace_styles_collection", extract_colors=True)
+
+
+
+#NOTE: JSONGrapher gets its default styles from the following dictionaries:
+#    JSONGrapher.styles.layout_styles_library
+#    JSONGrapher.styles.trace_styles_collection_library
+#    So if you make a layout_style or a trace_styles_collection, you can use the following syntax to use it by keyword.
+#    import JSONGrapher.styles.layout_styles_library
+#    JSONGrapher.styles.layout_styles_library["large_markers"] = {...}
+#    One thing to be carefeul about is making sure you're putting in a correctly structured dictionary.
+#    The function  extract_trace_styles_collection has the trace_styles_collection dictionary as its second return
+#    while the function export_trace_styles_collection has an extra level of nesting because it includes the name when writing to file.

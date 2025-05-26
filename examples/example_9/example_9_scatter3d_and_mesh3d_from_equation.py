@@ -1,5 +1,8 @@
 from JSONGrapher import JSONRecordCreator
 
+#We're going to make scatter3d and mesh3d plots from equations in this example.
+#3D plots can be made with points directly, equations are simply being used for convenience, here.
+#We'll also first make a 2D plot from equation, for comparison, then make the 3D plot, extending one dimension of the same equation.
 
 #First, we create a new JSONGrapherRecord that we'll put the equation into.
 #It's a good practice to set our datatype, graph title, and axes titles directly after making a graph object.

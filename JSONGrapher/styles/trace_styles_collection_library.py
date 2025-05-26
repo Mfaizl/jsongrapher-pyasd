@@ -68,12 +68,12 @@ styles_library = {
         "scatter3d": {
             "mode": "markers",
             "type": "scatter3d",
-            "marker": {"color" : "auto","colorscale":"viridis_r", "showscale":True}
+            "marker": {"color" : "auto","colorscale":"rainbow", "showscale":True}
         },
         "mesh3d": {
             "type": "mesh3d",
             "intensity" : "auto",
-            "colorscale":"viridis_r", 
+            "colorscale":"rainbow", 
             "showscale":True
         },
         "heatmap": {

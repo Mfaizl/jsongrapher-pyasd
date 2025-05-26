@@ -55,12 +55,15 @@ styles_library = {
             "mode": "lines+markers",
             "line": {"shape": "spline", "width": 2},
             "marker": {"size": 10},
-        },        
+        },
         "scatter3d": {
             "mode": "markers",
             "type": "scatter3d"
         },
         "mesh3d": {
+            "type": "mesh3d",
+        },
+        "surface": {
             "type": "mesh3d",
         },
         "heatmap": {

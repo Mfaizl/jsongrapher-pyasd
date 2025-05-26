@@ -1,15 +1,9 @@
 #This is a simple file for storing the automatically loaded trace_styles_collection dictionary for JSONGrapher.
 #It is not recommended that a person overwrite this file.
 
-#each dictionary below is one 'trace_styles_collection'
+#each dictionary below is one 'trace_styles_collection'. "default" is the first one.
 styles_library = {
     "default": {
-        "default": {
-            "type": "scatter",
-            "mode": "lines+markers",
-            "line": {"shape": "spline", "width": 2},
-            "marker": {"size": 10},
-        },
         "scatter_spline": {
             "type": "scatter",
             "mode": "lines+markers",
@@ -55,6 +49,19 @@ styles_library = {
                                 "width": 2
                             }
                         },
+        },
+        "default": {
+            "type": "scatter",
+            "mode": "lines+markers",
+            "line": {"shape": "spline", "width": 2},
+            "marker": {"size": 10},
+        },        
+        "scatter3d": {
+            "mode": "markers",
+            "type": "scatter3d"
+        },
+        "mesh3d": {
+            "type": "mesh3d",
         },
         "heatmap": {
             "type": "heatmap",

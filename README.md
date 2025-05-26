@@ -93,7 +93,7 @@ We can create an interactive graph with python plotly:
 Record.plot_with_plotly() #Try hovering your mouse over points after this command!
 </pre>
 
-[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2/image_from_tutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2/image_from_tutorial_matplotlib_fig.png)
+[![JSONGRapher record plotted using matplotlib](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2_creating_records_and_using_styles/image_from_tutorial_matplotlib_fig.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2_creating_records_and_using_styles/image_from_tutorial_matplotlib_fig.png)
 
 You can also see more examples: https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples
 

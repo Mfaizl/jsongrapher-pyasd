@@ -70,7 +70,7 @@ Record_for_bubble_plot['data'][0]["z"] = log_of_k.tolist()
 Record_for_bubble_plot["data"][0]["max_bubble_size"] = 25
 Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
 
-#It is possible to change the color of the bubbles to be a solid color. To do so, let's apply the bubble style, extract it, set the style to none, and then make adjustments.
+#It is possible to change the color of the bubbles to be a solid color. To do so, let's apply the bubble style, set the style to none, and then make adjustments.
 #First we apply the bubble style so that our fig_dict has it.
 Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="bubble")
 #Now, we set the style to "none" so that we can make changes.

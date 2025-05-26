@@ -826,6 +826,14 @@ class JSONGrapherRecord:
         data_series_dict = self.fig_dict["data"][data_series_index] #implied return
         return data_series_dict #Extra regular return
     #this function returns the current record.
+
+    def evaluate_eqution_of_data_series_by_index(self, series_index, equation_dict = None, verbose=False):
+        if equation_dict != None:
+            self.fig_dict["data"][series_index]["equation"] = equation_dict
+        self.fig_dict = evaluate_equation_for_data_series_by_index(data_series_index=data_series_dict, verbose=verbose) #implied return.
+        return data_series_dict #Extra regular return
+
+    #this function returns the current record.       
     def get_record(self):
         """
         Returns a JSON-dict string of the record
@@ -2087,9 +2095,16 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     if trace_style == "":
         trace_style = list(styles_collection_dict.keys())[0] #take the first trace_style name in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
     # Retrieve the specific style for the plot type
+    
+    colorscale = "" #initialize this variable for use later. It tells us which field to put the colorscale in.
 
     if trace_style == "bubble": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
         data_series = prepare_bubble_sizes(data_series)
+        colorscale = "bubble"
+    if trace_style == "mesh3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+        colorscale = "mesh3d"
+    if trace_style == "scatter3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+        colorscale = "scatter3d"
 
     if trace_style in styles_collection_dict:
         trace_style = styles_collection_dict.get(trace_style)
@@ -2107,6 +2122,32 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
                 data_series.setdefault(key, {}).update(value)
             else:
                 data_series[key] = value  # Direct assignment for non-dictionary values
+
+    #Block of code to set colorscales for 3D plots. It can't be just from the style because we need to point to data.
+    if colorscale == "bubble":
+        data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        data_series["marker"]["showscale"] = True
+        if "z" in data_series:
+            data_series["marker"]["color"] = data_series["z"]
+        elif "z_points" in data_series:
+            data_series["marker"]["color"] = data_series["z_points"]
+    if colorscale == "scatter3d":
+        data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        data_series["marker"]["showscale"] = True
+        if "z" in data_series:
+            data_series["marker"]["color"] = data_series["z"]
+        elif "z_points" in data_series:
+            data_series["marker"]["color"] = data_series["z_points"]
+    if colorscale == "mesh3d":
+        data_series["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        data_series["showscale"] = True
+        if "z" in data_series:
+            data_series["intensity"] = data_series["z"]
+        elif "z_points" in data_series:
+            data_series["intensity"] = data_series["z_points"]        
+        
+    
+
 
     return data_series
 
@@ -2882,7 +2923,7 @@ def remove_bubble_fields(fig_dict):
     bubble_found = False #initialize with false case.
     for data_series in fig_dict["data"]:
         if "trace_style" in data_series:
-            if data_series["trace_style"] == "bubble":
+            if (data_series["trace_style"] == "bubble") or ("max_bubble_size" in data_series):
                 bubble_found = True
             if bubble_found == True:
                 if "z" in data_series:
@@ -3205,7 +3246,7 @@ def evaluate_equations_as_needed_in_fig_dict(fig_dict):
             fig_dict = evaluate_equation_for_data_series_by_index(fig_dict, data_dict_index)
     return fig_dict
 
-#TODO: Should add z units ratio scaling here. Should do the same for the simulate_specific_data_series_by_index function.
+#TODO: Should add z units ratio scaling here (just to change units when merging records). Should do the same for the simulate_specific_data_series_by_index function.
 def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose="auto"):   
     try:
         # Attempt to import from the json_equationer package

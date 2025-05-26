@@ -243,8 +243,8 @@ class Equation:
         """Return the complete equation dictionary."""
         return self.equation_dict
     
-    def evaluate_equation(self, remove_equation_fields= False):
-        evaluated_dict = evaluate_equation_dict(self.equation_dict) #this function is from the evaluator module
+    def evaluate_equation(self, remove_equation_fields= False, verbose=False):
+        evaluated_dict = evaluate_equation_dict(self.equation_dict, verbose=verbose) #this function is from the evaluator module
         if "graphical_dimensionality" in evaluated_dict:
             graphical_dimensionality = evaluated_dict["graphical_dimensionality"]
         else:

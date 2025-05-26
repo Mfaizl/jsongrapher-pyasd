@@ -3,12 +3,24 @@
 
 #each dictionary below, like "default" or "Nature" is one 'layout_style'.
 #Currently, the style names are case sensitive. In the future, it is likely they will not be case sensitive.
-styles_available = {
+styles_library = {
         "default": {
             "layout": {
                 "title": {"font": {"size": 32}, "x": 0.5},
                 "xaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
                 "yaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
+                "legend": {
+                    "title": {"font": {"size": 22}},
+                    "font": {"size": 22}
+                }
+            }
+        },
+        "default3d": {
+            "layout": {
+                "title": {"font": {"size": 32}, "x": 0.5},
+                "xaxis": {"title": {"font": {"size": 12}}, "tickfont": {"size": 12}},
+                "yaxis": {"title": {"font": {"size": 12}}, "tickfont": {"size": 12}},
+                "zaxis": {"title": {"font": {"size": 12}}, "tickfont": {"size": 12}},
                 "legend": {
                     "title": {"font": {"size": 22}},
                     "font": {"size": 22}

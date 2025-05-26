@@ -3198,7 +3198,7 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
             #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
             data_dict_filled.pop("x_label", None)
             data_dict_filled.pop("y_label", None)
-            if "z_lablel" in data_dict_filled:
+            if "z_label" in data_dict_filled:
                 data_dict_filled.pop("z_label", None)
         if "type" not in data_dict:
             if graphical_dimensionality == 2:

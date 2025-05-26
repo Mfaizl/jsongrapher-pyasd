@@ -33,6 +33,15 @@ styles_library = {
             "mode": "markers",
             "marker": {"size": 10},
         },
+        "bubble": {
+            "type": "scatter",
+            "mode": "markers",
+            "marker": {
+                            "color": "auto",
+                            "colorscale": "viridis_r",
+                            "showscale": True
+                        }
+        },        
         "spline": {
             "type": "scatter",
             "mode": "lines",
@@ -58,10 +67,14 @@ styles_library = {
         },        
         "scatter3d": {
             "mode": "markers",
-            "type": "scatter3d"
+            "type": "scatter3d",
+            "marker": {"color" : "auto","colorscale":"rainbow", "showscale":True}
         },
         "mesh3d": {
             "type": "mesh3d",
+            "intensity" : "auto",
+            "colorscale":"rainbow", 
+            "showscale":True
         },
         "heatmap": {
             "type": "heatmap",

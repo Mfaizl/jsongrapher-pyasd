@@ -826,6 +826,14 @@ class JSONGrapherRecord:
         data_series_dict = self.fig_dict["data"][data_series_index] #implied return
         return data_series_dict #Extra regular return
     #this function returns the current record.
+
+    def evaluate_eqution_of_data_series_by_index(self, series_index, equation_dict = None, verbose=False):
+        if equation_dict != None:
+            self.fig_dict["data"][series_index]["equation"] = equation_dict
+        self.fig_dict = evaluate_equation_for_data_series_by_index(data_series_index=data_series_dict, verbose=verbose) #implied return.
+        return data_series_dict #Extra regular return
+
+    #this function returns the current record.       
     def get_record(self):
         """
         Returns a JSON-dict string of the record
@@ -1084,7 +1092,7 @@ class JSONGrapherRecord:
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style', 'scene_axes'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style', '3d_axes', 'bubble'])
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
@@ -2002,7 +2010,7 @@ def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collecti
 
     if "data" in fig_dict and isinstance(fig_dict["data"], list):
         fig_dict["data"] = [apply_trace_style_to_single_data_series(data_series=trace,trace_styles_collection=trace_styles_collection, trace_style_to_apply=trace_style_to_apply) for trace in fig_dict["data"]]
-    #now note
+    
     if "plot_style" not in fig_dict:
         fig_dict["plot_style"] = {}
     fig_dict["plot_style"]["trace_styles_collection"] = trace_styles_collection_name
@@ -2087,6 +2095,16 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     if trace_style == "":
         trace_style = list(styles_collection_dict.keys())[0] #take the first trace_style name in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
     # Retrieve the specific style for the plot type
+    
+    colorscale = "" #initialize this variable for use later. It tells us which field to put the colorscale in.
+
+    if trace_style == "bubble": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+        data_series = prepare_bubble_sizes(data_series)
+        colorscale = "bubble"
+    if trace_style == "mesh3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+        colorscale = "mesh3d"
+    if trace_style == "scatter3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+        colorscale = "scatter3d"
 
     if trace_style in styles_collection_dict:
         trace_style = styles_collection_dict.get(trace_style)
@@ -2096,8 +2114,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
         trace_style = styles_collection_dict.get(trace_style)
 
     # Apply type and other predefined settings
-    data_series["type"] = trace_style.get("type")
-    
+    data_series["type"] = trace_style.get("type")  
     # Apply other attributes while preserving existing values
     for key, value in trace_style.items():
         if key not in ["type"]:
@@ -2106,7 +2123,72 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             else:
                 data_series[key] = value  # Direct assignment for non-dictionary values
 
+    #Block of code to set colorscales for 3D plots. It can't be just from the style because we need to point to data.
+    if colorscale == "bubble":
+        data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        data_series["marker"]["showscale"] = True
+        if "z" in data_series:
+            data_series["marker"]["color"] = data_series["z"]
+        elif "z_points" in data_series:
+            data_series["marker"]["color"] = data_series["z_points"]
+    if colorscale == "scatter3d":
+        data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        data_series["marker"]["showscale"] = True
+        if "z" in data_series:
+            data_series["marker"]["color"] = data_series["z"]
+        elif "z_points" in data_series:
+            data_series["marker"]["color"] = data_series["z_points"]
+    if colorscale == "mesh3d":
+        data_series["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        data_series["showscale"] = True
+        if "z" in data_series:
+            data_series["intensity"] = data_series["z"]
+        elif "z_points" in data_series:
+            data_series["intensity"] = data_series["z_points"]        
+        
+    
+
+
     return data_series
+
+def prepare_bubble_sizes(data_series):
+    #To make a bubble plot with plotly, we are actually using a 2D plot
+    #and are using the z values in a data_series to create the sizes of each point.
+    #We also will scale them to some maximum bubble size that is specifed.
+    if "marker" not in data_series:
+        data_series["marker"] = {}   
+    if "z_points" in data_series:
+        data_series["marker"]["size"] = data_series["z_points"]
+    elif "z" in data_series:
+        data_series["marker"]["size"] = data_series["z"]
+
+    #now need to normalize to the max value in the list.
+    def normalize_to_max(starting_list):
+        import numpy as np
+        arr = np.array(starting_list)  # Convert list to NumPy array for efficient operations
+        max_value = np.max(arr)  # Find the maximum value in the list
+        if max_value == 0:
+            normalized_values = np.zeros_like(arr)  # If max_value is zero, return zeros
+        else:
+            normalized_values = arr / max_value  # Otherwise, divide each element by max_value           
+        return normalized_values  # Return the normalized values
+    normalized_sizes = normalize_to_max(data_series["marker"]["size"])
+    #Now biggest bubble is 1 (or 0) so multiply to enlarge to scale.
+    if "max_bubble_size" in data_series:
+        max_bubble_size = data_series["max_bubble_size"]
+    else:
+        max_bubble_size = 10       
+    scaled_sizes = normalized_sizes*max_bubble_size
+    data_series["marker"]["size"] = scaled_sizes.tolist() #from numpy array back to list.
+    
+    #Now let's also set the text that appears during hovering to include the original data.
+    if "z_points" in data_series:
+        data_series["text"] = data_series["z_points"]
+    elif "z" in data_series:
+        data_series["text"] = data_series["z"]
+
+    return data_series
+
 
 #TODO: This logic should be changed in the future. There should be a separated function to remove formatting
 # versus just removing the current setting of "trace_styles_collection"
@@ -2154,7 +2236,7 @@ def remove_trace_style_from_single_data_series(data_series):
 
     # **Define formatting fields to remove**
     formatting_fields = {
-        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor", "color",
+        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor", "color", "intensity", "showscale",
         "legendgroup", "showlegend", "textposition", "textfont", "visible", "connectgaps", "cliponaxis", "showgrid"
     }
 
@@ -2207,8 +2289,8 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
 
     # Define known formatting attributes. This is a set (not a dictionary, not a list)
     formatting_fields = {
-        "type", "mode", "line", "marker", "opacity", "fill", "fillcolor", "color",
-        "legendgroup", "showlegend", "textposition", "textfont", "colorscale"
+        "type", "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor", "color", "intensity", "showscale",
+        "legendgroup", "showlegend", "textposition", "textfont", "visible", "connectgaps", "cliponaxis", "showgrid"
     }
 
     formatting_fields.update(additional_attributes_to_extract)
@@ -2834,8 +2916,28 @@ def convert_to_3d_layout(layout):
 
     return new_layout
 
+    #A bubble plot uses z data, but that data is then
+    #moved into the size field and the z field must be removed.
+def remove_bubble_fields(fig_dict):
+    #This code will modify the data_series inside the fig_dict, directly.
+    bubble_found = False #initialize with false case.
+    for data_series in fig_dict["data"]:
+        if "trace_style" in data_series:
+            if (data_series["trace_style"] == "bubble") or ("max_bubble_size" in data_series):
+                bubble_found = True
+            if bubble_found == True:
+                if "z" in data_series:
+                    data_series.pop("z")
+                if "z_points" in data_series:
+                    data_series.pop("z_points")
+                if "max_bubble_size" in data_series:
+                    data_series.pop("max_bubble_size")
+    if bubble_found == True:
+        if "zaxis" in fig_dict["layout"]:
+            fig_dict["layout"].pop("zaxis")
+    return fig_dict
 
-def update_scene_axes(fig_dict):
+def update_3d_axes(fig_dict):
     if "zaxis" in fig_dict["layout"]:
         fig_dict['layout'] = convert_to_3d_layout(fig_dict['layout'])
         for data_series_index, data_series in enumerate(fig_dict["data"]):
@@ -2953,10 +3055,12 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
         fig_dict = remove_equation_field(fig_dict)
     if "custom_units_chevrons" in fields_to_update:
         fig_dict = remove_custom_units_chevrons(fig_dict)
+    if "bubble" in fields_to_update: #must be updated before trace_style is removed.
+        fig_dict = remove_bubble_fields(fig_dict)
     if "trace_style" in fields_to_update:
         fig_dict = remove_trace_style_field(fig_dict)
-    if "scene_axes" in fields_to_update: #This is for 3D plots
-        fig_dict = update_scene_axes(fig_dict)
+    if "3d_axes" in fields_to_update: #This is for 3D plots
+        fig_dict = update_3d_axes(fig_dict)
 
     return fig_dict
 
@@ -3142,7 +3246,7 @@ def evaluate_equations_as_needed_in_fig_dict(fig_dict):
             fig_dict = evaluate_equation_for_data_series_by_index(fig_dict, data_dict_index)
     return fig_dict
 
-#TODO: Should add z units ratio scaling here. Should do the same for the simulate_specific_data_series_by_index function.
+#TODO: Should add z units ratio scaling here (just to change units when merging records). Should do the same for the simulate_specific_data_series_by_index function.
 def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose="auto"):   
     try:
         # Attempt to import from the json_equationer package
@@ -3198,7 +3302,7 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
             #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
             data_dict_filled.pop("x_label", None)
             data_dict_filled.pop("y_label", None)
-            if "z_lablel" in data_dict_filled:
+            if "z_label" in data_dict_filled:
                 data_dict_filled.pop("z_label", None)
         if "type" not in data_dict:
             if graphical_dimensionality == 2:

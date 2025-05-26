@@ -68,7 +68,7 @@ styles_library = {
         "scatter3d": {
             "mode": "markers",
             "type": "scatter3d",
-            "marker": {"color" : "auto","colorscale":"rainbow", "showscale":True}
+            "marker": {"color" : "","colorscale":"rainbow", "showscale":True}
         },
         "mesh3d": {
             "type": "mesh3d",

@@ -16,6 +16,14 @@ JSONGrapher.launch()
 
 [![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png) [![JSONGRapher plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/UAN_DTA_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/UAN_DTA_image.png)
 
+[![rainbow plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/SrTiO3_rainbow_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/SrTiO3_rainbow_image.png)
+[![mesh3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_mesh3d.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_mesh3d.png)
+[![scatter3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_Scatter3d_example10.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_Scatter3d_example10.png)
+[![bubble plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_bubble.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_bubble.png)
+
+
+
+
 ## **1\. Preparing to Create a Record**
 
 The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/jsongrapher-py/blob/main/examples/example_2/example_2_json_record_tutorial.py) which shows how to create graphable .json records. The records can then be plotted with python JSONGrapher or with jsongrapher.com<br>

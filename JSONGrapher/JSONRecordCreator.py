@@ -2217,7 +2217,12 @@ def prepare_bubble_sizes(data_series):
         else:
             normalized_values = arr / max_value  # Otherwise, divide each element by max_value           
         return normalized_values  # Return the normalized values
-    normalized_sizes = normalize_to_max(data_series["marker"]["size"])
+    try:
+        normalized_sizes = normalize_to_max(data_series["marker"]["size"])
+    except KeyError as exc:
+        raise KeyError("Error: During bubble plot bubble size normalization, there was an error. This usually means the z variable has not been populated. For example, by equation evaluation set to false or simulation evaluation set to false.")
+
+        
     #Now biggest bubble is 1 (or 0) so multiply to enlarge to scale.
     if "max_bubble_size" in data_series:
         max_bubble_size = data_series["max_bubble_size"]

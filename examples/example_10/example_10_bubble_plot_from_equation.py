@@ -44,7 +44,7 @@ Record_for_bubble_plot.add_data_series_as_equation(series_name="Arrhenius Exampl
 Record_for_bubble_plot["data"][0]["max_bubble_size"] = 150 
 #Below is a syntax we could have used if we wanted to set the trace_style after addition.
 #Record_for_bubble_plot.set_trace_style_one_data_series(0, "bubble")
-
+Record_for_bubble_plot.export_to_json_file("Rate_Constant_bubble.json") #This has the evaluated datapoints. If we wanted only the equation in the record, we would have set evaluate_equations_as_added to False during the add_data_series_as_equation.
 
 #we have already evaluated the equations, so we don't need to evaluate them again.
 #When plotted, we see the expected behavior for where a rate constant is large or small.

@@ -20,13 +20,35 @@ merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_st
 #Additionally, the plotly settings are not consistent between data_series. Plotly changes how series are plotted based on the number of points.
 merged_record.plot() #plot 2
 
-#Now, let's go back to the JSONGrapher default, then something about one of the data_series. 
+#Now, let's go back to the JSONGrapher default, then change somet things about the data_series. 
 merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"default"})
 merged_record.plot() #plot 3
 #The syntax for adding things into a record is Record["data"][0]
 #There are no 'commands' for formatting in JSONGrapher. Instead, we use formatting that is allowed for plotly.
 
-#Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series.
+#there is a special feature in JSONGrapher where if we put "__" followed by the name of a colorscale after any style in the library,
+#the plot will be created with a colorscale. This works with any variations of scatter, line, spline.
+merged_record.apply_trace_style_by_index(data_series_index=0, trace_styles_collection="default", trace_style="scatter__Aggrnyl") #https://plotly.com/python/builtin-colorscales/
+merged_record.apply_trace_style_by_index(data_series_index=1, trace_styles_collection="default", trace_style="scatter__Agsunset") #https://plotly.com/python/builtin-colorscales/
+merged_record.plot() #plot 4
+
+#Since the color bars are overlapping with each other and the legend, let's remove them and also reverse the colorscales.
+merged_record.apply_trace_style_by_index(data_series_index=0, trace_styles_collection="default", trace_style="scatter__Aggrnyl_r") #https://plotly.com/python/builtin-colorscales/
+merged_record.apply_trace_style_by_index(data_series_index=1, trace_styles_collection="default", trace_style="scatter__Agsunset_r") #https://plotly.com/python/builtin-colorscales/
+#To manually override any setting, include the showscale setting, we need to turn off the trace_style for single series or for all series.
+merged_record.apply_trace_style_by_index(data_series_index=0, trace_style="none") #This would be fore one series.
+merged_record.apply_trace_style_by_index(data_series_index=1, trace_style="none")  
+merged_record["data"][0]["marker"]["showscale"] = False
+merged_record["data"][1]["marker"]["showscale"] = False
+merged_record.plot() #plot 5
+
+
+#let's set things back to regular scatter plots with colorscales, then we'll make some different custom changes.
+merged_record.apply_trace_style_by_index(data_series_index=0, trace_styles_collection="default", trace_style="scatter")
+merged_record.apply_trace_style_by_index(data_series_index=1, trace_styles_collection="default", trace_style="scatter")
+merged_record.plot() #plot 6
+
+#Since we are going to apply the style one at a time, it is important to turn off the automatic styles for data_series. We can turn it off for all dataseries by completely turning off the trace_styles_collection.
 merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_styles_collection":"none"})
 
 #We will make the first data_series have marker size 15 and color of green.
@@ -38,11 +60,11 @@ merged_record.apply_plot_style(plot_style = {"layout_style":"default", "trace_st
 merged_record["data"][0]["marker"] = {}
 merged_record["data"][0]["marker"]["size"] = 15
 merged_record["data"][0]["marker"]["color"] = "green"
-merged_record.plot() #plot 4
+merged_record.plot() #plot 7
 #now, let's make the other series markers large and purple, but we'll use the built in function way.
 merged_record["data"][1].set_marker_size(15)
 merged_record["data"][1].set_marker_color("purple")
-merged_record.plot() #plot 5
+merged_record.plot() #plot 8
 
 #Let's save these two styles, so we can use them later. We also need to name these new styles.
 #Normally, we intentionally do not include colors in each trace_style since a person wants automatic coloring.
@@ -85,7 +107,7 @@ merged_record.set_trace_style_one_data_series(1,"large_green")
 
 merged_record.apply_trace_style_by_index(data_series_index=0, trace_styles_collection=large_markers_trace_styles_collection, trace_style="large_purple")
 merged_record.apply_trace_style_by_index(data_series_index=1, trace_styles_collection=large_markers_trace_styles_collection, trace_style="large_green")
-merged_record.plot() #plot 6
+merged_record.plot() #plot 9
 
 #Let's export this style, including the colors, which is not typical. The below command extracts the styles from all traces that are present.
 #We have extract_colors set to True. The default for extract_colors is False.

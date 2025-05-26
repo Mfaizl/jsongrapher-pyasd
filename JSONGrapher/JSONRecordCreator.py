@@ -2079,7 +2079,8 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     #
     # Note: Colors are intentionally omitted to allow users to define their own.
     # However, predefined colorscales are applied for heatmaps.
-    
+
+
     styles_available = JSONGrapher.styles.trace_styles_collection_library.styles_library
 
     # Get the appropriate style dictionary
@@ -2091,20 +2092,32 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             print(f"Warning: trace_styles_collection named '{trace_styles_collection}' not found. Using 'default' trace_styles_collection instead.")
             styles_collection_dict = styles_available.get("default", {})
     # Determine the trace_style, defaulting to the first item in a given style if none is provided.
-    trace_style = data_series.get("trace_style", "")
-    if trace_style == "":
-        trace_style = list(styles_collection_dict.keys())[0] #take the first trace_style name in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
-    # Retrieve the specific style for the plot type
-    
-    colorscale = "" #initialize this variable for use later. It tells us which field to put the colorscale in.
 
+    # Retrieve the specific style for the plot type
+    if trace_style_to_apply == "":# if a trace_style_to_apply has not been supplied, we will get it from the dataseries.
+        trace_style = data_series.get("trace_style", "")
+    else:
+        trace_style = trace_style_to_apply
+
+    if trace_style == "": #if the trace style is an empty string....
+        trace_style = list(styles_collection_dict.keys())[0] #take the first trace_style name in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
+
+    #If a person adds "__colorscale" to the end of a trace_style, like "scatter_spline__rainbow" we will extract the colorscale and apply it to the plot.
+    #This should be done before extracting the trace_style from the styles_available, because we need to split the string to break out the trace_style
+    colorscale = "" #initializing variable.
+    if isinstance(trace_style, str): #check if it is a string type.
+        if "__" in trace_style:
+            trace_style, colorscale = trace_style.split("__")
+
+    colorscale_structure = "" #initialize this variable for use later. It tells us which fields to put the colorscale related values in. This should be done before regular trace_style fields are applied.
+    #3D and bubble plots will have a colorscale by default.
     if trace_style == "bubble": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
         data_series = prepare_bubble_sizes(data_series)
-        colorscale = "bubble"
-    if trace_style == "mesh3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
-        colorscale = "mesh3d"
-    if trace_style == "scatter3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
-        colorscale = "scatter3d"
+        colorscale_structure = "bubble"
+    elif trace_style == "mesh3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+        colorscale_structure = "mesh3d"
+    elif trace_style == "scatter3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+        colorscale_structure = "scatter3d"
 
     if trace_style in styles_collection_dict:
         trace_style = styles_collection_dict.get(trace_style)
@@ -2123,32 +2136,64 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             else:
                 data_series[key] = value  # Direct assignment for non-dictionary values
 
-    #Block of code to set colorscales for 3D plots. It can't be just from the style because we need to point to data.
-    if colorscale == "bubble":
-        data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+    #Before applying colorscales, we check if we have recieved a colorscale from the user. If so, we'll need to parse the trace_type to assign the colorscale structure.
+    if colorscale != "":
+        #If it is a scatter plot with markers, then the colorscale_structure will be marker. Need to check for this before the lines alone case.
+        if ("markers" in data_series["mode"]) or ("markers+lines" in data_series["mode"]) or ("lines+markers" in data_series["mode"]):
+            colorscale_structure = "marker"
+        elif ("lines" in data_series["mode"]):
+            colorscale_structure = "line"
+        elif ("bar" in data_series["type"]):
+            colorscale_structure = "marker"
+
+    #Block of code to clean color values for 3D plots and 2D plots. It can't be just from the style dictionary because we need to point to data.
+    def clean_color_values(list_of_values, variable_string_for_warning):
+        if None in list_of_values:
+            print("Warning: A colorscale based on" + variable_string_for_warning + "was requested. None values were found. They are being replaced with 0 values. It is recommended to provide data without None values.")
+            color_values = [0 if value is None else value for value in list_of_values]
+        else:
+            color_values = list_of_values
+        return color_values
+
+    if colorscale_structure == "bubble":
+        #data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
         data_series["marker"]["showscale"] = True
         if "z" in data_series:
-            data_series["marker"]["color"] = data_series["z"]
+            color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")
+            data_series["marker"]["color"] = color_values
         elif "z_points" in data_series:
-            data_series["marker"]["color"] = data_series["z_points"]
-    if colorscale == "scatter3d":
-        data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+            color_values = clean_color_values(list_of_values= data_series["z_points"], variable_string_for_warning="z_points")
+            data_series["marker"]["color"] = color_values
+    elif colorscale_structure == "scatter3d":
+        #data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
         data_series["marker"]["showscale"] = True
         if "z" in data_series:
-            data_series["marker"]["color"] = data_series["z"]
+            color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")
+            data_series["marker"]["color"] = color_values
         elif "z_points" in data_series:
-            data_series["marker"]["color"] = data_series["z_points"]
-    if colorscale == "mesh3d":
-        data_series["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+            color_values = clean_color_values(list_of_values= data_series["z_points"], variable_string_for_warning="z_points")
+            data_series["marker"]["color"] = color_values
+    elif colorscale_structure == "mesh3d":
+        #data_series["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
         data_series["showscale"] = True
         if "z" in data_series:
-            data_series["intensity"] = data_series["z"]
+            color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")
+            data_series["intensity"] = color_values
         elif "z_points" in data_series:
-            data_series["intensity"] = data_series["z_points"]        
+            color_values = clean_color_values(list_of_values= data_series["z_points"], variable_string_for_warning="z_points")
+            data_series["intensity"] = color_values
+    elif colorscale_structure == "marker":
+        data_series["marker"]["colorscale"] = colorscale
+        data_series["marker"]["showscale"] = True
+        color_values = clean_color_values(list_of_values=data_series["y"], variable_string_for_warning="y")
+        data_series["marker"]["color"] = color_values
+    elif colorscale_structure == "line":
+        data_series["line"]["colorscale"] = colorscale
+        data_series["line"]["showscale"] = True
+        color_values = clean_color_values(list_of_values=data_series["y"], variable_string_for_warning="y")
+        data_series["line"]["color"] = color_values
         
-    
-
-
+            
     return data_series
 
 def prepare_bubble_sizes(data_series):
@@ -2172,7 +2217,12 @@ def prepare_bubble_sizes(data_series):
         else:
             normalized_values = arr / max_value  # Otherwise, divide each element by max_value           
         return normalized_values  # Return the normalized values
-    normalized_sizes = normalize_to_max(data_series["marker"]["size"])
+    try:
+        normalized_sizes = normalize_to_max(data_series["marker"]["size"])
+    except KeyError as exc:
+        raise KeyError("Error: During bubble plot bubble size normalization, there was an error. This usually means the z variable has not been populated. For example, by equation evaluation set to false or simulation evaluation set to false.")
+
+        
     #Now biggest bubble is 1 (or 0) so multiply to enlarge to scale.
     if "max_bubble_size" in data_series:
         max_bubble_size = data_series["max_bubble_size"]

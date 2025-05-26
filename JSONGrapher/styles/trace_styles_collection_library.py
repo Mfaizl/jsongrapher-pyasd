@@ -37,8 +37,9 @@ styles_library = {
             "type": "scatter",
             "mode": "markers",
             "marker": {
-                            "color": "blue",
-                            "colorscale": [[0, "blue"],[1,"blue"]]
+                            "color": "auto",
+                            "colorscale": "viridis_r",
+                            "showscale": True
                         }
         },        
         "spline": {
@@ -66,10 +67,14 @@ styles_library = {
         },        
         "scatter3d": {
             "mode": "markers",
-            "type": "scatter3d"
+            "type": "scatter3d",
+            "marker": {"color" : "auto","colorscale":"viridis_r", "showscale":True}
         },
         "mesh3d": {
             "type": "mesh3d",
+            "intensity" : "auto",
+            "colorscale":"viridis_r", 
+            "showscale":True
         },
         "heatmap": {
             "type": "heatmap",

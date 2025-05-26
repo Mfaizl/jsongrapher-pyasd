@@ -323,7 +323,7 @@ def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y
     return scaled_fig_dict
 
 
-def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
+def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1, num_to_scale_z_values_by = 1):
     import numpy as np
     dataseries = dataseries_dict
     dataseries["x"] = list(np.array(dataseries["x"], dtype=float)*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.
@@ -332,6 +332,10 @@ def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_
     # Ensure elements are converted to standard Python types. 
     dataseries["x"] = [float(val) for val in dataseries["x"]] #This line written by copilot.
     dataseries["y"] = [float(val) for val in dataseries["y"]] #This line written by copilot.
+
+    if "z" in dataseries:
+        dataseries["z"] = list(np.array(dataseries["z"], dtype=float)*num_to_scale_z_values_by) #convert to numpy array for multiplication, then back to list.
+        dataseries["z"] = [float(val) for val in dataseries["z"]] #Mimicking above lines.
     return dataseries_dict
 
 ### End of portion of the file that has functions for scaling data to the same units ###
@@ -743,6 +747,7 @@ class JSONGrapherRecord:
         #make this a JSONGrapherDataSeries class object, that way a person can use functions to do things like change marker size etc. more easily.
         JSONGrapher_data_series_object = JSONGrapherDataSeries()
         JSONGrapher_data_series_object.update_while_preserving_old_terms(data_series_dict)
+        data_series_dict = JSONGrapher_data_series_object
         #Add to the JSONGrapherRecord class object's data list.
         self.fig_dict["data"].append(data_series_dict) #implied return.
         return data_series_dict
@@ -798,9 +803,9 @@ class JSONGrapherRecord:
         #make this a JSONGrapherDataSeries class object, that way a person can use functions to do things like change marker size etc. more easily.
         JSONGrapher_data_series_object = JSONGrapherDataSeries()
         JSONGrapher_data_series_object.update_while_preserving_old_terms(data_series_dict)
+        data_series_dict = JSONGrapher_data_series_object
         #Add to the JSONGrapherRecord class object's data list.
         self.fig_dict["data"].append(data_series_dict)  
-
         #Now evaluate the equation as added, if requested. It does seem counterintuitive to do this "at the end",
         #but the reason this happens at the end is that the evaluation *must* occur after being a fig_dict because we
         #need to check the units coming out against the units in the layout. Otherwise we would not be able to convert units.
@@ -1471,35 +1476,42 @@ def units_plural_removal(units_to_check):
 
 
 def separate_label_text_from_units(label_with_units):
-    """
-    Parses a label with text string and units in parentheses after that to return the two parts.
-    This is not meant to separate strings like "Time (s)", it is not meant for strings like "5 (kg)"
+    # Check for mismatched parentheses
+    open_parentheses = label_with_units.count('(')
+    close_parentheses = label_with_units.count(')')
+    
+    if open_parentheses != close_parentheses:
+        raise ValueError(f"Mismatched parentheses in input string: '{label_with_units}'")
 
-    Args:
-        value (str): A string containing a label and optional units enclosed in parentheses.
-                     Example: "Time (Years)" or "Speed (km/s)
+    # Default parsed output
+    parsed_output = {"text": label_with_units, "units": ""}
 
-    Returns:
-        dict: A dictionary with two keys:
-              - "text" (str): The label text parsed from the input string.
-              - "units" (str): The units parsed from the input string, or an empty string if no units are present.
-    """
-    # Find the position of the first '(' and the last ')'
+    # Extract tentative start and end indices, from first open and first close parentheses.
     start = label_with_units.find('(')
     end = label_with_units.rfind(')')
-    
-    # Ensure both are found and properly ordered
-    if start != -1 and end != -1 and end > start:
-        text_part = label_with_units[:start].strip()  # Everything before '('
-        units_part = label_with_units[start + 1:end].strip()  # Everything inside '()'
+
+    # Flag to track if the second check fails
+    second_check_failed = False
+
+    # Ensure removing both first '(' and last ')' doesn't cause misalignment
+    if start != -1 and end != -1:
+        temp_string = label_with_units[:start] + label_with_units[start + 1:end] + label_with_units[end + 1:]  # Removing first '(' and last ')'
+        first_closing_paren_after_removal = temp_string.find(')')
+        first_opening_paren_after_removal = temp_string.find('(')
+        if first_opening_paren_after_removal != -1 and first_closing_paren_after_removal < first_opening_paren_after_removal:
+            second_check_failed = True  # Set flag if second check fails
+
+    if second_check_failed:
+        #For the units, keep everything from the first '(' onward
+        parsed_output["text"] = label_with_units[:start].strip()
+        parsed_output["units"] = label_with_units[start:].strip()
     else:
-        text_part = label_with_units
-        units_part = ""
-    parsed_output = {
-                "text":text_part,
-                "units":units_part
-            }
+        # Extract everything between first '(' and last ')'
+        parsed_output["text"] = label_with_units[:start].strip()
+        parsed_output["units"] = label_with_units[start + 1:end].strip()
+
     return parsed_output
+
 
 
 def validate_plotly_data_list(data):
@@ -2039,6 +2051,10 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     if type(trace_style_to_apply) == type("string"):
         if (trace_style_to_apply.lower() == "nature") or (trace_style_to_apply.lower() == "science"):
             trace_style_to_apply = "default"
+
+    #at this stage, should remove any existing formatting before applying new formatting.
+    data_series = remove_trace_style_from_single_data_series(data_series)
+
     # -------------------------------
     # Predefined trace_styles_collection
     # -------------------------------
@@ -2138,7 +2154,7 @@ def remove_trace_style_from_single_data_series(data_series):
 
     # **Define formatting fields to remove**
     formatting_fields = {
-        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor",
+        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor", "color",
         "legendgroup", "showlegend", "textposition", "textfont", "visible", "connectgaps", "cliponaxis", "showgrid"
     }
 
@@ -2191,7 +2207,7 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
 
     # Define known formatting attributes. This is a set (not a dictionary, not a list)
     formatting_fields = {
-        "type", "mode", "line", "marker", "opacity", "fill", "fillcolor",
+        "type", "mode", "line", "marker", "opacity", "fill", "fillcolor", "color",
         "legendgroup", "showlegend", "textposition", "textfont", "colorscale"
     }
 
@@ -2325,7 +2341,7 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
         layout_style_to_apply = "default"
 
 
-    styles_available = JSONGrapher.styles.layout_styles_collection_library.styles_library
+    styles_available = JSONGrapher.styles.layout_styles_library.styles_library
 
 
     # Use or get the style specified, or use default if not found
@@ -2411,7 +2427,7 @@ def remove_layout_style_from_plotly_dict(fig_dict):
             "title.text": fig_dict.get("layout", {}).get("title", {}).get("text", None),
             "xaxis.title.text": fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", None),
             "yaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
-            "zaxis.title.text": fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", None),
+            "zaxis.title.text": fig_dict.get("layout", {}).get("zaxis", {}).get("title", {}).get("text", None),
             "legend.title.text": fig_dict.get("layout", {}).get("legend", {}).get("title", {}).get("text", None),
             "annotations.text": [annotation.get("text", None) for annotation in fig_dict.get("layout", {}).get("annotations", [])],
             "updatemenus.buttons.label": [
@@ -2796,17 +2812,28 @@ def update_title_field(fig_dict, depth=1, max_depth=10):
     return fig_dict
 
 
-#This helper function turns a layout dictionary into a "scene" dictionary
+
+
+
 def convert_to_3d_layout(layout):
-    # Convert xaxis, yaxis, zaxis to a scene structure within layout
-    return {
-        "title": layout.get("title", {}),
-        "scene": {
-            "xaxis": layout.get("xaxis", {}),
-            "yaxis": layout.get("yaxis", {}),
-            "zaxis": layout.get("zaxis", {})
-            }
-        }
+    import copy
+    # Create a deep copy to avoid modifying the original layout
+    new_layout = copy.deepcopy(layout)
+
+    # Add the axis fields inside `scene` first
+    new_layout["scene"] = {
+        "xaxis": layout.get("xaxis", {}),
+        "yaxis": layout.get("yaxis", {}),
+        "zaxis": layout.get("zaxis", {})
+    }
+
+    # Remove the original axis fields from the top-level layout
+    new_layout.pop("xaxis", None)
+    new_layout.pop("yaxis", None)
+    new_layout.pop("zaxis", None)
+
+    return new_layout
+
 
 def update_scene_axes(fig_dict):
     if "zaxis" in fig_dict["layout"]:
@@ -3115,6 +3142,7 @@ def evaluate_equations_as_needed_in_fig_dict(fig_dict):
             fig_dict = evaluate_equation_for_data_series_by_index(fig_dict, data_dict_index)
     return fig_dict
 
+#TODO: Should add z units ratio scaling here. Should do the same for the simulate_specific_data_series_by_index function.
 def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose="auto"):   
     try:
         # Attempt to import from the json_equationer package
@@ -3149,12 +3177,14 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
             data_dict_filled['z_label'] = data_dict_filled['equation']['z_variable'] 
             data_dict_filled['z'] = equation_dict_evaluated['z_points']
         #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
-        if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)):
+        if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)) or ("z_label" in data_dict_filled):
             #first, get the units that are in the layout of fig_dict so we know what to convert to.
             existing_record_x_label = fig_dict["layout"]["xaxis"]["title"]["text"] #this is a dictionary.
             existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
             existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]
             existing_record_y_units = separate_label_text_from_units(existing_record_y_label)["units"]
+            if "z_label" in data_dict_filled:
+                existing_record_z_label = fig_dict["layout"]["zaxis"]["title"]["text"] #this is a dictionary.
             if (existing_record_x_units == '') and (existing_record_y_units == ''): #skip scaling if there are no units.
                 pass
             else: #If we will be scaling...
@@ -3168,6 +3198,8 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
             #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
             data_dict_filled.pop("x_label", None)
             data_dict_filled.pop("y_label", None)
+            if "z_lablel" in data_dict_filled:
+                data_dict_filled.pop("z_label", None)
         if "type" not in data_dict:
             if graphical_dimensionality == 2:
                 data_dict_filled['type'] = 'spline'

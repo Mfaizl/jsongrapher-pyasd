@@ -84,6 +84,15 @@ Record_3D["data"][0]["trace_style"] = "none"
 Record_3D["data"][0]["color"] = "pink"
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
 
+#We can use a built in colorscale.
+#We have formatting from an existing style applied, so now we can set the trace_style to none to avoid reverting to the default color of that trace_style.
+Record_3D["data"][0]["trace_style"] = "none"
+#NOTE: There seems to be a bug in plotly. Uncomment the below line to see the colorscale, but the program will crash here.
+#So keep this line commented out to continue to the later portions of this example.
+#Record_3D["data"][0]["intensity"] = Record_3D['data'][0]["z"]
+Record_3D["data"][0]["colorscale"] = "tropic" #https://plotly.com/python/builtin-colorscales/
+Record_3D.plot_with_plotly(evaluate_all_equations=False)
+
 #Let's now make the plot a scatter3d plot, which is just a style change, then plot again.
 #We don't need to evaluate the equations again.
 Record_3D.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="scatter3d")
@@ -95,6 +104,13 @@ Record_3D["data"][0].set_marker_color("darkred")
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
 
 #Colorscales:
-#It's possible to use some colorscales with the 3D plots, using plotly json syntax. Doing so is beyond the scope of this example.
-#For the scatter3D, one can do so by first ordering the x_points, y_points, and z_points. (This would need to be after an equation evaluation)
-#Then one could pass in a list of colors (such as color hex numbers) into the set_marker_color field, and this would specify the color of each point.
+#It's possible to use some colorscales with the 3D plots, using plotly json syntax. 
+#For the scatter3d case, it is a little easier compared to mesh3d.
+#First, we turn off the trace_style so that we don't revert the color.
+#Then we set the colors to be determined by the same list of values as "z" (or some other list)
+#Then we choose a colorscale and plot.
+Record_3D["data"][0]["trace_style"] = "none" 
+Record_3D["data"][0]["marker"]["color"] = Record_3D['data'][0]["z"]
+Record_3D["data"][0]["marker"]["colorscale"] = "rainbow" #https://plotly.com/python/builtin-colorscales/
+Record_3D.plot_with_plotly(evaluate_all_equations=False)
+

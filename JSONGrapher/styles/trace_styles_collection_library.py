@@ -33,6 +33,14 @@ styles_library = {
             "mode": "markers",
             "marker": {"size": 10},
         },
+        "bubble": {
+            "type": "scatter",
+            "mode": "markers",
+            "marker": {
+                            "color": "blue",
+                            "colorscale": [[0, "blue"],[1,"blue"]]
+                        }
+        },        
         "spline": {
             "type": "scatter",
             "mode": "lines",
@@ -55,15 +63,12 @@ styles_library = {
             "mode": "lines+markers",
             "line": {"shape": "spline", "width": 2},
             "marker": {"size": 10},
-        },
+        },        
         "scatter3d": {
             "mode": "markers",
             "type": "scatter3d"
         },
         "mesh3d": {
-            "type": "mesh3d",
-        },
-        "surface": {
             "type": "mesh3d",
         },
         "heatmap": {

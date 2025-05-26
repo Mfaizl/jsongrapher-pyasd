@@ -72,7 +72,7 @@ styles_library = {
         },
         "mesh3d": {
             "type": "mesh3d",
-            "intensity" : "auto",
+            "intensity" : [],
             "colorscale":"rainbow", 
             "showscale":True
         },

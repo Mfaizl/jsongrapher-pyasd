@@ -8,26 +8,26 @@ To use python JSONGrapher, first install it using conda or pip:<br>
 Alternatively, you can download the directory directly.<br> 
 
 ## **0\. Plotting a JSON Record**
-It's as simple as one line! Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1) JSONGrapher record into the window to plot!
+It's as simple as one line! Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot!
 Below shows several plot types for 2D and 3D plots, followed by a simple example of how to use python JSONGrapher to create your own records.
 <pre>
 import JSONGrapher 
 JSONGrapher.launch()
 </pre>
 
-[![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png) [![JSONGRapher plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/UAN_DTA_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/UAN_DTA_image.png)
+[![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png) [![JSONGRapher plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/UAN_DTA_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/UAN_DTA_image.png)
 
-[![rainbow plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/SrTiO3_rainbow_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/SrTiO3_rainbow_image.png)
-[![mesh3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_mesh3d.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_mesh3d.png)
-[![scatter3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_Scatter3d_example10.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_Scatter3d_example10.png)
-[![bubble plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_bubble.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1/Rate_Constant_bubble.png)
+[![rainbow plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/SrTiO3_rainbow_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/SrTiO3_rainbow_image.png)
+[![mesh3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/Rate_Constant_mesh3d.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/Rate_Constant_mesh3d.png)
+[![scatter3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/Rate_Constant_Scatter3d_example10.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/Rate_Constant_Scatter3d_example10.png)
+[![bubble plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/Rate_Constant_bubble.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/Rate_Constant_bubble.png)
 
 
 
 
 ## **1\. Preparing to Create a Record**
 
-The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/jsongrapher-py/blob/main/examples/example_2/example_2_json_record_tutorial.py) which shows how to create graphable .json records. The records can then be plotted with python JSONGrapher or with jsongrapher.com<br>
+The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/jsongrapher-py/blob/main/examples/example_2_creating_records_and_using_styles/example_2_json_record_tutorial.py) which shows how to create graphable .json records. The records can then be plotted with python JSONGrapher or with jsongrapher.com<br>
 
 Let's create an example where we plot the height of a pear tree over several years. 
 <pre>

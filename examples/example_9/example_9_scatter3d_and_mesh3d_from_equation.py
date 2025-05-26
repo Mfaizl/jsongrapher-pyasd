@@ -79,6 +79,7 @@ Record_3D.apply_trace_style_by_index(0, trace_styles_collection="default", trace
 #we have already evaluated the equations, so we don't need to evaluate them again.
 #After we plot the data, we can hover to see specific values.
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
+Record_3D.export_to_json_file("Rate_Constant_mesh3d.json")
 
 #We can change to a single color. If we want to change the formatting, we should first set the style to "none" to prevent the automatic formatting.
 Record_3D["data"][0]["trace_style"] = "none"
@@ -134,3 +135,4 @@ Record_3D["data"][0]["marker"]["color"] = Record_3D['data'][0]["y"]
 Record_3D["data"][0]["marker"]["colorscale"] = "rainbow_r" #https://plotly.com/python/builtin-colorscales/
 Record_3D["data"][0]["marker"]["showscale"] = True 
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
+Record_3D.export_to_json_file("Rate_Constant_scatter3d.json")

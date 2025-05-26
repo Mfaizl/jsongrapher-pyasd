@@ -9,6 +9,7 @@ Alternatively, you can download the directory directly.<br>
 
 ## **0\. Plotting a JSON Record**
 It's as simple as one line! Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1) JSONGrapher record into the window to plot!
+Below shows several plot types for 2D and 3D plots, followed by a simple example of how to use python JSONGrapher to create your own records.
 <pre>
 import JSONGrapher 
 JSONGrapher.launch()

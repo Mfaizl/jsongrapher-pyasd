@@ -70,14 +70,25 @@ Record_for_bubble_plot['data'][0]["z"] = log_of_k.tolist()
 Record_for_bubble_plot["data"][0]["max_bubble_size"] = 25
 Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
 
-#It is possible to change the color of the bubbles. To do so, we need to first apply the bubble style, then change the trace_style to none.
-#TODO: make it so people can put styles like "bubble__jet" to choose a pre_chosen style.
+#It is possible to change the color of the bubbles to be a solid color. To do so, let's apply the bubble style, extract it, set the style to none, and then make adjustments.
+#First we apply the bubble style so that our fig_dict has it.
 Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="bubble")
-Record_for_bubble_plot.set_trace_style_one_data_series(0, "none")
-Record_for_bubble_plot["data"][0].pop("z")
-Record_for_bubble_plot["data"][0].pop("max_bubble_size")
-Record_for_bubble_plot["data"][0]["marker"] = {} # The marker field did not exist, so created it.
-Record_for_bubble_plot["data"][0]["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
-Record_for_bubble_plot["data"][0]["marker"]["color"] = log_of_k.tolist()
-Record_for_bubble_plot["data"][0]["marker"]["size"] = log_of_k.tolist()
+#Now, we set the style to "none" so that we can make changes.
+Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="none")
+#Let's set the color scale to something else.
+Record_for_bubble_plot["data"][0]["marker"]["colorscale"] = "rainbow" #https://plotly.com/python/builtin-colorscales/
+Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
+#We can also change the color or size to be determined by one of the other variables, or any arbitrary list.
+Record_for_bubble_plot["data"][0]["marker"]["colorscale"] = "rainbow" #https://plotly.com/python/builtin-colorscales/
+Record_for_bubble_plot["data"][0]["marker"]["color"] = Record_for_bubble_plot['data'][0]["y"]
+Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
+
+# We can also remove the colorscale bar, and making our plot a single color.
+#Let's first change the bubble size, which requires applying the bubble style again.
+Record_for_bubble_plot["data"][0]["max_bubble_size"] = 150 
+Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="bubble")
+#Now we can go back to none and change the color.
+Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="none")
+Record_for_bubble_plot["data"][0]["marker"]["showscale"] = False
+Record_for_bubble_plot["data"][0]["marker"]["color"] = "blue"
 Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)

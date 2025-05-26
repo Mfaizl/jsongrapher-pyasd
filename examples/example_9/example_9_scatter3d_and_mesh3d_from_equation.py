@@ -87,9 +87,7 @@ Record_3D.plot_with_plotly(evaluate_all_equations=False)
 #We can use a built in colorscale.
 #We have formatting from an existing style applied, so now we can set the trace_style to none to avoid reverting to the default color of that trace_style.
 Record_3D["data"][0]["trace_style"] = "none"
-#NOTE: There seems to be a bug in plotly. Uncomment the below line to see the colorscale, but the program will crash here.
-#So keep this line commented out to continue to the later portions of this example.
-#Record_3D["data"][0]["intensity"] = Record_3D['data'][0]["z"]
+Record_3D["data"][0]["intensity"] = Record_3D['data'][0]["z"]
 Record_3D["data"][0]["colorscale"] = "tropic" #https://plotly.com/python/builtin-colorscales/
 Record_3D.plot_with_plotly(evaluate_all_equations=False)
 

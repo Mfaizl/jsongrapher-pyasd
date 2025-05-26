@@ -2195,7 +2195,7 @@ def remove_trace_style_from_single_data_series(data_series):
 
     # **Define formatting fields to remove**
     formatting_fields = {
-        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor", "color",
+        "mode", "line", "marker", "colorscale", "opacity", "fill", "fillcolor", "color", "intensity",
         "legendgroup", "showlegend", "textposition", "textfont", "visible", "connectgaps", "cliponaxis", "showgrid"
     }
 
@@ -2248,7 +2248,7 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
 
     # Define known formatting attributes. This is a set (not a dictionary, not a list)
     formatting_fields = {
-        "type", "mode", "line", "marker", "opacity", "fill", "fillcolor", "color",
+        "type", "mode", "line", "marker", "opacity", "fill", "fillcolor", "color", "intensity",
         "legendgroup", "showlegend", "textposition", "textfont", "colorscale"
     }
 

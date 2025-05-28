@@ -1,5 +1,17 @@
 import json
+import JSONGrapher
 from JSONGrapher import JSONRecordCreator
+
+### STEP 0: DRAG INTO JSONGRAPHER DIRECTLY, IF DESIRED ###
+
+#The user can simply launch JSONGrapher and drag the json file from this directory into it 
+# (amino_silane_silica_LangmuirIsothermModel_343_equilibrium.json)
+
+# Uncomment the below line to use the "drag and drop" way. The simulation will take a few seconds.
+# JSONGrapher.launch()
+
+#However, this example file is intended to educate users who want to make records, so more information is provided below.
+
 
 ### STEP 1: USE A JSON RECORD WITH A SIMULATE FUNCTION ###
 #First, we will load a JSONGrapher record from a file.
@@ -10,7 +22,7 @@ Record_with_simulate_field.import_from_json(r"./amino_silane_silica_LangmuirIsot
 Record_with_simulate_field.print_to_inspect()
 
 #By default, the simulation will get called if we try to make plotly figure or export to json.
-Record_with_simulate_field.plot_with_plotly()
+Record_with_simulate_field.plot()
 print("The data has been simulated using a javascript function, with source code called from online.")
 
 #One can change the parameters and then update the data object by forcing simulation again. Below is an example.
@@ -25,13 +37,13 @@ adjusted_Record_with_simulate_field["data"][0]["name"] = "CO2 Adsorption, K_eq =
 #Now call a function to force re-simulation of the data series at index 0 for this new record.
 adjusted_Record_with_simulate_field.simulate_data_series_by_index(data_series_index=0)
 #Now plot the newly simulated series.
-adjusted_Record_with_simulate_field.plot_with_plotly()
+adjusted_Record_with_simulate_field.plot()
 
 #Now let's plot both records together by merging them.
 import JSONGrapher
 merged_record = JSONGrapher.merge_JSONGrapherRecords([Record_with_simulate_field, adjusted_Record_with_simulate_field])
 #plotting with plotly.
-merged_record.plot_with_plotly()
+merged_record.plot()
 #plotting with matplotlib.
 merged_record.plot_with_matplotlib()
 

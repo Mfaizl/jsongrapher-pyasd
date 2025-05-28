@@ -8,6 +8,7 @@ import JSONGrapher.styles.trace_styles_collection_library
 global_records_list = [] #This list holds onto records as they are added. Index 0 is the merged record. Each other index corresponds to record number (like 1 is first record, 2 is second record, etc)
 
 
+
 #This is a JSONGrapher specific function
 #That takes filenames and adds new JSONGrapher records to a global_records_list
 #If the all_selected_file_paths and newest_file_name_and_path are [] and [], that means to clear the global_records_list.
@@ -3118,6 +3119,8 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
 
 ### Beginning of section of file that has functions for "simulate" and "equation" fields, to evaluate equations and call external javascript simulators, as well as support functions ###
 
+local_python_functions_dictionary = {} #This is a global variable that works with the "simulate" feature and lets users call python functions for data generation.
+
 def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbose = False):
     """
     Downloads a JavaScript file using its URL, extracts the filename, appends an export statement,
@@ -3227,7 +3230,7 @@ def convert_to_raw_github_url(url):
     return url  # Return unchanged if not a GitHub file URL
 
 #This function takes in a data_series_dict object and then
-#calls an external javascript simulation if needed
+#calls an external python or javascript simulation if needed
 #Then fills the data_series dict with the simulated data.
 #This function is not intended to be called by the regular user
 #because it returns extra fields that need to be parsed out.
@@ -3235,6 +3238,16 @@ def convert_to_raw_github_url(url):
 def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
     if simulator_link == '':
         simulator_link = data_series_dict["simulate"]["model"]  
+    if simulator_link == "local_python": #this is the local python case.
+        #Here, I haev split up the lines of code more than needed so that the logic is easy to follow.
+        simulation_function_label = data_series_dict["simulate"]["simulation_function_label"]
+        simulation_function = local_python_functions_dictionary[simulation_function_label] 
+        simulation_return = simulation_function(data_series_dict) 
+        if "data" in simulation_return: #the simulation return should have the data_series_dict in another dictionary.
+            simulation_result = simulation_return["data"]
+        else: #if there is no "data" field, we will assume that only the data_series_dict has been returned.
+            simulation_result = simulation_return
+        return simulation_result
     try:
         simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose=verbose)
         if isinstance(simulation_return, dict) and "error" in simulation_return: # Check for errors in the returned data

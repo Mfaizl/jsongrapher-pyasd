@@ -50,7 +50,7 @@ Record.add_data_series(series_name = "pear tree growth", x_values=time_in_years,
 Record.set_graph_title("Pear Tree Growth Versus Time")
 
 print("\n\n STEP 4: PLOT WITH PLOTLY")
-Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
+Record.plot() #Try hovering the mouse over points in plotly figures!
 
 print("\n\n STEP 5: USING CUSTOM UNITS  ")
 #Let's try converting the data into seasons rather than years.
@@ -61,4 +61,4 @@ new_x_label_including_units= "Time (<season>)" #By convention, units should not 
 Record.set_x_axis_label_including_units(new_x_label_including_units)
 
 print("\n\n STEP 6: PLOT AGAIN WITH PLOTLY")
-Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
+Record.plot() #Try hovering the mouse over points in plotly figures!

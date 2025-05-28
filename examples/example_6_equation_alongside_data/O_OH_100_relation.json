@@ -18,6 +18,7 @@
                 "equation_string" : "E_Ads_O=1.63*E_Ads_OH + y_intercept",
                 "y_variable": "E_Ads_O (eV)",
                 "x_variable": "E_Ads_OH (eV)",
+                "x_range_default" : [-2,3],
                 "constants": {"y_intercept": "1.44 (eV)"}
                 }
         }

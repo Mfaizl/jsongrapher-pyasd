@@ -4,7 +4,7 @@ example_1_drag_and_drop shows how to launch a JSONGrapher window for dragging an
 
 example_2_creating_records_and_using_styles provides a tutorial like example on how to make JSONGrapher records and apply styles (layout_style and trace_styles_collection)
 
-example_3_simulation_call shows an example where the json record calls JavaScript source code from online to simulate and populate a dataseries.
+example_3_online_simulation_call shows an example where the json record calls JavaScript source code from online to simulate and populate a dataseries.
 
 example_4_custom_units shows an example where custom units are used.
 
@@ -20,3 +20,4 @@ example_9_scatter3d_and_mesh3d_plots shows an example of 3D plots (both scatter3
 
 example_10_bubble_plot shows an example of how to create a bubble plot, which is another kind of 3D plot.
 
+example_11_local_python_call shows an example where the json record calls a local python function to simulate and populate a dataseries. This feature requires the user's script to call the feature, for security reasons. The JSON record cannot call functions "by itself".

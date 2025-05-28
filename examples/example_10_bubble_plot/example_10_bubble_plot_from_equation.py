@@ -51,7 +51,7 @@ Record_for_bubble_plot.export_to_json_file("Rate_Constant_bubble.json") #This ha
 #Because this is an exponential type size change, the drop off is dramatic.
 # If one hovers over the bubbles, one sees the rate constant values for each bubble.
 #The "empty" areas of the plot actually have very small bubbles.  If one hovers over there, one can see the rate constant values in that region of parameter space.
-Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
+Record_for_bubble_plot.plot(evaluate_all_equations=False)
 
 #Let's now try making a bubble plot with the log of the rate constant.
 #We can manually change to taking the log of the rate constant. Since this is a bubble size, we do not have to be as worried about the units.
@@ -68,7 +68,7 @@ Record_for_bubble_plot['data'][0]["z"] = log_of_k.tolist()
 #We see that when using the log of the rate constant, we get the same trend.
 #however, now we see a more "linear" change of bubble size across the graph.
 Record_for_bubble_plot["data"][0]["max_bubble_size"] = 25
-Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
+Record_for_bubble_plot.plot(evaluate_all_equations=False)
 
 #It is possible to change the color of the bubbles to be a solid color. To do so, let's apply the bubble style, set the style to none, and then make adjustments.
 #First we apply the bubble style so that our fig_dict has it.
@@ -77,11 +77,11 @@ Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="de
 Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="none")
 #Let's set the color scale to something else.
 Record_for_bubble_plot["data"][0]["marker"]["colorscale"] = "rainbow" #https://plotly.com/python/builtin-colorscales/
-Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
+Record_for_bubble_plot.plot(evaluate_all_equations=False)
 #We can also change the color or size to be determined by one of the other variables, or any arbitrary list.
 Record_for_bubble_plot["data"][0]["marker"]["colorscale"] = "rainbow" #https://plotly.com/python/builtin-colorscales/
 Record_for_bubble_plot["data"][0]["marker"]["color"] = Record_for_bubble_plot['data'][0]["y"]
-Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
+Record_for_bubble_plot.plot(evaluate_all_equations=False)
 
 # We can also remove the colorscale bar, and making our plot a single color.
 #Let's first change the bubble size, which requires applying the bubble style again.
@@ -91,4 +91,4 @@ Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="de
 Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="none")
 Record_for_bubble_plot["data"][0]["marker"]["showscale"] = False
 Record_for_bubble_plot["data"][0]["marker"]["color"] = "blue"
-Record_for_bubble_plot.plot_with_plotly(evaluate_all_equations=False)
+Record_for_bubble_plot.plot(evaluate_all_equations=False)

@@ -62,7 +62,8 @@ Record.print_to_inspect()
 
 #We can also plot the data with matplotlib, and can export to file as png. 
 print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB AND PLOTLY-PYTHON-MODULE")
-Record.plot_with_plotly() #Try hovering the mouse over points in plotly figures!
+Record.plot() #Try hovering the mouse over points in plotly figures!
+#Record.plot_with_plotly()  is the same as Record.plot()
 #Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
 
 Record.plot_with_matplotlib()
@@ -87,7 +88,7 @@ Record2["data"][0]["name"] = "pear tree growth 3"
 #now let's merge in the new record.
 Record.merge_in_JSONGrapherRecord(Record2)
 #Now plot the JSONGrapher object again. This time, there will be 3 series.
-Record.plot_with_plotly()
+Record.plot()
 
 
 #Now let's try applying a predfined style!
@@ -95,15 +96,15 @@ print("\n\n STEP 7: TRYING PREDIFINED STYLES")
 #There are two parts to a style: the layout_style and the trace_style. This is further described in a separate file about styles.
 science_plot_style = {"layout_style":"Science", "trace_styles_collection":"default"}
 Record.apply_plot_style(plot_style=science_plot_style) #This command puts and applies style into the JSONgrapher record.  
-Record.plot_with_plotly()
+Record.plot()
 #we can also "temporarily" apply a style while plotting, without changing the record itself..
 nature_plot_style = {"layout_style":"Nature", "trace_styles_collection":"default"}
-Record.plot_with_plotly(plot_style=nature_plot_style)
+Record.plot(plot_style=nature_plot_style)
 #So this plot will produce the "Science" style again:
-Record.plot_with_plotly()
+Record.plot()
 #One can also remove styles, and produce the default style, again.
 Record.remove_plot_style()
-Record.plot_with_plotly()
+Record.plot()
 
 #Note: As of April 2025, the styles have not actually been made suitable for journals. However, the feature is here so that such styles can be made.
 

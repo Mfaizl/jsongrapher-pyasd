@@ -16,8 +16,8 @@
                 "simulation_function_label": "simulate_Langmuir_by_kadskdes",
                 "K_eq": null,
                 "sigma_max": "1.0267670459667 (mol/kg)",
-                "k_ads": "200 (1/(bar * s))",
-                "k_des": "100 (1/s)"
+                "k_ads": "200 ((bar**(-1))*(s**(-1)))",
+                "k_des": "100 (s**(-1))"
             }
         }
     ],

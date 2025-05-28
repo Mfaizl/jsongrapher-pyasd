@@ -31,11 +31,12 @@ JSONGrapher.local_python_functions_dictionary["simulate_Langmuir_by_Keq"] = Lang
 #But doing so is unnecessary, let's simply call the JSONGrapher drag and drop window, and drag the .json files in!
 # We can even drag both of them in, so that JSONGrapher can plot them together!
 
-#JSONGrapher.launch()
-new_record = JSONRecordCreator.create_new_JSONGrapherRecord()
-new_record.import_from_file("343_equilibrium.json")
-#new_record.import_from_file("343_kinetic.json")
-new_record.plot()
+JSONGrapher.launch()
+
+#Below is a non-drag and drop way to plot both records together:
+
+# new_record = JSONRecordCreator.merge_JSONGrapherRecords(["343_equilibrium.json", "343_kinetic.json"])
+# new_record.plot()
 
 
 

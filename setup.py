@@ -17,7 +17,7 @@ from setuptools import find_packages, setup, Command
 NAME = 'JSONGrapher'
 DESCRIPTION = 'The python version of JSONGrapher with tools for creating JSONGrapher Records.'
 URL = 'https://github.com/AdityaSavara/jsongrapher-py'
-EMAIL = 'AditySavara2008@u.northwestern.edu'  
+EMAIL = 'AdityaSavara2008@u.northwestern.edu'  
 AUTHOR = 'Aditya Savara'
 REQUIRES_PYTHON = '>=3.0.0'
 VERSION = '3.8'

@@ -1,5 +1,17 @@
 import json
+import JSONGrapher
 from JSONGrapher import JSONRecordCreator
+
+### STEP 0: DRAG INTO JSONGRAPHER DIRECTLY, IF DESIRED ###
+
+#The user can simply launch JSONGrapher and drag the json file from this directory into it 
+# (amino_silane_silica_LangmuirIsothermModel_343_equilibrium.json)
+
+# Uncomment the below line to use the "drag and drop" way. The simulation will take a few seconds.
+# JSONGrapher.launch()
+
+#However, this example file is intended to educate users who want to make records, so more information is provided below.
+
 
 ### STEP 1: USE A JSON RECORD WITH A SIMULATE FUNCTION ###
 #First, we will load a JSONGrapher record from a file.

@@ -2947,7 +2947,7 @@ def update_title_field(fig_dict_or_subdict, depth=1, max_depth=10):
         return fig_dict_or_subdict
     
     for key, value in fig_dict_or_subdict.items():
-        if key == "title" and isinstance(value, str):
+        if key == "title" and isinstance(value, str):  #This is for axes labels.
             fig_dict_or_subdict[key] = {"text": value}
         elif isinstance(value, dict):  # Nested dictionary
             fig_dict_or_subdict[key] = update_title_field(value, depth + 1, max_depth)
@@ -2966,9 +2966,13 @@ def update_superscripts_strings(fig_dict_or_subdict, depth=1, max_depth=10):
         return fig_dict_or_subdict
     
     for key, value in fig_dict_or_subdict.items():
-        if key == "title":
+        if key == "title": #This is for axes labels and graph title.
             if "text" in fig_dict_or_subdict[key]:
                 fig_dict_or_subdict[key]["text"] = replace_superscripts(fig_dict_or_subdict[key]["text"])
+        if key == "data": #This is for the legend.
+            for data_dict in fig_dict_or_subdict[key]:
+                if "name" in data_dict:
+                    data_dict["name"] = replace_superscripts(data_dict["name"])
         elif isinstance(value, dict):  # Nested dictionary
             fig_dict_or_subdict[key] = update_superscripts_strings(value, depth + 1, max_depth)
         elif isinstance(value, list):  # Lists can contain nested dictionaries

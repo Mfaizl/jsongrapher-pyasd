@@ -78,14 +78,14 @@
         },
         "xaxis": {
             "title": {
-                "text": "Quantity Adsorbed (\u03bcmol/m2)"
+                "text": "Quantity Adsorbed (µmol*m^(-2))"
             },
             "showgrid": false,
             "autorange": true
         },
         "yaxis": {
             "title": {
-                "text": "Adsorption_Enthalpy (kJ/mol)"
+                "text": "Adsorption_Enthalpy (kJ*mol**(-1))"
             },
             "autorange": true,
             "gridcolor": "rgb(208, 208, 208)",

@@ -7,15 +7,15 @@
                 "shape": "spline",
                 "width": 3
             },
-            "name": "CO2 Adsorption, K_eq = 99.6 (1/bar)",
+            "name": "CO2 Adsorption, K_eq = 99.6 (bar^(-1))",
             "type": "scatter",
             "x": [],
             "y": [],
             "simulate": {
                 "model": "local_python",
                 "simulation_function_label": "simulate_Langmuir_by_Keq",
-                "K_eq": "99.6 (1/bar)",
-                "sigma_max": "1.0267670459667 (mol/kg)",
+                "K_eq": "99.6 (bar^(-1))",
+                "sigma_max": "1.0267670459667 (mol*kg^(-1))",
                 "k_ads": null,
                 "k_des": null
             }
@@ -34,7 +34,7 @@
         },
         "yaxis": {
             "title": {
-                "text": "CO2 Adsorbed (mol/kg)"
+                "text": "CO2 Adsorbed (mol*kg^(-1))"
             },
             "autorange": true,
             "gridcolor": "rgb(208, 208, 208)",

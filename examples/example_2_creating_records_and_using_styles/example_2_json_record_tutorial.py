@@ -1,15 +1,4 @@
-#To use JSONGrapher, first use pip install JSONGrapher or download the directory.
-#This file will show one typical usage.
-
-try: 
-    from JSONGrapher import JSONRecordCreator #normal usage
-except:
-    #add the path.
-    import sys, os 
-    json_grapher_rc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "JSONGrapher"))
-    sys.path.append(json_grapher_rc_path)
-    import JSONRecordCreator #this is if you have the class file locally.
-
+from JSONGrapher import JSONRecordCreator #normal usage
 
 print("\n\n STEP 1: PREPARING TO CREATE A RECORD")
 # Let's make an example where we are plotting the height of a pear tree per year.

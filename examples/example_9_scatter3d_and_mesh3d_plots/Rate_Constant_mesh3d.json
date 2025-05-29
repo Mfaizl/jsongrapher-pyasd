@@ -213,9 +213,9 @@
             "equation": {
                 "equation_string": "k = A*(e**((-Ea)/(R*T)))",
                 "x_variable": "T (K)",
-                "y_variable": "Ea ((J)*(mol^(-1)))",
+                "y_variable": "Ea (J*mol^(-1))",
                 "constants": {
-                    "R": "8.314 (J)*(mol^(-1))*(K^(-1))",
+                    "R": "8.314 (J*mol^(-1)*K^(-1))",
                     "A": "1*10^13 (s^-1)",
                     "e": "2.71828"
                 },
@@ -237,7 +237,7 @@
                 "y_range_limits": [],
                 "verbose": true,
                 "x_units": "(K)",
-                "y_units": "((J)*(mol^(-1)))",
+                "y_units": "(J*mol^(-1))",
                 "x_points": [
                     200.0,
                     200.0,
@@ -765,7 +765,7 @@
         },
         "yaxis": {
             "title": {
-                "text": "Ea ((J)*(mol^(-1)))"
+                "text": "Ea (J*mol^(-1))"
             }
         },
         "zaxis": {

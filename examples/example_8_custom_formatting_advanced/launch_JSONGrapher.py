@@ -1,1 +1,0 @@
-import JSONGrapher ; JSONGrapher.launch()

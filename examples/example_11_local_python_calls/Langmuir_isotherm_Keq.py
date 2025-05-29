@@ -31,7 +31,7 @@ def simulate(input_dict):
 
     # This is the actual "simulation"
     def get_predicted_values(K_eq_value, K_eq_unit, sigma_max=1, sigma_max_unit="<Monolayer>"):
-        x_label = f"Pressure (1/({K_eq_unit}))"
+        x_label = f"Pressure (({K_eq_unit})**(-1))"
         y_label = f"Amount Adsorbed ({sigma_max_unit})"
         y_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] #For our langmuir simulation we use Y to get X in this case. Coverage to calculate pressure.
         x_values = [sigma_max * y / (K_eq_value * (1 - y)) for y in y_values]
@@ -75,8 +75,8 @@ if __name__ == "__main__":
     ##### Test with input as a JSON-like dictionary.#####
     input_json_as_dict = {
         "simulate": {
-            "K_eq": "99.6 (1/bar)",  # Using K_eq directly instead of k_ads and k_des
-            "sigma_max": "1.0267670459667 (mol/kg)",
+            "K_eq": "99.6 (bar**(-1))",  # Using K_eq directly instead of k_ads and k_des
+            "sigma_max": "1.0267670459667 (mol*kg^(-1))",
             "simulation_function_label": "simulate_Langmuir_by_Keq"
         }
     }

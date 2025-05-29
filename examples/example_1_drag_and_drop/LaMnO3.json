@@ -55,12 +55,12 @@
         },
         "xaxis": {
             "title": {
-                "text": "Quantity Adsorbed (µmol/(m^2))"
+                "text": "Quantity Adsorbed (µmol*m^(-2))"
             }
         },
         "yaxis": {
             "title": {
-                "text": "Adsorption_Enthalpy (kJ/mol)"
+                "text": "Adsorption_Enthalpy (kJ*mol**(-1))"
             }
         }
     }

@@ -87,8 +87,8 @@ if __name__ == "__main__":
     ##### Test with input as a JSON-like dictionary.#####
     input_json_as_dict = {
         "simulate": {
-            "k_ads": "200 (1/(bar * s))",
-            "k_des": "100 (1/s)",
+            "k_ads": "200 (bar^(-1)* s^(-1))",
+            "k_des": "100 (s^(-1))",
             "sigma_max": "1.0267670459667 (<Monolayer>)",
             "simulation_function_label": "simulate_Langmuir_by_kadskdes"
             }

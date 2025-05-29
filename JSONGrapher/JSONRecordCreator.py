@@ -831,6 +831,7 @@ class JSONGrapherRecord:
     def evaluate_eqution_of_data_series_by_index(self, series_index, equation_dict = None, verbose=False):
         if equation_dict != None:
             self.fig_dict["data"][series_index]["equation"] = equation_dict
+        data_series_dict = self.fig_dict["data"][series_index]
         self.fig_dict = evaluate_equation_for_data_series_by_index(data_series_index=data_series_dict, verbose=verbose) #implied return.
         return data_series_dict #Extra regular return
 
@@ -842,11 +843,11 @@ class JSONGrapherRecord:
         return self.fig_dict
     #The update_and_validate function will clean for plotly.
     #TODO: the internal recommending "print_to_inspect" function should, by default, exclude printing the full dictionaries of the layout_style and the trace_collection_style.
-    def print_to_inspect(self, update_and_validate=True, validate=True, remove_remaining_hints=False):
+    def print_to_inspect(self, update_and_validate=True, validate=True, clean_for_plotly = True, remove_remaining_hints=False):
         if remove_remaining_hints == True:
             self.remove_hints()
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
-            self.update_and_validate_JSONGrapher_record()
+            self.update_and_validate_JSONGrapher_record(clean_for_plotly=clean_for_plotly)
         elif validate: #this will validate without doing automatic updates.
             self.validate_JSONGrapher_record()
         print(json.dumps(self.fig_dict, indent=4))
@@ -896,9 +897,7 @@ class JSONGrapherRecord:
         #now, add the scaled data objects to the original one.
         #This is fairly easy using a list extend.
         self.fig_dict["data"].extend(scaled_fig_dict["data"])
-
-
-    
+   
     def import_from_dict(self, fig_dict):
         self.fig_dict = fig_dict
     
@@ -1047,7 +1046,7 @@ class JSONGrapherRecord:
         elif validate: #this will validate without doing automatic updates.
             self.validate_JSONGrapher_record()
 
-        # filepath: Optional, filename with path to save the JSON file.       
+        # filename with path to save the JSON file.       
         if len(filename) > 0: #this means we will be writing to file.
             # Check if the filename has an extension and append `.json` if not
             if '.json' not in filename.lower():
@@ -1056,6 +1055,18 @@ class JSONGrapherRecord:
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(self.fig_dict, f, indent=4)
         return self.fig_dict
+
+    def export_plotly_json(self, filename, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True,adjust_implicit_data_ranges=True):
+        fig = self.get_plotly_fig(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+        plotly_json_string = fig.to_plotly_json()
+        if len(filename) > 0: #this means we will be writing to file.
+            # Check if the filename has an extension and append `.json` if not
+            if '.json' not in filename.lower():
+                filename += ".json"
+            #Write to file using UTF-8 encoding.
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(plotly_json_string, f, indent=4)
+        return plotly_json_string
 
     #simulate all series will simulate any series as needed.
     def get_plotly_fig(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
@@ -1092,8 +1103,8 @@ class JSONGrapherRecord:
         self.apply_plot_style(plot_style=plot_style)
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
-            self.update_and_validate_JSONGrapher_record() #this is the line that cleans "self.fig_dict"
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style', '3d_axes', 'bubble'])
+            self.update_and_validate_JSONGrapher_record(clean_for_plotly=False) #We use the False argument here because the cleaning will be on the next line with beyond default arguments.
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style', '3d_axes', 'bubble', 'superscripts'])
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
@@ -1390,8 +1401,8 @@ class JSONGrapherRecord:
     #Make some pointers to external functions, for convenience, so people can use syntax like record.function_name() if desired.
     def validate_JSONGrapher_record(self):
         validate_JSONGrapher_record(self)
-    def update_and_validate_JSONGrapher_record(self):
-        update_and_validate_JSONGrapher_record(self)
+    def update_and_validate_JSONGrapher_record(self, clean_for_plotly=True):
+        update_and_validate_JSONGrapher_record(self, clean_for_plotly=clean_for_plotly)
 
 
 # helper function to validate x axis and y axis labels.
@@ -2928,24 +2939,61 @@ def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
 
 ### Start section of code with functions for cleaning fig_dicts for plotly compatibility ###
 
-def update_title_field(fig_dict, depth=1, max_depth=10):
+def update_title_field(fig_dict_or_subdict, depth=1, max_depth=10):
     """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting
     which is necessary to do things like change the font, and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects.
     Recursively checks for 'title' fields and converts them to dictionary format. """
-    if depth > max_depth or not isinstance(fig_dict, dict):
-        return fig_dict
+    if depth > max_depth or not isinstance(fig_dict_or_subdict, dict):
+        return fig_dict_or_subdict
     
-    for key, value in fig_dict.items():
-        if key == "title" and isinstance(value, str):
-            fig_dict[key] = {"text": value}
+    for key, value in fig_dict_or_subdict.items():
+        if key == "title" and isinstance(value, str):  #This is for axes labels.
+            fig_dict_or_subdict[key] = {"text": value}
         elif isinstance(value, dict):  # Nested dictionary
-            fig_dict[key] = update_title_field(value, depth + 1, max_depth)
+            fig_dict_or_subdict[key] = update_title_field(value, depth + 1, max_depth)
         elif isinstance(value, list):  # Lists can contain nested dictionaries
-            fig_dict[key] = [update_title_field(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
-    return fig_dict
+            fig_dict_or_subdict[key] = [update_title_field(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
+    return fig_dict_or_subdict
 
 
 
+
+def update_superscripts_strings(fig_dict_or_subdict, depth=1, max_depth=10):
+    """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting
+    which is necessary to do things like change the font, and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects.
+    Recursively checks for 'title' fields and converts them to dictionary format. """
+    if depth > max_depth or not isinstance(fig_dict_or_subdict, dict):
+        return fig_dict_or_subdict
+    
+    for key, value in fig_dict_or_subdict.items():
+        if key == "title": #This is for axes labels and graph title.
+            if "text" in fig_dict_or_subdict[key]:
+                fig_dict_or_subdict[key]["text"] = replace_superscripts(fig_dict_or_subdict[key]["text"])
+        if key == "data": #This is for the legend.
+            for data_dict in fig_dict_or_subdict[key]:
+                if "name" in data_dict:
+                    data_dict["name"] = replace_superscripts(data_dict["name"])
+        elif isinstance(value, dict):  # Nested dictionary
+            fig_dict_or_subdict[key] = update_superscripts_strings(value, depth + 1, max_depth)
+        elif isinstance(value, list):  # Lists can contain nested dictionaries
+            fig_dict_or_subdict[key] = [update_superscripts_strings(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
+    return fig_dict_or_subdict
+
+#The below function was made with the help of copilot.
+def replace_superscripts(input_string):
+    #Example usage: print(replace_superscripts("x^(2) + y**(-3) = z^(test)"))
+    import re
+    # Step 1: Wrap superscript expressions in <sup> tags
+    output_string = re.sub(r'\^\((.*?)\)|\*\*\((.*?)\)', 
+                           lambda m: f"<sup>{m.group(1) or m.group(2)}</sup>", 
+                           input_string)
+    # Step 2: Remove parentheses if the content is only digits
+    output_string = re.sub(r'<sup>\((\d+)\)</sup>', r'<sup>\1</sup>', output_string)
+    # Step 3: Remove parentheses if the content is a negative number (- followed by digits)
+    # Step 4: Remove parentheses if the superscript is a single letter
+    output_string = re.sub(r'<sup>\((\w)\)</sup>', r'<sup>\1</sup>', output_string)
+    output_string = re.sub(r'<sup>\(-(\d+)\)</sup>', r'<sup>-\1</sup>', output_string)
+    return output_string
 
 
 def convert_to_3d_layout(layout):
@@ -3089,6 +3137,7 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
      because one would not want to do that by mistake before simulation is performed.
      This function can also remove the 'equation' field from data series. However, that is not the default behavior
      because one would not want to do that by mistake before the equation is evaluated.
+     The "superscripts" option is not normally used until right before plotting because that will affect unit conversions.
      """
     if fields_to_update is None:  # should not initialize mutable objects in arguments line, so doing here.
         fields_to_update = ["title_field", "extraInformation", "nested_comments"]
@@ -3112,6 +3161,8 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
         fig_dict = remove_trace_style_field(fig_dict)
     if "3d_axes" in fields_to_update: #This is for 3D plots
         fig_dict = update_3d_axes(fig_dict)
+    if "superscripts" in fields_to_update:
+        fig_dict = update_superscripts_strings(fig_dict)
 
     return fig_dict
 

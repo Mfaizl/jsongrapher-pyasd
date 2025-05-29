@@ -430,7 +430,7 @@
         },
         "yaxis": {
             "title": {
-                "text": "Ea ((J)*(mol^(-1)))"
+                "text": "Ea (J*mol^(-1))"
             }
         },
         "zaxis": {

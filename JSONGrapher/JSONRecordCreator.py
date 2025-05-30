@@ -832,7 +832,7 @@ class JSONGrapherRecord:
         if equation_dict != None:
             self.fig_dict["data"][series_index]["equation"] = equation_dict
         data_series_dict = self.fig_dict["data"][series_index]
-        self.fig_dict = evaluate_equation_for_data_series_by_index(data_series_index=data_series_dict, verbose=verbose) #implied return.
+        self.fig_dict = evaluate_equation_for_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_dict, verbose=verbose) #implied return.
         return data_series_dict #Extra regular return
 
     #this function returns the current record.       
@@ -901,8 +901,35 @@ class JSONGrapherRecord:
     def import_from_dict(self, fig_dict):
         self.fig_dict = fig_dict
     
-    def import_from_file(self, json_filename_or_object):
-        self.import_from_json(json_filename_or_object)
+    def import_from_file(self, record_filename_or_object):
+        """
+        Determine the type of file or data and call the appropriate import function.
+
+        Args:
+            record_filename_or_object (str or dict): Filename of the CSV/TSV/JSON file or a dictionary object.
+
+        Returns:
+            dict: Processed JSON data.
+        """
+        import os  # Moved inside the function
+
+        # If the input is a dictionary, process it as JSON
+        if isinstance(record_filename_or_object, dict):
+            result = self.import_from_json(record_filename_or_object)
+        else:
+            # Determine file extension
+            file_extension = os.path.splitext(record_filename_or_object)[1].lower()
+
+            if file_extension == ".csv":
+                result = self.import_from_csv(record_filename_or_object, delimiter=",")
+            elif file_extension == ".tsv":
+                result = self.import_from_csv(record_filename_or_object, delimiter="\t")
+            elif file_extension == ".json":
+                result = self.import_from_json(record_filename_or_object)
+            else:
+                raise ValueError("Unsupported file type. Please provide a CSV, TSV, or JSON file.")
+
+        return result
 
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
@@ -927,6 +954,63 @@ class JSONGrapherRecord:
         else:
             self.fig_dict = json_filename_or_object
             return self.fig_dict
+
+    def import_from_csv(self, filename, delimiter=","):
+        """
+        Convert CSV file content into a JSON structure for Plotly.
+
+        Args:
+            filename (str): Path to the CSV file.
+            delimiter (str, optional): Delimiter used in CSV. Default is ",".
+                                    Use "\\t" for a tab-delimited file.
+
+        Returns:
+            dict: JSON representation of the CSV data.
+        """
+        import os  
+        # Modify the filename based on the delimiter and existing extension
+        file_extension = os.path.splitext(filename)[1]
+        if delimiter == "," and not file_extension:  # No extension present
+            filename += ".csv"
+        elif delimiter == "\t" and not file_extension:  # No extension present
+            filename += ".tsv"
+        with open(filename, "r", encoding="utf-8") as file:
+            file_content = file.read().strip()
+        # Separate rows
+        arr = file_content.split("\n")
+        # Count number of columns
+        number_of_columns = len(arr[5].split(delimiter))
+        # Extract config information
+        comments = arr[0].split(delimiter)[0].split(":")[1].strip()
+        datatype = arr[1].split(delimiter)[0].split(":")[1].strip()
+        chart_label = arr[2].split(delimiter)[0].split(":")[1].strip()
+        x_label = arr[3].split(delimiter)[0].split(":")[1].strip()
+        y_label = arr[4].split(delimiter)[0].split(":")[1].strip()
+        # Extract series names
+        series_names_array = [
+            n.strip()
+            for n in arr[5].split(":")[1].split('"')[0].split(delimiter)
+            if n.strip()
+        ]
+        # Extract data
+        data = [[float(str_val) for str_val in row.split(delimiter)] for row in arr[8:]]
+        self.fig_dict["comments"] = comments
+        self.fig_dict["datatype"] = datatype
+        self.fig_dict["layout"]["title"] = {"text": chart_label}
+        self.fig_dict["layout"]["xaxis"]["title"] = {"text": x_label}
+        self.fig_dict["layout"]["yaxis"]["title"] = {"text": y_label}
+        # Create series datasets
+        new_data = []
+        for index, series_name in enumerate(series_names_array):
+            data_series_dict = {}
+            data_series_dict["name"] = series_name
+            data_series_dict["x"] = [row[0] for row in data]
+            data_series_dict["y"] = [row[index + 1] for row in data]
+            data_series_dict["uid"] = str(index)
+            new_data.append(data_series_dict)
+        self.fig_dict["data"] = new_data
+        self.fig_dict = self.fig_dict
+        return self.fig_dict 
 
     def set_datatype(self, datatype):
         """

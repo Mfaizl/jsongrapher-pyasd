@@ -1,7 +1,7 @@
 import JSONGrapher 
 
 
-##STEP 1:  Launch JSONGrapher with a single line!
+
 final_plots_record_list = JSONGrapher.launch()
 
 
@@ -10,7 +10,8 @@ final_plots_record_list = JSONGrapher.launch()
 
 #The rest of this file is simply a suggested order and also demonstrates merging records!
 
-##STEP 2: Try dragging in UAN_DTA_8.json and UAN_DTA_6.json to see two graphs plotted together.
+##STEP 1: Try dragging in La_Perovskites_Combined.json to see a series with several data_series in it.
+##STEP 2: Click "Clear Files List", try dragging in UAN_DTA_8.json and UAN_DTA_6.json to see two records plotted together.
 
 ##STEP 3: Click "Clear Files List", then drag in O_OH_Scaling.json to see a fancy graph.
 ##STEP 4: Click "Clear Files List", then drag in SrTiO3_rainbow.json to see a fancy graph.

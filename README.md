@@ -1,7 +1,6 @@
 # JSONGrapher (python)
-This is the python version of JSONGrapher with JSONRecordCreator. This package is for plotting JSON records with drag and drop and has tools for creating the JSON records.
-
-The software will automatically plot multiple records together, for comparison, and will automaticlaly converting units between records as needed to plot them for comparison (like kg/s and g/s).
+JSONGrapher creates plots by drag-and-drop of JSON records. Tools are included for creating the JSON records.
+JSONGrapher automatically plots multiple records together, for comparison, and will automaticlaly convert units between records to plot them for comparison. For example, if one record is in kg/s and another in g/s, JSONGrapher will do the conversion automatically to plot both records together for comparison.
 
 To use python JSONGrapher, first install it using conda or pip:<br>
 `pip install JSONGrapher[COMPLETE]` or `conda install conda-forge::jsongrapher` <br>

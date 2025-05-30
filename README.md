@@ -1,18 +1,17 @@
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/jsongrapher/badges/version.svg)](https://anaconda.org/conda-forge/jsongrapher) [![Anaconda-Server Badge](https://badge.fury.io/py/jsongrapher.svg)](https://badge.fury.io/py/jsongrapher)
 
 # JSONGrapher (python)
-Create plots just by drag-and-drop of JSON records. Share the json files for easy plotting by others. JSONGrapher automatically plots multiple records together, for comparison, and will automaticlaly convert units between records to plot the data sets together. For example, if one record is in kg/s and another in g/s, JSONGrapher will do the conversion automatically to plot both records together for comparison. Tools and examples are included for how to create JSON records.
+Create interactive plots just by drag-and-drop of JSON records. Share the json files for easy plotting by others. JSONGrapher automatically plots multiple records together, for comparison, and will automaticlaly convert units between records to plot the data sets together. For example, if one record is in kg/s and another in g/s, JSONGrapher will do the conversion automatically to plot both records together for comparison. Tools and examples are included for how to create JSON records.
 
 To use python JSONGrapher, first install it using conda or pip:<br>
 `pip install JSONGrapher[COMPLETE]` or `conda install conda-forge::jsongrapher` <br>
 Alternatively, you can download the directory directly.<br> 
 
 ## **0\. Plotting a JSON Record**
-It's as simple as one line! Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot!
-Below shows several plot types for 2D and 3D plots, followed by a simple example of how to use python JSONGrapher to create your own records.
+To create an interactive plot, you just need one line of code! Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot!
+Below are example 2D and 3D plots. Further below shows how easy it is to create your own json records.
 <pre>
-import JSONGrapher 
-JSONGrapher.launch()
+import JSONGrapher; JSONGrapher.launch()
 </pre>
 
 [![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/JSONGrapher/JSONGrapherWindowShortened.png) [![JSONGRapher plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/UAN_DTA_image.png)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/UAN_DTA_image.png)

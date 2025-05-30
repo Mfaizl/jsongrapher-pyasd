@@ -99,3 +99,14 @@ You can also see more examples: https://github.com/AdityaSavara/jsongrapher-py/t
 
 Additionally, json records you send to others can be plotted by them at www.jsongrapher.com
 This 'see the plot using a browser' capability is intended to facilitate including JSONGrapher records in supporting information of scientific publications.
+
+
+## **Contributing to JSONGrapher, Feature Suggestions, and Reporting Issues**
+
+These interactions should be through github at https://github.com/AdityaSavara/jsongrapher-py
+
+To contribute to JSONGrapher, make a pull request with sufficient details about what issue you are trying to solve, and adequate commenting in your code to follow the logic. After that, be prepared for further communication if needed.
+
+To suggest features, create a new issue under the issues tab.
+
+To report issues, create a new issue under the issues tab.

@@ -1,3 +1,5 @@
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/jsongrapher/badges/version.svg)](https://anaconda.org/conda-forge/jsongrapher) [![Anaconda-Server Badge](https://badge.fury.io/py/jsongrapher.svg)](https://badge.fury.io/py/jsongrapher)
+
 # JSONGrapher (python)
 JSONGrapher creates plots by drag-and-drop of JSON records. Tools are included for creating the JSON records.
 JSONGrapher automatically plots multiple records together, for comparison, and will automaticlaly convert units between records to plot them for comparison. For example, if one record is in kg/s and another in g/s, JSONGrapher will do the conversion automatically to plot both records together for comparison.

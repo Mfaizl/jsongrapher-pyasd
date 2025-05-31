@@ -2200,6 +2200,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
 
     #If a person adds "__colorscale" to the end of a trace_style, like "scatter_spline__rainbow" we will extract the colorscale and apply it to the plot.
     #This should be done before extracting the trace_style from the styles_available, because we need to split the string to break out the trace_style
+    #Also should be initialized before determining the second half of colorscale_structure checks (which occurs after the trace_style application), since it affects that logic.
     colorscale = "" #initializing variable.
     if isinstance(trace_style, str): #check if it is a string type.
         if "__" in trace_style:

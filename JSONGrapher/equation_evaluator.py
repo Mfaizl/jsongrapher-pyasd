@@ -446,6 +446,8 @@ def split_at_first_delimiter(string, delimter=" "):
 #I would still expect the optimzed code to be an order of magnitude faster. So it may be worth finding the slow steps.
 #One possibility might be to use "re.compile()"
 def evaluate_equation_dict(equation_dict, verbose=False):
+    import copy
+    equation_dict = copy.deepcopy(equation_dict)  # Create a deep copy to prevent unintended modifications
     #First a block of code to extract the x_points needed
     # Extract each dictionary key as a local variable
     equation_string = equation_dict['equation_string']
@@ -479,21 +481,28 @@ def evaluate_equation_dict(equation_dict, verbose=False):
 
     #Start of block to check for any custom units and add them to the ureg if necessary.
     custom_units_list = []
+    #helper function to clean custom units brackets. In future, could be made mroe general rather than hardcoded.
+    def clean_brackets(string):
+        return string.replace("<", "").replace(">", "")
+
     for constant_entry_key in independent_variables_dict.keys():
         independent_variables_string = independent_variables_dict[constant_entry_key]
         custom_units_extracted = extract_tagged_strings(independent_variables_string)
+        independent_variables_dict[constant_entry_key] = clean_brackets(independent_variables_dict[constant_entry_key])
         for custom_unit in custom_units_extracted: #this will be skipped if the list is empty.
             ureg.define(f"{custom_unit} = [custom]") #use "[custom]" to create a custom unit in the pint module.
         custom_units_list.extend(custom_units_extracted)
       
     #now also check for the x_variable_extracted_dict 
     custom_units_extracted = extract_tagged_strings(x_variable_extracted_dict["units"])
+    x_variable_extracted_dict["units"] = clean_brackets(x_variable_extracted_dict["units"])
     for custom_unit in custom_units_extracted: #this will be skipped if the list is empty.
         ureg.define(f"{custom_unit} = [custom]") #use "[custom]" to create a custom unit in the pint module.
     custom_units_list.extend(custom_units_extracted)
 
     #now also check for the y_variable_extracted_dict (technically not needed)
     custom_units_extracted = extract_tagged_strings(y_variable_extracted_dict["units"])
+    y_variable_extracted_dict["units"] = clean_brackets(y_variable_extracted_dict["units"])
     for custom_unit in custom_units_extracted: #this will be skipped if the list is empty.
         ureg.define(f"{custom_unit} = [custom]") #use "[custom]" to create a custom unit in the pint module.
     custom_units_list.extend(custom_units_extracted)
@@ -501,12 +510,14 @@ def evaluate_equation_dict(equation_dict, verbose=False):
     if graphical_dimensionality == 3:
         #now also check for the z_variable_extracted_dict (technically not needed)
         custom_units_extracted = extract_tagged_strings(z_variable_extracted_dict["units"])
+        z_variable_extracted_dict["units"] = clean_brackets(z_variable_extracted_dict["units"])
         for custom_unit in custom_units_extracted: #this will be skipped if the list is empty.
             ureg.define(f"{custom_unit} = [custom]") #use "[custom]" to create a custom unit in the pint module.
         custom_units_list.extend(custom_units_extracted)
 
     #now also check for the equation_string
     custom_units_extracted = extract_tagged_strings(equation_string)
+    equation_string = clean_brackets(equation_string)
     for custom_unit in custom_units_extracted: #this will be skipped if the list is empty.
         ureg.define(f"{custom_unit} = [custom]") #use "[custom]" to create a custom unit in the pint module.
     custom_units_list.extend(custom_units_extracted)        

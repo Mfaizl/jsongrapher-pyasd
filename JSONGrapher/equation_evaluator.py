@@ -481,7 +481,7 @@ def evaluate_equation_dict(equation_dict, verbose=False):
 
     #Start of block to check for any custom units and add them to the ureg if necessary.
     custom_units_list = []
-    #helper function to clean custom units brackets. In future, could be made mroe general rather than hardcoded.
+    #helper function to clean custom units brackets. In future, could be made more general rather than hardcoded as angle brackets.
     def clean_brackets(string):
         return string.replace("<", "").replace(">", "")
 
@@ -522,8 +522,12 @@ def evaluate_equation_dict(equation_dict, verbose=False):
         ureg.define(f"{custom_unit} = [custom]") #use "[custom]" to create a custom unit in the pint module.
     custom_units_list.extend(custom_units_extracted)        
     
+    # Remove duplicates by converting to a set and back to a list.
+    custom_units_list = list(set(custom_units_list))
     #now sort from longest to shortest, since we will have to put them back in that way later.
+    # Sort the unique units by length in descending order
     custom_units_list = sorted(custom_units_list, key=len, reverse=True)
+
     #End of block to check for any custom units and add them to the ureg if necessary.
 
     #For graphical_dimensionality of 2, The full list of independent variables includes the x_variable and the independent_variables. 

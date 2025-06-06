@@ -5,7 +5,7 @@
         {
             "uid": "",
             "name": "Arrhenius Example 3D plot",
-            "trace_style": "none",
+            "trace_style": "scatter3d__Rainbow_r",
             "x": [
                 200.0,
                 200.0,
@@ -417,7 +417,6 @@
                     47777.77777777778,
                     50000.0
                 ],
-                "colorscale": "rainbow_r",
                 "showscale": true
             }
         }

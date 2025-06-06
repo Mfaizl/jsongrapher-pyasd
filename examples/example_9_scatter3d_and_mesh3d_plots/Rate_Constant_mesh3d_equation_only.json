@@ -5,7 +5,7 @@
         {
             "uid": "",
             "name": "Arrhenius Example 3D plot",
-            "trace_style": "",
+            "trace_style": "mesh3d",
             "x": [],
             "y": [],
             "equation": {

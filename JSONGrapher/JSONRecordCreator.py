@@ -2135,14 +2135,14 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
         data_series["trace_style"] = trace_style_to_apply
     elif str(trace_style_to_apply) == str(''): #If we received an empty string for the trace_style_to apply (default JSONGrapher flow), we'll check in the data_series object.   
         #first see if there is a trace_style in the data_series.
-        trace_style = data_series.get("trace_style", "")
+        trace_style_to_apply = data_series.get("trace_style", "")
         #If it's "none", then we'll return the data series unchanged.
         #We consider it that for every trace_styles_collection, that "none" means to make no change.
-        if str(trace_style).lower() == "none":
+        if str(trace_style_to_apply).lower() == "none":
             return data_series
         #if we find a dictionary, we will set the trace_style_to_apply to that, to ensure we skip other string checks to use the dictionary.
-        if isinstance(trace_style,dict):
-            trace_style_to_apply = trace_style
+        if isinstance(trace_style_to_apply,dict):
+            trace_style_to_apply = trace_style_to_apply
     #if the trace_style_to_apply is a string and we have not received a trace_styles collection, then we have nothing
     #to use, so will return the data_series unchanged.
     if type(trace_style_to_apply) == type("string"):
@@ -2155,6 +2155,16 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     if type(trace_style_to_apply) == type("string"):
         if (trace_style_to_apply.lower() == "nature") or (trace_style_to_apply.lower() == "science"):
             trace_style_to_apply = "default"
+    #Because the 3D traces will not plot correctly unless recognized,
+    #we have a hardcoded case for the situation that 3D dataset is received without plot style.
+    if trace_styles_collection == "default":
+        if trace_style_to_apply == "":
+            if data_series.get("z", '') != '':
+                trace_style_to_apply = "scatter3d"
+                uid = data_series.get('uid', '')
+                name = data_series.get("name", '')
+                print("Warning: A dataseries was found with no trace_style but with a 'z' field. " , "uid: " , uid ,  " . " + "name:",  name ,  " . The trace style for this dataseries is being set to scatter3d.")
+
 
     #at this stage, should remove any existing formatting before applying new formatting.
     data_series = remove_trace_style_from_single_data_series(data_series)
@@ -2194,7 +2204,6 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
         trace_style = data_series.get("trace_style", "")
     else:
         trace_style = trace_style_to_apply
-
     if trace_style == "": #if the trace style is an empty string....
         trace_style = list(styles_collection_dict.keys())[0] #take the first trace_style name in the style_dict.  In python 3.7 and later dictionary keys preserve ordering.
 

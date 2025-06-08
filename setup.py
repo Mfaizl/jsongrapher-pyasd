@@ -20,7 +20,7 @@ URL = 'https://github.com/AdityaSavara/jsongrapher-py'
 EMAIL = 'AdityaSavara2008@u.northwestern.edu'  
 AUTHOR = 'Aditya Savara'
 REQUIRES_PYTHON = '>=3.0.0'
-VERSION = '4.0'
+VERSION = '4.1'
 LICENSE = 'BSD-3-Clause'
 
 # What packages are required for this module to be executed?
@@ -35,7 +35,7 @@ EXTRAS = {
 
 #To make sure the license etc. is included, I added the DATA_FILES object based on https://stackoverflow.com/questions/9977889/how-to-include-license-file-in-setup-py-script
 DATA_FILES = [
-       ("", ["./README.md", "LICENSE"]),
+       ("", ["./README.md", "LICENSE.txt"]),
        ]
 
 # The rest you shouldn't have to touch too much :)

@@ -5,17 +5,13 @@
         {
             "uid": "",
             "name": "Arrhenius Example 3D plot",
-            "trace_style": "mesh3d",
-            "x": [],
-            "y": [],
+            "trace_style": "scatter3d",
             "equation": {
                 "equation_string": "k = A*(e**((-Ea)/(R*T)))",
-                "graphical_dimensionality": 3,
                 "x_variable": "T (K)",
-                "y_variable": "Ea (J*mol^(-1))",
-                "z_variable": "k (s**(-1))",
+                "y_variable": "Ea ((J)*(mol^(-1)))",
                 "constants": {
-                    "R": "8.314 (J*mol^(-1)*K^(-1))",
+                    "R": "8.314 (J)*(mol^(-1))*(K^(-1))",
                     "A": "1*10^13 (s^-1)",
                     "e": "2.71828"
                 },
@@ -25,16 +21,23 @@
                     500
                 ],
                 "x_range_limits": [],
+                "x_points_specified": [],
+                "points_spacing": "Linear",
+                "reverse_scaling": false,
+                "graphical_dimensionality": 3,
+                "z_variable": "k (s**(-1))",
                 "y_range_default": [
                     30000,
                     50000
                 ],
                 "y_range_limits": [],
-                "x_points_specified": [],
-                "points_spacing": "Linear",
-                "reverse_scaling": false,
-                "verbose": true
-            }
+                "verbose": true,
+                "x_units": "(K)",
+                "y_units": "((J)*(mol^(-1)))"
+            },
+            "type": "scatter3d",
+            "colorscale": "rainbow_r",
+            "showscale": true
         }
     ],
     "layout": {
@@ -48,7 +51,7 @@
         },
         "yaxis": {
             "title": {
-                "text": "Ea (J*mol^(-1))"
+                "text": "Ea ((J)*(mol^(-1)))"
             }
         },
         "zaxis": {

@@ -1,6 +1,6 @@
 {
     "comments": "",
-    "datatype": "",
+    "datatype": "Arrhenius_plot_3D",
     "data": [
         {
             "uid": "",
@@ -312,7 +312,6 @@
                 101979538.165506,
                 59751781.2789155
             ],
-            "type": "mesh3d",
             "max_bubble_size": 150
         }
     ],

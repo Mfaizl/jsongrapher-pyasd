@@ -68,7 +68,8 @@ Record_3D = JSONRecordCreator.create_new_JSONGrapherRecord()
 #This adjusts the font sizes to be more suitable for a 3D plot. This could also be done right before plotting. 
 Record_3D.set_layout_style("default3d") # <-- this line is important.
 
-#As usual, it is a good practice to first set our graph title and axes labels.
+#As usual, it is a good practice to first set our datatype, graph title and axes labels.
+Record_3D.set_datatype("Arrhenius_plot_3D")
 Record_3D.set_graph_title("Typical Temperature Behavior for a Rate Constant")
 Record_3D.set_x_axis_label_including_units(example_equation_dict['x_variable'])
 Record_3D.set_y_axis_label_including_units(example_equation_dict['y_variable'])

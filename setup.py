@@ -35,7 +35,7 @@ EXTRAS = {
 
 #To make sure the license etc. is included, I added the DATA_FILES object based on https://stackoverflow.com/questions/9977889/how-to-include-license-file-in-setup-py-script
 DATA_FILES = [
-       ("", ["./README.md", "LICENSE"]),
+       ("", ["./README.md", "LICENSE.txt"]),
        ]
 
 # The rest you shouldn't have to touch too much :)

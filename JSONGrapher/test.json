@@ -1,11 +1,12 @@
 {
     "comments": "Tree Growth Data collected from the US National Arboretum",
     "datatype": "Tree_Growth_Curve",
+    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 4.1",
     "data": [
         {
             "uid": "123",
             "name": "Series A",
-            "trace_type": "spline",
+            "trace_style": "spline",
             "x": [
                 1,
                 2,

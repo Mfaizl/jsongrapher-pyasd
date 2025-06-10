@@ -12,6 +12,8 @@ import os
 import sys
 from shutil import rmtree
 from setuptools import find_packages, setup, Command
+sys.path.append(os.path.join(os.path.dirname(__file__), 'JSONGrapher'))
+import version
 
 # Package meta-data.
 NAME = 'JSONGrapher'
@@ -20,7 +22,7 @@ URL = 'https://github.com/AdityaSavara/jsongrapher-py'
 EMAIL = 'AdityaSavara2008@u.northwestern.edu'  
 AUTHOR = 'Aditya Savara'
 REQUIRES_PYTHON = '>=3.0.0'
-VERSION = '4.1'
+VERSION = version.__version__
 LICENSE = 'BSD-3-Clause'
 
 # What packages are required for this module to be executed?

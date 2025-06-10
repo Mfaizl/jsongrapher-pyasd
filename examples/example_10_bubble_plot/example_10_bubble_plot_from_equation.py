@@ -29,7 +29,8 @@ example_equation_dict["verbose"] = True
 Record_for_bubble_plot = JSONRecordCreator.create_new_JSONGrapherRecord()
 #We'll keep the layout as the default, not default3d since the 3rd dimension doesn't come out of the page.
 Record_for_bubble_plot.set_layout_style("default")
-#As usual, it is a good practice to first set our graph title and axes labels.
+#As usual, it is a good practice to first set our datatype, graph title, and axes labels.
+Record_for_bubble_plot.set_datatype("Arrhenius_plot_3D")
 Record_for_bubble_plot.set_graph_title("Bubble plot for Ea vs Temperature Behavior for a Rate Constant")
 Record_for_bubble_plot.set_x_axis_label_including_units(example_equation_dict['x_variable'])
 Record_for_bubble_plot.set_y_axis_label_including_units(example_equation_dict['y_variable'])

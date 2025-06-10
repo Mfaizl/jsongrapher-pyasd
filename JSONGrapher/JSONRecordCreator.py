@@ -608,8 +608,8 @@ class JSONGrapherRecord:
 
         self.fig_dict.update( {
             "comments": comments,  # Top-level comments
-            "datatype": datatype,  # Top-level datatype (datatype)
             "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version " + JSONGrapher.version.__version__,
+            "datatype": datatype,  # Top-level datatype (datatype)
             "data": data_objects_list if data_objects_list else [],  # Data series list
             "layout": layout if layout else {
                 "title": {"text": graph_title},

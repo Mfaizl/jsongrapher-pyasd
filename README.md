@@ -4,7 +4,7 @@
 
 Imagine a world where a person can simply drag a datafile into a graphing utility and a plot will be made -- including scientific units -- and where data from data other sources (with other units) can then be dragged in for comparison, with all data plotted on an interactive graph. Imagine that the units of all of these datasets will be converted automatically, as needed, for the comparison.
 
-Create interactive plots just by drag-and-drop of JSON records. Share the json files for easy plotting by others. JSONGrapher automatically plots multiple records together, for comparison, and will automaticlaly convert units between records to plot the data sets together. For example, if one record is in kg/s and another in g/s, JSONGrapher will do the conversion automatically to plot both records together for comparison. Tools and examples are included for how to create JSON records.
+Create interactive plots just by drag-and-drop of JSON records. Share the json files for easy plotting by others. JSONGrapher will automatically convert units between records to plot the data sets together, to enable comparisons. For example, if one record is in kg/s and another in g/s, JSONGrapher will do the conversion automatically to plot both records together, for comparison. Tools and examples are included for how to create JSON records.
 
 To use python JSONGrapher, first install it using conda or pip:<br>
 `pip install JSONGrapher[COMPLETE]` or `conda install conda-forge::jsongrapher` <br>

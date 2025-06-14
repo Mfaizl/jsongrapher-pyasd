@@ -11,10 +11,12 @@ To use python JSONGrapher, first install it using conda or pip:<br>
 Alternatively, you can download the directory directly.<br> 
 
 ## **0\. Plotting a JSON Record**
-To create an interactive plot, you just need one line of code! Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot!
+To create an interactive plot, you just need one line of code! <br>
+Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot!<br>
 Below are example 2D and 3D plots. Further below shows how easy it is to create your own json records.
 <pre>
 import JSONGrapher; JSONGrapher.launch()
+# Then just drag records into the window!
 </pre>
 
 <a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif" width="20%"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 

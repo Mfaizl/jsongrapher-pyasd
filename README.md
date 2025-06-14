@@ -26,7 +26,7 @@ import JSONGrapher; JSONGrapher.launch()
 <a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_bubble.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_bubble.gif" width="35%"></a>&nbsp;&nbsp;&nbsp;
 <a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif" width="30%"></a>
 <br>
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/O_OH_Scaling.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/O_OH_Scaling.gif" width="60%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/O_OH_Scaling.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/O_OH_Scaling.gif" width="50%"></a>
 
 
 ## **1\. Preparing to Create a Record**

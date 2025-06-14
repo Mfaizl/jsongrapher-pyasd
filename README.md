@@ -11,20 +11,24 @@ To use python JSONGrapher, first install it using conda or pip:<br>
 Alternatively, you can download the directory directly.<br> 
 
 ## **0\. Plotting a JSON Record**
-To create an interactive plot, you just need one line of code! Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot!
-Below are example 2D and 3D plots. Further below shows how easy it is to create your own json records.
+To create an interactive plot, you just need one line of code! <br>
+Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot! Below are example 2D and 3D plots. <br>
+Further below shows how easy it is to create your own json records.
 <pre>
 import JSONGrapher; JSONGrapher.launch()
+# Then just drag records into the window!
 </pre>
 
-[![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif) [![JSONGRapher plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif)
-
-[![rainbow plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif)
-[![mesh3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif)
-[![scatter3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_Scatter3d_example10.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_Scatter3d_example10.gif)
-[![bubble plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_bubble.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_bubble.gif)
-
-
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif" width="20%"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif" width="25%"></a>
+<br>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif" width="35%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_Scatter3d_example10.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_Scatter3d_example10.gif" width="35%"></a>
+<br>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_bubble.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_bubble.gif" width="35%"></a>&nbsp;&nbsp;&nbsp;
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif" width="30%"></a>
+<br><br>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/O_OH_Scaling.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/O_OH_Scaling.gif" width="50%"></a>
 
 
 ## **1\. Preparing to Create a Record**
@@ -33,16 +37,16 @@ The remainder of this landing page follows a json record tutorial [example file]
 
 Let's create an example where we plot the height of a pear tree over several years. 
 <pre>
+Record = JSONRecordCreator.create_new_JSONGrapherRecord()
 x_label_including_units = "Time (years)"
 y_label_including_units = "Height (m)"
 time_in_years = [0, 1, 2, 3, 4]
 tree_heights = [0, 0.42, 0.86, 1.19, 1.45]
 </pre>
 
-## **2\. Creating and Populating a New JSONGrapher Record**
+## **2\. Populating the New JSONGrapher Record**
 
 <pre>
-Record = JSONRecordCreator.create_new_JSONGrapherRecord()
 Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
 Record.set_x_axis_label_including_units(x_label_including_units)

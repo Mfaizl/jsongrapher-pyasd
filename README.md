@@ -2,7 +2,7 @@
 
 # JSONGrapher (python)
 
-Imagine a world where a person can simply drag a datafile into a graphing utility and a plot will be made -- including axes with units. Imagine that data from data other sources (with other units) can then be dragged in for comparison, with all data plotted on an interactive graph. Imagine that the units of all of these datasets will be converted automatically, as needed, for the comparison.
+Imagine a world where a person can simply drag a data file into a graphing utility and a plot will be made -- including axes with units. Imagine that data from data other sources (with other units) can then be dragged in for comparison, with all data plotted on an interactive graph. Imagine that the units of all of these datasets will be converted automatically, as needed, for the comparison.
 
 Create interactive plots just by drag-and-drop of JSON records. Share the json files for easy plotting by others. JSONGrapher will automatically convert units between records to plot the data sets together, to enable comparisons. For example, if one record is in kg/s and another in g/s, JSONGrapher will do the conversion automatically to plot both records together, for comparison. Tools and examples are included for how to create JSON records.
 

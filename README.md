@@ -12,8 +12,8 @@ Alternatively, you can download the directory directly.<br>
 
 ## **0\. Plotting a JSON Record**
 To create an interactive plot, you just need one line of code! <br>
-Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot!<br>
-Below are example 2D and 3D plots. Further below shows how easy it is to create your own json records.
+Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot! Below are example 2D and 3D plots. <br>
+Further below shows how easy it is to create your own json records.
 <pre>
 import JSONGrapher; JSONGrapher.launch()
 # Then just drag records into the window!

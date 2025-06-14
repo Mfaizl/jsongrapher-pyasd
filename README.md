@@ -37,16 +37,16 @@ The remainder of this landing page follows a json record tutorial [example file]
 
 Let's create an example where we plot the height of a pear tree over several years. 
 <pre>
+Record = JSONRecordCreator.create_new_JSONGrapherRecord()
 x_label_including_units = "Time (years)"
 y_label_including_units = "Height (m)"
 time_in_years = [0, 1, 2, 3, 4]
 tree_heights = [0, 0.42, 0.86, 1.19, 1.45]
 </pre>
 
-## **2\. Creating and Populating a New JSONGrapher Record**
+## **2\. Populating the New JSONGrapher Record**
 
 <pre>
-Record = JSONRecordCreator.create_new_JSONGrapherRecord()
 Record.set_comments("Tree Growth Data collected from the US National Arboretum")
 Record.set_datatype("Tree_Growth_Curve")
 Record.set_x_axis_label_including_units(x_label_including_units)

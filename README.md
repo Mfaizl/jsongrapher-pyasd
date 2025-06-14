@@ -88,7 +88,7 @@ JSONGrapher Record exported to, ./ExampleFromTutorial.json
 
 ## **4\. Plotting to Inspect**
 
-We can create an interactive graph with python plotly, which does have a save to file option:
+We can plot the data with plotly, interact with the graph, and save as a png file.
 <pre>
 Record.plot_with_plotly() #Try hovering your mouse over points after this command!
 </pre>

@@ -17,7 +17,9 @@ Below are example 2D and 3D plots. Further below shows how easy it is to create 
 import JSONGrapher; JSONGrapher.launch()
 </pre>
 
-[![JSONGRapher window](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif) [![JSONGRapher plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif)
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif" width="40%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif" width="40%"></a>
+
 
 [![rainbow plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif)
 [![mesh3d plot](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif)](https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif)

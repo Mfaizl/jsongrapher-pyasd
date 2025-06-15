@@ -40,7 +40,7 @@ Record_for_bubble_plot.set_z_axis_label_including_units(example_equation_dict['z
 #We are setting the trace_style as bubble while adding the equation data series.
 #It is important to either set the trace_style as bubble *during* the addition, or to set evaluate_equations_as_added as False
 #Because if JSONGrapher evaluates a z_point porducing equation without knowing you want a bubble plot, JSONgrapher will automatically set the plot type to a 3D plot.
-Record_for_bubble_plot.add_data_series_as_equation(series_name="Arrhenius Example 3D plot",equation_dict=example_equation_dict, trace_style="bubble", evaluate_equations_as_added=True)
+Record_for_bubble_plot.add_data_series_as_equation(series_name="Arrhenius Example Bubble plot", graphical_dimensionality=3, equation_dict=example_equation_dict, trace_style="bubble", evaluate_equations_as_added=True)
 #We will set a max_bubble_size. This is optional, but good to play with for a bubble plot.
 Record_for_bubble_plot["data"][0]["max_bubble_size"] = 150 
 #Below is a syntax we could have used if we wanted to set the trace_style after addition.
@@ -58,7 +58,7 @@ Record_for_bubble_plot.plot(evaluate_all_equations=False)
 #We can manually change to taking the log of the rate constant. Since this is a bubble size, we do not have to be as worried about the units.
 Record_for_bubble_plot.set_graph_title("Bubble plot for Ea vs Temperature for the Log of a Rate Constant")
 import numpy as np
-log_of_k = np.log(Record_for_bubble_plot['data'][0]["z"])
+log_of_k = np.log(Record_for_bubble_plot['data'][0]["z"]) #This is natural log.
 #it turns out there is a negative value from the log of a small rate constant.
 #We can't ahve negative values in our bubble plot. We will replace that with a 0.001, though a 0 would also be okay.
 log_of_k[9] = 0.001
@@ -92,4 +92,10 @@ Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="de
 Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="none")
 Record_for_bubble_plot["data"][0]["marker"]["showscale"] = False
 Record_for_bubble_plot["data"][0]["marker"]["color"] = "blue"
+Record_for_bubble_plot.plot(evaluate_all_equations=False)
+
+#Now let's go back to the default trace_style and a use k for the bubble size again.
+Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="bubble")
+Record_for_bubble_plot["data"][0]["max_bubble_size"] = 150
+Record_for_bubble_plot["data"][0]["z"] = np.exp(Record_for_bubble_plot["data"][0]["z"])
 Record_for_bubble_plot.plot(evaluate_all_equations=False)

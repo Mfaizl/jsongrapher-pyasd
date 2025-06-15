@@ -1,11 +1,11 @@
 {
     "comments": "",
-    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 3.0",
+    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 4.1",
     "datatype": "Arrhenius_plot_3D",
     "data": [
         {
             "uid": "",
-            "name": "Arrhenius Example 3D plot",
+            "name": "Arrhenius Example Bubble plot",
             "trace_style": "bubble",
             "x": [
                 200.0,

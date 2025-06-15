@@ -97,5 +97,5 @@ Record_for_bubble_plot.plot(evaluate_all_equations=False)
 #Now let's go back to the default trace_style and a use k for the bubble size again.
 Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="bubble")
 Record_for_bubble_plot["data"][0]["max_bubble_size"] = 150
-Record_for_bubble_plot["data"][0]["z"] = list(np.exp(Record_for_bubble_plot["data"][0]["z"]))
+Record_for_bubble_plot["data"][0]["z"] = np.exp(Record_for_bubble_plot["data"][0]["z"])
 Record_for_bubble_plot.plot(evaluate_all_equations=False)

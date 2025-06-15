@@ -3486,11 +3486,11 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
         data_dict_filled['equation'] = equation_dict_evaluated
         data_dict_filled['x_label'] = data_dict_filled['equation']['x_variable'] 
         data_dict_filled['y_label'] = data_dict_filled['equation']['y_variable'] 
-        data_dict_filled['x'] = equation_dict_evaluated['x_points']
-        data_dict_filled['y'] = equation_dict_evaluated['y_points']
+        data_dict_filled['x'] = list(equation_dict_evaluated['x_points'])
+        data_dict_filled['y'] = list(equation_dict_evaluated['y_points'])
         if graphical_dimensionality == 3:
             data_dict_filled['z_label'] = data_dict_filled['equation']['z_variable'] 
-            data_dict_filled['z'] = equation_dict_evaluated['z_points']
+            data_dict_filled['z'] = list(equation_dict_evaluated['z_points'])
         #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
         if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)) or ("z_label" in data_dict_filled):
             #first, get the units that are in the layout of fig_dict so we know what to convert to.
@@ -3559,10 +3559,10 @@ def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_
         # Use zip() when parallel_structure=True and lengths match
         for target_series, source_series in zip(target_data_series, source_data_series):
             if ("equation" in target_series) or ("simulate" in target_series):
-                target_series["x"] = source_series.get("x", [])  # Extract and apply "x" values
-                target_series["y"] = source_series.get("y", [])  # Extract and apply "y" values
+                target_series["x"] = list(source_series.get("x", []))  # Extract and apply "x" values
+                target_series["y"] = list(source_series.get("y", []))  # Extract and apply "y" values
                 if "z" in source_series:
-                    target_series["z"] = source_series.get("z", [])  # Extract and apply "z" values                    
+                    target_series["z"] = list(source_series.get("z", []))  # Extract and apply "z" values                    
     else:
         # Match by name when parallel_structure=False or lengths differ
         source_data_dict = {series["name"]: series for series in source_data_series if "name" in series}
@@ -3573,10 +3573,10 @@ def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_
                
                 if target_name in source_data_dict:
                     source_series = source_data_dict[target_name]
-                    target_series["x"] = source_series.get("x", [])  # Extract and apply "x" values
-                    target_series["y"] = source_series.get("y", [])  # Extract and apply "y" values
+                    target_series["x"] = list(source_series.get("x", []))  # Extract and apply "x" values
+                    target_series["y"] = list(source_series.get("y", []))  # Extract and apply "y" values
                     if "z" in source_series:
-                        target_series["z"] = source_series.get("z", [])  # Extract and apply "z" values                    
+                        target_series["z"] = list(source_series.get("z", []))  # Extract and apply "z" values                    
     return updated_fig_dict
 
 

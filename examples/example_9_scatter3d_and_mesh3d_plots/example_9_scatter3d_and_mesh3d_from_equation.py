@@ -31,7 +31,7 @@ equation_dict = {
 
 #Add the equation as a dataseries and plot.
 # By default, the equation will be evaluated when added, and also when plotted.
-Record.add_data_series_as_equation(series_name="Arrhenius Example 2D plot",equation_dict=equation_dict, trace_style = "spline")
+Record.add_data_series_as_equation(series_name="Arrhenius Example 2D plot", graphical_dimensionality=2, equation_dict=equation_dict, trace_style = "spline")
 Record.plot()
 
 ### Now, let's add a 3D equation using json_equationer ###
@@ -76,13 +76,13 @@ Record_3D.set_y_axis_label_including_units(example_equation_dict['y_variable'])
 Record_3D.set_z_axis_label_including_units(example_equation_dict['z_variable'])
 
 #let's temporarily add the equation series with the equation evaluate to false so that we can save a copy of the record before equation evaluation, with just the equation and no generated data.
-Record_3D.add_data_series_as_equation(series_name="Arrhenius Example 3D plot",equation_dict=example_equation_dict, evaluate_equations_as_added=False)
+Record_3D.add_data_series_as_equation(series_name="Arrhenius Example 3D plot", graphical_dimensionality=3, equation_dict=example_equation_dict, evaluate_equations_as_added=False)
 Record_3D.set_trace_style_one_data_series(0, "mesh3d")
 Record_3D.export_to_json_file("Rate_Constant_mesh3d_equation_only.json")
 Record_3D["data"].pop(0) #let's remove this data series. We'll add it again, evaluating the equations during addition, which is the default.
 
 #Now we'll proceed with a normal use case.
-Record_3D.add_data_series_as_equation(series_name="Arrhenius Example 3D plot",equation_dict=example_equation_dict, evaluate_equations_as_added=True)
+Record_3D.add_data_series_as_equation(series_name="Arrhenius Example 3D plot", graphical_dimensionality=3, equation_dict=example_equation_dict, evaluate_equations_as_added=True)
 Record_3D.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="mesh3d")
 #Now we don't need to evaluate the equations each time we plot the data.
 #Note that if we only evaluated the equations while plotting, we would

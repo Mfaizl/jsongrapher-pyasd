@@ -1939,6 +1939,7 @@ def apply_plot_style_to_plotly_dict(fig_dict, plot_style=None):
     if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
         if plot_style["layout_style"] == '': #in this case, we're going to use the default.
             plot_style["layout_style"] = 'default'
+            print("Warning: No layout_style provided and 'z' field found in first data series. For 'bubble' plots, it is recommended to set layout_style to 'default'. For 'mesh3d' graphs and 'scatter3d' graphs, it is recommended to set layout_style to 'default3d'. Set layout_style to 'none' or another layout_style to avoid this warning.")
         fig_dict = remove_layout_style_from_plotly_dict(fig_dict=fig_dict)
         fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=plot_style["layout_style"])
     #Code logic for trace_styles_collection style.

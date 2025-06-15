@@ -761,6 +761,7 @@ class JSONGrapherRecord:
         The equation will be a equation_dict of the json_equationer type
         """
         # series_name: Name of the data series.
+        # graphical_dimensionality is the number of geometric dimensions, so should be either 2 or 3.
         # x: List of x-axis values. Or similar structure.
         # y: List of y-axis values. Or similar structure.
         # equation_dict: This is the field for the equation_dict of json_equationer type

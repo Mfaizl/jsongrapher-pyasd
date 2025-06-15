@@ -1940,7 +1940,8 @@ def apply_plot_style_to_plotly_dict(fig_dict, plot_style=None):
     if str(plot_style["layout_style"]).lower() != 'none': #take no action if received "None" or NoneType
         if plot_style["layout_style"] == '': #in this case, we're going to use the default.
             plot_style["layout_style"] = 'default'
-            print("Warning: No layout_style provided and 'z' field found in first data series. For 'bubble' plots, it is recommended to set layout_style to 'default'. For 'mesh3d' graphs and 'scatter3d' graphs, it is recommended to set layout_style to 'default3d'. Set layout_style to 'none' or another layout_style to avoid this warning.")
+            if "z" in fig_dict["data"][0]:
+                print("Warning: No layout_style provided and 'z' field found in first data series. For 'bubble2d' plots, it is recommended to set layout_style to 'default'. For 'mesh3d' graphs and 'scatter3d' graphs, it is recommended to set layout_style to 'default3d'. Set layout_style to 'none' or another layout_style to avoid this warning.")
         fig_dict = remove_layout_style_from_plotly_dict(fig_dict=fig_dict)
         fig_dict = apply_layout_style_to_plotly_dict(fig_dict=fig_dict, layout_style_to_apply=plot_style["layout_style"])
     #Code logic for trace_styles_collection style.
@@ -2260,7 +2261,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     #Block of code to clean color values for 3D plots and 2D plots. It can't be just from the style dictionary because we need to point to data.
     def clean_color_values(list_of_values, variable_string_for_warning):
         if None in list_of_values:
-            print("Warning: A colorscale based on" + variable_string_for_warning + "was requested. None values were found. They are being replaced with 0 values. It is recommended to provide data without None values.")
+            print("Warning: A colorscale based on " + variable_string_for_warning + " was requested. None values were found. They are being replaced with 0 values. It is recommended to provide data without None values.")
             color_values = [0 if value is None else value for value in list_of_values]
         else:
             color_values = list_of_values
@@ -2338,7 +2339,7 @@ def prepare_bubble_sizes(data_series):
     if "max_bubble_size" in data_series:
         max_bubble_size = data_series["max_bubble_size"]
     else:
-        max_bubble_size = 10       
+        max_bubble_size = 100       
     scaled_sizes = normalized_sizes*max_bubble_size
     data_series["marker"]["size"] = scaled_sizes.tolist() #from numpy array back to list.
     

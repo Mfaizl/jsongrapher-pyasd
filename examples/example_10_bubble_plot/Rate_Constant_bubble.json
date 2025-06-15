@@ -5,7 +5,7 @@
     "data": [
         {
             "uid": "",
-            "name": "Arrhenius Example 3D plot",
+            "name": "Arrhenius Example Bubble plot",
             "trace_style": "bubble",
             "x": [
                 200.0,

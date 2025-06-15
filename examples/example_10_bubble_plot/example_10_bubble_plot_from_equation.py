@@ -58,7 +58,7 @@ Record_for_bubble_plot.plot(evaluate_all_equations=False)
 #We can manually change to taking the log of the rate constant. Since this is a bubble size, we do not have to be as worried about the units.
 Record_for_bubble_plot.set_graph_title("Bubble plot for Ea vs Temperature for the Log of a Rate Constant")
 import numpy as np
-log_of_k = np.log(Record_for_bubble_plot['data'][0]["z"])
+log_of_k = np.log(Record_for_bubble_plot['data'][0]["z"]) #This is natural log.
 #it turns out there is a negative value from the log of a small rate constant.
 #We can't ahve negative values in our bubble plot. We will replace that with a 0.001, though a 0 would also be okay.
 log_of_k[9] = 0.001
@@ -92,4 +92,10 @@ Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="de
 Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="none")
 Record_for_bubble_plot["data"][0]["marker"]["showscale"] = False
 Record_for_bubble_plot["data"][0]["marker"]["color"] = "blue"
+Record_for_bubble_plot.plot(evaluate_all_equations=False)
+
+#Now let's go back to the default trace_style and a use k for the bubble size again.
+Record_for_bubble_plot.apply_trace_style_by_index(0, trace_styles_collection="default", trace_style="bubble")
+Record_for_bubble_plot["data"][0]["max_bubble_size"] = 150
+Record_for_bubble_plot["data"][0]["z"] = list(np.exp(Record_for_bubble_plot["data"][0]["z"]))
 Record_for_bubble_plot.plot(evaluate_all_equations=False)

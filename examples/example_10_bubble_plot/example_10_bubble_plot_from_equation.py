@@ -40,7 +40,7 @@ Record_for_bubble_plot.set_z_axis_label_including_units(example_equation_dict['z
 #We are setting the trace_style as bubble while adding the equation data series.
 #It is important to either set the trace_style as bubble *during* the addition, or to set evaluate_equations_as_added as False
 #Because if JSONGrapher evaluates a z_point porducing equation without knowing you want a bubble plot, JSONgrapher will automatically set the plot type to a 3D plot.
-Record_for_bubble_plot.add_data_series_as_equation(series_name="Arrhenius Example 3D plot", graphical_dimensionality=3, equation_dict=example_equation_dict, trace_style="bubble", evaluate_equations_as_added=True)
+Record_for_bubble_plot.add_data_series_as_equation(series_name="Arrhenius Example Bubble plot", graphical_dimensionality=3, equation_dict=example_equation_dict, trace_style="bubble", evaluate_equations_as_added=True)
 #We will set a max_bubble_size. This is optional, but good to play with for a bubble plot.
 Record_for_bubble_plot["data"][0]["max_bubble_size"] = 150 
 #Below is a syntax we could have used if we wanted to set the trace_style after addition.

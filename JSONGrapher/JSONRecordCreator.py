@@ -755,7 +755,7 @@ class JSONGrapherRecord:
         self.fig_dict["data"].append(data_series_dict) #implied return.
         return data_series_dict
 
-    def add_data_series_as_equation(self, series_name, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
+    def add_data_series_as_equation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
         """
         This is a way to add an equation that would be used to fill an x,y data series.
         The equation will be a equation_dict of the json_equationer type
@@ -777,6 +777,7 @@ class JSONGrapherRecord:
             y_values = []
         if equation_dict is None:
             equation_dict = {}
+        equation_dict["graphical_dimensionality"] = int(graphical_dimensionality)
 
         x_values = list(x_values)
         y_values = list(y_values)

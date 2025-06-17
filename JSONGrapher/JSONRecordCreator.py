@@ -610,13 +610,13 @@ class JSONGrapherRecord:
             "comments": comments,  # Top-level comments
             "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version " + JSONGrapher.version.__version__,
             "datatype": datatype,  # Top-level datatype (datatype)
-            "data": data_objects_list if data_objects_list else [],  # Data series list
             "layout": layout if layout else {
                 "title": {"text": graph_title},
                 "xaxis": {"title": {"text": x_axis_label_including_units}},
                 "yaxis": {"title": {"text": y_axis_label_including_units}}
-                   }
-                }
+                   },
+            "data": data_objects_list if data_objects_list else []  # Data series list                
+            }
             )
 
         if plot_style !="":

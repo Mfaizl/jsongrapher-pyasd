@@ -3102,11 +3102,10 @@ def convert_to_3d_layout(layout):
     new_layout = copy.deepcopy(layout)
 
     # Add the axis fields inside `scene` first
-    new_layout["scene"] = {
-        "xaxis": layout.get("xaxis", {}),
-        "yaxis": layout.get("yaxis", {}),
-        "zaxis": layout.get("zaxis", {})
-    }
+    scene = new_layout.setdefault("scene", {}) #Create a new dict if not present, otherwise use existing one.
+    scene["xaxis"] = layout.get("xaxis", {})
+    scene["yaxis"] = layout.get("yaxis", {})
+    scene["zaxis"] = layout.get("zaxis", {})
 
     # Remove the original axis fields from the top-level layout
     new_layout.pop("xaxis", None)

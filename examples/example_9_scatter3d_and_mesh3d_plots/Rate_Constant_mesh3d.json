@@ -1,7 +1,27 @@
 {
     "comments": "",
-    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 4.1",
+    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 4.2",
     "datatype": "Arrhenius_plot_3D",
+    "layout": {
+        "title": {
+            "text": "Typical Temperature Behavior for a Rate Constant"
+        },
+        "xaxis": {
+            "title": {
+                "text": "T (K)"
+            }
+        },
+        "yaxis": {
+            "title": {
+                "text": "Ea (J*mol^(-1))"
+            }
+        },
+        "zaxis": {
+            "title": {
+                "text": "k (s**(-1))"
+            }
+        }
+    },
     "data": [
         {
             "uid": "",
@@ -755,26 +775,6 @@
             "showscale": true
         }
     ],
-    "layout": {
-        "title": {
-            "text": "Typical Temperature Behavior for a Rate Constant"
-        },
-        "xaxis": {
-            "title": {
-                "text": "T (K)"
-            }
-        },
-        "yaxis": {
-            "title": {
-                "text": "Ea (J*mol^(-1))"
-            }
-        },
-        "zaxis": {
-            "title": {
-                "text": "k (s**(-1))"
-            }
-        }
-    },
     "plot_style": {
         "layout_style": "default3d"
     }

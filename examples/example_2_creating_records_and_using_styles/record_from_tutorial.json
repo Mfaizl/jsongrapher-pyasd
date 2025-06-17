@@ -1,7 +1,22 @@
 {
     "comments": "Tree Growth Data collected from the US National Arboretum",
-    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 4.1",
+    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 4.2",
     "datatype": "Tree_Growth_Curve",
+    "layout": {
+        "title": {
+            "text": "Pear Tree Growth Versus Time"
+        },
+        "xaxis": {
+            "title": {
+                "text": "Time (year)"
+            }
+        },
+        "yaxis": {
+            "title": {
+                "text": "Height (m)"
+            }
+        }
+    },
     "data": [
         {
             "uid": "",
@@ -22,20 +37,5 @@
                 1.45
             ]
         }
-    ],
-    "layout": {
-        "title": {
-            "text": "Pear Tree Growth Versus Time"
-        },
-        "xaxis": {
-            "title": {
-                "text": "Time (year)"
-            }
-        },
-        "yaxis": {
-            "title": {
-                "text": "Height (m)"
-            }
-        }
-    }
+    ]
 }

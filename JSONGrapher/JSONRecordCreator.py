@@ -14,6 +14,22 @@ global_records_list = [] #This list holds onto records as they are added. Index 
 #That takes filenames and adds new JSONGrapher records to a global_records_list
 #If the all_selected_file_paths and newest_file_name_and_path are [] and [], that means to clear the global_records_list.
 def add_records_to_global_records_list_and_plot(all_selected_file_paths, newly_added_file_paths, plot_immediately=True):
+    """
+    Updates the global records list with newly added file paths and optionally refreshes the plot.
+
+    If both input path lists are empty, the global records list is cleared. If no prior records exist,
+    a new record is created and used as the merge base. Otherwise, new records are appended and merged
+    into the existing master record. Optionally triggers a plot update and returns a JSON string
+    representation of the updated figure.
+
+    Args:
+        all_selected_file_paths (list[str]): All file paths currently selected by the user.
+        newly_added_file_paths (list[str]): File paths recently added to the selection.
+        plot_immediately (bool, optional): Whether to trigger a plot update after processing. Defaults to True.
+
+    Returns:
+        list[str]: A list containing a JSON string of the updated figure, suitable for export.
+    """
     #First check if we have received a "clear" condition.
     if (len(all_selected_file_paths) == 0) and (len(newly_added_file_paths) == 0):
         global_records_list.clear()
@@ -52,6 +68,15 @@ def add_records_to_global_records_list_and_plot(all_selected_file_paths, newly_a
 #This ia JSONGrapher specific wrapper function to drag_and_drop_gui create_and_launch.
 #This launches the python based JSONGrapher GUI.
 def launch():
+    """
+    Launches the JSONGrapher graphical user interface.
+
+    Attempts to import and start the drag-and-drop GUI interface used for selecting files
+    and triggering the record addition workflow. Returns the updated global records list.
+
+    Returns:
+        list[JSONGrapherRecord]: The updated list of global records after GUI interaction.
+    """
     try:
         import JSONGrapher.drag_and_drop_gui as drag_and_drop_gui
     except ImportError:
@@ -70,6 +95,18 @@ def launch():
 # intuitive to create class objects that way, this variable is actually just a reference
 # so that we don't have to map the arguments.
 def create_new_JSONGrapherRecord(hints=False):
+    """
+    Creates and returns a new JSONGrapherRecord instance.
+
+    Constructs a new record using the default class constructor. If hints are enabled,
+    additional annotation fields are pre-populated to guide user input.
+
+    Args:
+        hints (bool, optional): Whether to include hint fields in the new record. Defaults to False.
+
+    Returns:
+        JSONGrapherRecord: A new instance of a JSONGrapher record, optionally populated with hints.
+    """
     #we will create a new record. While we could populate it with the init,
     #we will use the functions since it makes thsi function a bit easier to follow.
     new_record = JSONGrapherRecord()
@@ -79,10 +116,33 @@ def create_new_JSONGrapherRecord(hints=False):
 
 #This is actually a wrapper around merge_JSONGrapherRecords. Made for convenience.
 def load_JSONGrapherRecords(recordsList):
+    """
+    Merges a list of JSONGrapher records into a single combined record.
+
+    Passes the provided list directly into the merge function, which consolidates
+    multiple records into a single, unified structure.
+
+    Args:
+        recordsList (list[JSONGrapherRecord]): A list of JSONGrapher records to merge.
+
+    Returns:
+        JSONGrapherRecord: A single record resulting from merging all input records.
+    """
     return merge_JSONGrapherRecords(recordsList)
 
 #This is actually a wrapper around merge_JSONGrapherRecords. Made for convenience.
 def import_JSONGrapherRecords(recordsList):
+    """
+    Imports and merges multiple JSONGrapher records into a single consolidated record.
+
+    Delegates directly to the merge function to unify all records in the provided list.
+
+    Args:
+        recordsList (list[JSONGrapherRecord]): The list of records to merge.
+
+    Returns:
+        JSONGrapherRecord: A single merged record containing data from all inputs.
+    """
     return merge_JSONGrapherRecords(recordsList)
 
 #This is a function for merging JSONGrapher records.
@@ -92,6 +152,20 @@ def import_JSONGrapherRecords(recordsList):
 #The units used will be that of the first record encountered
 #if changing this function's arguments, then also change those for load_JSONGrapherRecords and import_JSONGrapherRecords
 def merge_JSONGrapherRecords(recordsList):
+    """
+    Merges multiple JSONGrapher records into one, aligning units and scaling data if needed.
+
+    Accepts a list of records, which may be JSON strings, dictionaries, or JSONGrapherRecord
+    instances. Each record is converted to a figure dictionary. Unit labels are compared and,
+    if necessary, data values are scaled to match the units of the first record before merging.
+    All data series are consolidated into a single record.
+
+    Args:
+        recordsList (list): A list of records to merge. May include JSON strings, dicts, or JSONGrapherRecord objects.
+
+    Returns:
+        JSONGrapherRecord: A new record containing all merged and unit-aligned data series.
+    """
     if type(recordsList) == type(""):
         recordsList = [recordsList]
     import copy
@@ -148,6 +222,19 @@ def merge_JSONGrapherRecords(recordsList):
     return merged_JSONGrapherRecord
 
 def convert_JSONGRapherRecord_data_list_to_class_objects(record):
+    """
+    Converts the 'data' list in a record or figure dictionary into JSONGrapherDataSeries objects.
+
+    Accepts either a JSONGrapherRecord or a standalone figure dictionary. Each entry in the
+    'data' list is replaced with a properly constructed JSONGrapherDataSeries instance,
+    preserving any existing terms. The transformed record or dictionary is returned.
+
+    Args:
+        record (dict | JSONGrapherRecord): A record or figure dictionary to transform.
+
+    Returns:
+        dict | JSONGrapherRecord: The updated record or dictionary with casted data series objects.
+    """
     #will also support receiving a fig_dict
     if isinstance(record, dict):
         fig_dict_received = True

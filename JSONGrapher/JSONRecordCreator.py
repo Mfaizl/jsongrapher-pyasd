@@ -293,16 +293,22 @@ def convert_JSONGRapherRecord_data_list_to_class_objects(record):
 #to make the option of other characters for custom units.
 def get_units_scaling_ratio(units_string_1, units_string_2):
     """
-    Calculate the scaling ratio between two unit strings.
+    Calculate the scaling ratio between two unit strings, returns ratio from units_string_1 / units_string_2.
+    Unit strings may include parentheses, division symbols, multiplication symbols, and exponents.
+    
 
     This function computes the multiplicative ratio required to convert from
-    `units_string_1` to `units_string_2`, using the `unitpy` library for parsing
-    and unit arithmetic. For example, converting from "(((kg)/m))/s" to "(((g)/m))/s"
+    `units_string_1` to `units_string_2`. For example, converting from "(((kg)/m))/s" to "(((g)/m))/s"
     yields a scaling ratio of 1000.
 
-    Unit expressions may include custom symbols (like µ), which are tagged and
-    registered dynamically. If reciprocal units cause issues (e.g., "1/bar"), the
-    function attempts a fallback conversion using a preprocessor.
+    Unit expressions may include custom units if they are tagged in advance with angle brackets
+    like "<umbrella>/m^(-2)".
+
+    The function uses the `unitpy` library for parsing and unit arithmetic. 
+
+    Reciprocal units with a "1" can cause issues (e.g., "1/bar"), the
+    function attempts a fallback conversion in those cases.
+    It is recommended to instead use exponents like "bar^(-1)"
 
     Args:
     units_string_1 (str): The source units as a string expression.
@@ -368,12 +374,17 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
 
 def return_custom_units_markup(units_string, custom_units_list):
     """
-    Wraps known custom unit names in markup tags for prettier display formatting.
-
-    This function replaces known unit substrings within a given string with versions
-    wrapped in angle brackets (e.g., "kohm" becomes "<kohm>"). It allows for cleaner
-    representation in plots or reports, especially when LaTeX-style or Unicode units 
-    are desired. Units are matched longest-first for correct substitution priority.
+    Puts markup around custom units with '<' and '>'.
+    
+    This function receives a units_string and a custom_units_list which is a list of strings
+    and then puts tagging markup on any custom units within the units_string, 'tagging' them with '<' and '>'
+    The units_string may include *, /, ^, and ( ).
+        
+    For example, if the units string was "((umbrella)/m^(-2))" 
+    And the custom_units_list was ['umbrella'],
+    the string returned would be "((<umbrella>)/m^(-2))" 
+    If the custom_units_list is empty or custom units are not found
+    then no change is made to the units string.
 
     Args:
         units_string (str): The input string that may contain units (e.g., "10kohm").
@@ -381,9 +392,9 @@ def return_custom_units_markup(units_string, custom_units_list):
             and wrap in markup.
 
     Returns:
-        str: The updated string with custom units wrapped in angle brackets (e.g., "10<kohm>").
+        str: The updated string with custom units wrapped in angle brackets (e.g., "((umbrella)/m^(-2))" ).
     """
-    """puts markup around custom units with '<' and '>' """
+    
     sorted_custom_units_list = sorted(custom_units_list, key=len, reverse=True)
     #the units should be sorted from longest to shortest if not already sorted that way.
     for custom_unit in sorted_custom_units_list:
@@ -398,15 +409,21 @@ def tag_micro_units(units_string):
     Replaces micro symbol-prefixed units with a custom tagged format for internal use.
 
     This function scans a unit string for various Unicode representations of the micro symbol 
-    (e.g., "µ", "μ", "𝜇", "𝝁") followed by standard unit characters. It replaces each match with 
-    a placeholder tag like "<microfrogX>" (e.g., "μm" → "<microfrogm>") to ensure compatibility 
-    with systems that can't handle special characters in file names or logic.
+    (e.g., "µ", "μ", "𝜇", "𝝁") followed by standard unit characters, such as "μm".
+    
+    It replaces each match with a placeholder tag that converts the micro symbol
+    to the word "microfrog" with pattern "<microfrogX>", such as "μm*s^(-1)" → "<microfrogm>*s^(-1)"
+    
+    The reason to replace the micro symbols is to avoid any incompatibilities with 
+    functions or packages that would handle the micro symbols incorrectly,
+    especially because there are multiple micro symbols. The reason that "microfrog" is used is 
+    because it is distinct enough for us to convert back to microsymbol later.
 
     Args:
-        units_string (str): A string potentially containing micro-prefixed units.
+        units_string (str): A units string potentially containing µ symbols as prefixes, such as "μm*s^(-1)".
 
     Returns:
-        str: A modified string with micro units replaced by custom tags.
+        str: A modified string with units containing micro symbols replaced by custom units tags containing "microfrog", such as "<microfrogm>*s^(-1)"
     """
     # Unicode representations of micro symbols:
     # U+00B5 → µ (Micro Sign)
@@ -431,18 +448,23 @@ def tag_micro_units(units_string):
     #We are actually going to change them back to "µm" from "<microfrogm>"
 def untag_micro_units(units_string):
     """
-    Restores standard micro-prefixed units from internal tagged format.
+    Restores standard micro-prefixed units from internal "microfrog" tagged format.
 
     This function reverses the transformation applied by `tag_micro_units`, converting 
     placeholder tags like "<microfrogF>" back into units with the Greek micro symbol 
-    (e.g., "μF"). It's useful when preparing unit strings for display after they've been 
-    sanitized or made file-safe.
+    (such as, "μF"). This simply returns to having micro symbols in unit strings for display
+    and for record exporting, once the algorithmic work is done.
+    For example, from "<microfrogm>*s^(-1)" to "μm*s^(-1)".
+
+    Note that we always use µ which is unicode U+00B5 adnd this may be different
+    from the original micro symbol before the algorithm started.
+    See tag_micro_units function comments for more information about microsymbols.
 
     Args:
-        units_string (str): A string containing tagged micro-units.
+        units_string (str): A string potentially containing tagged micro-units, like "<microfrogm>*s^(-1)"
 
     Returns:
-        str: The string with tags converted back to standard micro-unit notation (e.g., "μF").
+        str: The string with tags converted back to standard micro-unit notation (such as from "<microfrogm>*s^(-1)" to "μm*s^(-1)" ).
     """
     if "<microfrog" not in units_string:  # Check if any frogified unit exists
         return units_string
@@ -462,7 +484,7 @@ def add_custom_unit_to_unitpy(unit_string):
     that could cause runtime issues.
 
     Args:
-        unit_string (str): The name of the unit to register (e.g., "widget").
+        unit_string (str): The name of the unit to register (such as, "umbrellaArea").
     """
     import unitpy
     from unitpy.definitions.entry import Entry
@@ -485,7 +507,7 @@ def extract_tagged_strings(text):
     """
     Extracts and returns a sorted list of unique substrings found within angle brackets.
 
-    This function identifies all substrings wrapped in angle brackets (e.g., "<tag>"), 
+    This function identifies all substrings wrapped in angle brackets (such as "<umbrella>"), 
     removes duplicates, and returns them sorted by length in descending order. It's useful 
     for parsing tagged text where the tags follow a consistent markup format.
 
@@ -510,8 +532,8 @@ def convert_inverse_units(expression, depth=100):
     """
     Converts unit reciprocals in string expressions to exponent notation.
 
-    This function detects reciprocal expressions like "1/unit" or nested forms such as 
-    "1/(1/unit)" and converts them into exponent format (e.g., "unit**(-1)"). It processes 
+    This function detects reciprocal expressions like "1/m" or nested forms such as 
+    "1/(1/m)" and converts them into exponent format (such as "m**(-1)"). It processes 
     the expression iteratively up to the specified depth to ensure all nested reciprocals 
     are resolved. This helps standardize units for parsing or evaluation.
 
@@ -542,9 +564,9 @@ def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y
     """
     Scales the 'x' and/or 'y' values in a figure dictionary for rescaling plotted data.
 
-    This function takes a figure dictionary (e.g., one structured for Plotly or similar 
-    visualization tools), deep-copies it, and applies x/y scaling factors to each data 
-    series using an external helper `scale_dataseries_dict`.
+    This function takes a figure dictionary from JSONGrapher which has the same structure
+    as a Plotly figure dictionary, deep-copies it, and applies x/y scaling factors to each data 
+    series using the helper function `scale_dataseries_dict`.
 
     Args:
         fig_dict (dict): A dictionary containing figure data with a "data" key.

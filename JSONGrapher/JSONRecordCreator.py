@@ -292,6 +292,31 @@ def convert_JSONGRapherRecord_data_list_to_class_objects(record):
 #Could add "tag_characters"='<>' as an optional argument to this and other functions
 #to make the option of other characters for custom units.
 def get_units_scaling_ratio(units_string_1, units_string_2):
+    """
+    Calculate the scaling ratio between two unit strings.
+
+    This function computes the multiplicative ratio required to convert from
+    `units_string_1` to `units_string_2`, using the `unitpy` library for parsing
+    and unit arithmetic. For example, converting from "(((kg)/m))/s" to "(((g)/m))/s"
+    yields a scaling ratio of 1000.
+
+    Unit expressions may include custom symbols (like µ), which are tagged and
+    registered dynamically. If reciprocal units cause issues (e.g., "1/bar"), the
+    function attempts a fallback conversion using a preprocessor.
+
+    Args:
+    units_string_1 (str): The source units as a string expression.
+    units_string_2 (str): The target units as a string expression.
+
+    Returns:
+    float: The numerical ratio to convert values in `units_string_1`
+    to `units_string_2`.
+
+    Raises:
+    KeyError: If a required unit is missing from the definition registry.
+    ValueError: If the unit format is invalid or conversion fails.
+    RuntimeError: For any unexpected errors during conversion.
+    """
     # Ensure both strings are properly encoded in UTF-8
     units_string_1 = units_string_1.encode("utf-8").decode("utf-8")
     units_string_2 = units_string_2.encode("utf-8").decode("utf-8")
@@ -342,6 +367,22 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
     return ratio_only #function returns ratio only. If function is later changed to return more, then units_strings may need further replacements.
 
 def return_custom_units_markup(units_string, custom_units_list):
+    """
+    Wraps known custom unit names in markup tags for prettier display formatting.
+
+    This function replaces known unit substrings within a given string with versions
+    wrapped in angle brackets (e.g., "kohm" becomes "<kohm>"). It allows for cleaner
+    representation in plots or reports, especially when LaTeX-style or Unicode units 
+    are desired. Units are matched longest-first for correct substitution priority.
+
+    Args:
+        units_string (str): The input string that may contain units (e.g., "10kohm").
+        custom_units_list (List[str]): A list of custom unit strings to search for 
+            and wrap in markup.
+
+    Returns:
+        str: The updated string with custom units wrapped in angle brackets (e.g., "10<kohm>").
+    """
     """puts markup around custom units with '<' and '>' """
     sorted_custom_units_list = sorted(custom_units_list, key=len, reverse=True)
     #the units should be sorted from longest to shortest if not already sorted that way.
@@ -353,6 +394,20 @@ def return_custom_units_markup(units_string, custom_units_list):
     #However, because unitpy gives unexpected behavior with the microsymbol,
     #We are actually going to change them from "µm" to "<microfrogm>"
 def tag_micro_units(units_string):
+    """
+    Replaces micro symbol-prefixed units with a custom tagged format for internal use.
+
+    This function scans a unit string for various Unicode representations of the micro symbol 
+    (e.g., "µ", "μ", "𝜇", "𝝁") followed by standard unit characters. It replaces each match with 
+    a placeholder tag like "<microfrogX>" (e.g., "μm" → "<microfrogm>") to ensure compatibility 
+    with systems that can't handle special characters in file names or logic.
+
+    Args:
+        units_string (str): A string potentially containing micro-prefixed units.
+
+    Returns:
+        str: A modified string with micro units replaced by custom tags.
+    """
     # Unicode representations of micro symbols:
     # U+00B5 → µ (Micro Sign)
     # U+03BC → μ (Greek Small Letter Mu)
@@ -375,6 +430,20 @@ def tag_micro_units(units_string):
 
     #We are actually going to change them back to "µm" from "<microfrogm>"
 def untag_micro_units(units_string):
+    """
+    Restores standard micro-prefixed units from internal tagged format.
+
+    This function reverses the transformation applied by `tag_micro_units`, converting 
+    placeholder tags like "<microfrogF>" back into units with the Greek micro symbol 
+    (e.g., "μF"). It's useful when preparing unit strings for display after they've been 
+    sanitized or made file-safe.
+
+    Args:
+        units_string (str): A string containing tagged micro-units.
+
+    Returns:
+        str: The string with tags converted back to standard micro-unit notation (e.g., "μF").
+    """
     if "<microfrog" not in units_string:  # Check if any frogified unit exists
         return units_string
     import re
@@ -384,6 +453,17 @@ def untag_micro_units(units_string):
     return re.sub(pattern, r"µ\1", units_string)
 
 def add_custom_unit_to_unitpy(unit_string):
+    """
+    Registers a new custom unit in the UnitPy framework for internal use.
+
+    This function adds a user-defined unit to the UnitPy system by inserting a BaseUnit 
+    into the global base dictionary and defining an Entry using a BaseSet. It's designed 
+    to expand UnitPy's supported units dynamically while preventing duplicate entries 
+    that could cause runtime issues.
+
+    Args:
+        unit_string (str): The name of the unit to register (e.g., "widget").
+    """
     import unitpy
     from unitpy.definitions.entry import Entry
     #need to put an entry into "bases" because the BaseSet class will pull from that dictionary.
@@ -402,6 +482,19 @@ def add_custom_unit_to_unitpy(unit_string):
         unitpy.ledger.add_unit(new_entry) #implied return is here. No return needed.
 
 def extract_tagged_strings(text):
+    """
+    Extracts and returns a sorted list of unique substrings found within angle brackets.
+
+    This function identifies all substrings wrapped in angle brackets (e.g., "<tag>"), 
+    removes duplicates, and returns them sorted by length in descending order. It's useful 
+    for parsing tagged text where the tags follow a consistent markup format.
+
+    Args:
+        text (str): A string potentially containing angle-bracketed tags.
+
+    Returns:
+        List[str]: A list of unique tags sorted from longest to shortest.
+    """
     """Extracts tags surrounded by <> from a given string. Used for custom units.
        returns them as a list sorted from longest to shortest"""
     import re
@@ -414,6 +507,21 @@ def extract_tagged_strings(text):
 #It was written by copilot and refined by further prompting of copilot by testing.
 #The depth is because the function works iteratively and then stops when finished.
 def convert_inverse_units(expression, depth=100):
+    """
+    Converts unit reciprocals in string expressions to exponent notation.
+
+    This function detects reciprocal expressions like "1/unit" or nested forms such as 
+    "1/(1/unit)" and converts them into exponent format (e.g., "unit**(-1)"). It processes 
+    the expression iteratively up to the specified depth to ensure all nested reciprocals 
+    are resolved. This helps standardize units for parsing or evaluation.
+
+    Args:
+        expression (str): A string containing unit expressions to transform.
+        depth (int, optional): Maximum number of recursive replacements. Default is 100.
+
+    Returns:
+        str: A string with all convertible reciprocal units expressed using exponents.
+    """
     import re
     # Patterns to match valid reciprocals while ignoring multiplied units, so (1/bar)*bar should be  handled correctly.
     patterns = [r"1/\((1/.*?)\)", r"1/([a-zA-Z]+)"]
@@ -431,6 +539,21 @@ def convert_inverse_units(expression, depth=100):
 #the below function takes in a fig_dict, as well as x and/or y scaling values.
 #The function then scales the values in the data of the fig_dict and returns the scaled fig_dict.
 def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
+    """
+    Scales the 'x' and/or 'y' values in a figure dictionary for rescaling plotted data.
+
+    This function takes a figure dictionary (e.g., one structured for Plotly or similar 
+    visualization tools), deep-copies it, and applies x/y scaling factors to each data 
+    series using an external helper `scale_dataseries_dict`.
+
+    Args:
+        fig_dict (dict): A dictionary containing figure data with a "data" key.
+        num_to_scale_x_values_by (float, optional): Factor to scale all x-values. Defaults to 1.
+        num_to_scale_y_values_by (float, optional): Factor to scale all y-values. Defaults to 1.
+
+    Returns:
+        dict: A new figure dictionary with scaled x and/or y data values.
+    """
     import copy
     scaled_fig_dict = copy.deepcopy(fig_dict)
     #iterate across the data objects inside, and change them.
@@ -441,6 +564,24 @@ def scale_fig_dict_values(fig_dict, num_to_scale_x_values_by = 1, num_to_scale_y
 
 
 def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1, num_to_scale_z_values_by = 1):
+    """
+    Applies scaling factors to x, y, and optionally z data in a data series dictionary.
+
+    This function updates the numeric values in a data series dictionary by applying 
+    scaling factors to each axis. It supports scaling for 2D and 3D datasets, and ensures 
+    that all resulting values are converted to standard Python floats for compatibility 
+    and serialization.
+
+    Args:
+        dataseries_dict (dict): A dictionary with keys "x", "y", and optionally "z", 
+            each mapping to a list of numeric values.
+        num_to_scale_x_values_by (float, optional): Factor by which to scale x-values. Default is 1.
+        num_to_scale_y_values_by (float, optional): Factor by which to scale y-values. Default is 1.
+        num_to_scale_z_values_by (float, optional): Factor by which to scale z-values (if present). Default is 1.
+
+    Returns:
+        dict: The updated data series dictionary with scaled numeric values.
+    """
     import numpy as np
     dataseries = dataseries_dict
     dataseries["x"] = list(np.array(dataseries["x"], dtype=float)*num_to_scale_x_values_by) #convert to numpy array for multiplication, then back to list.

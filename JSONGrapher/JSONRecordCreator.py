@@ -1705,7 +1705,7 @@ def units_plural_removal(units_to_check):
 
 def separate_label_text_from_units(label_with_units):
     """
-    Separates the main text and units from a label string that includes parentheses.
+    Separates the main label text and the units text from a string. String must contain the main label text followed by units in parentheses, such as "Distance (km).
 
     Args:
         label_with_units (str): A label string expected to include units in parentheses, e.g., "Distance (km)".
@@ -1758,13 +1758,13 @@ def separate_label_text_from_units(label_with_units):
 
 def validate_plotly_data_list(data):
     """
-    Validates the entries in a Plotly data list or single trace.
+    Validates the data series dictionaries in a list provided, also accepts a single data series dictionary instead of a list.
 
     If a single dictionary is passed, it is treated as a one-item list. The function checks each trace for the required
-    structure and fields based on its type (e.g., 'scatter', 'bar', 'pie', 'heatmap'). Warnings are printed for any issues found.
+    structure and fields based on its inferred type (such as 'scatter', 'bar', 'pie', 'heatmap'). Warnings are printed for any issues found.
 
     Args:
-        data (list or dict): A list of dictionaries (Plotly traces), or a single trace dictionary.
+        data (list or dict): A list of data series dictionaries (each for one Plotly traces), or a single data series dictionary.
 
     Returns:
         tuple:
@@ -1824,9 +1824,8 @@ def validate_plotly_data_list(data):
 
 def parse_units(value):
     """
-    Parses a numerical value and its associated units from a string.
-
-    This is intended for scientific constants and parameters, such as rate constants or the gravitational constant.
+    Parses strings containing numerical values aund units in parentheses, and extracts both the numerical value string and the units string.
+    This is intended for scientific measurements, constants, or parameters, including the gravitational constant, rate constants, etc.
     It is not meant for separating axis labels from units; for that use `separate_label_text_from_units()` instead.
 
     Args:

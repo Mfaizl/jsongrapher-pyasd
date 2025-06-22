@@ -2671,10 +2671,17 @@ def prepare_bubble_sizes(data_series):
 # So the main class function will also be broken into two and/or need to take an optional argument in
 def remove_trace_styles_collection_from_plotly_dict(fig_dict):
     """
-    Remove applied data series styles from a Plotly figure dictionary.
-    
-    :param fig_dict: dict, Plotly style fig_dict
-    :return: dict, Updated Plotly style fig_dict with default formatting.
+    Removes trace styles from all data series in a Plotly figure dictionary.
+
+    This function iterates through each trace in `fig_dict["data"]` and strips out applied
+    style formatting—unless the trace's `trace_style` is explicitly set to "none". It also removes
+    the `trace_styles_collection` reference from the figure's `plot_style` metadata.
+
+    Args:
+        fig_dict (dict): A Plotly-formatted figure dictionary.
+
+    Returns:
+        dict: The updated figure dictionary with trace styles removed.
     """
     #will remove formatting from the individual data_series, but will not remove formatting from any that have trace_style of "none".
     if isinstance(fig_dict, dict) and "data" in fig_dict and isinstance(fig_dict["data"], list):
@@ -2698,13 +2705,17 @@ def remove_trace_styles_collection_from_plotly_dict(fig_dict):
 
 def remove_trace_style_from_single_data_series(data_series):
     """
-    Remove only formatting fields from a single Plotly data series while preserving all other fields.
+    Removes style-related formatting fields from a single Plotly data series.
 
-    Note: Since fig_dict data objects may contain custom fields (e.g., "equation", "metadata"),
-    this function explicitly removes predefined **formatting** attributes while leaving all other data intact.
+    This function strips only visual styling attributes (e.g., marker, line, fill) while preserving all
+    other metadata and custom fields such as equations or simulation details. The result is returned as a
+    `JSONGrapherDataSeries` object with key values preserved.
 
-    :param data_series: dict, A dictionary representing a single Plotly data series.
-    :return: dict, Updated data series with formatting fields removed but key data retained.
+    Args:
+        data_series (dict): A dictionary representing a single Plotly-style trace.
+
+    Returns:
+        JSONGrapherDataSeries: The cleaned data series with formatting fields removed.
     """
 
     if not isinstance(data_series, dict):
@@ -2724,16 +2735,32 @@ def remove_trace_style_from_single_data_series(data_series):
     return new_data_series_object
 
 def extract_trace_style_by_index(fig_dict, data_series_index, new_trace_style_name='', extract_colors=False):
+    """
+    Extracts the trace style from a single data series in a Plotly figure by its index.
+
+    This is a wrapper for `extract_trace_style_from_data_series_dict()` and allows optional renaming
+    of the extracted style and inclusion of color attributes.
+
+    Args:
+        fig_dict (dict): The Plotly figure dictionary containing the `data` list.
+        data_series_index (int): Index of the target data series within the `data` list.
+        new_trace_style_name (str): Optional new name to assign to the extracted style.
+        extract_colors (bool): Whether to include color-related attributes in the extracted style.
+
+    Returns:
+        dict: A dictionary containing the extracted trace style.
+    """
     data_series_dict = fig_dict["data"][data_series_index]
     extracted_trace_style = extract_trace_style_from_data_series_dict(data_series_dict=data_series_dict, new_trace_style_name=new_trace_style_name, extract_colors=extract_colors)
     return extracted_trace_style
 
 def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_name='', additional_attributes_to_extract=None, extract_colors=False):
     """
-    Extract formatting attributes from a given Plotly data series.
+    Extracts formatting attributes from a single Plotly data series dictionary.
 
-    The function scans the provided `data_series` dictionary and returns a new dictionary
-    containing only the predefined formatting fields.
+    This function returns a dictionary containing only style-related fields—such as line, marker,
+    and text formatting—under a user-defined name. Color values (e.g., fill, marker color) can optionally
+    be excluded to support general-purpose styling templates.
 
     Examples of formatting attributes extracted:
     - "type"
@@ -2748,9 +2775,16 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
     - "textposition"
     - "textfont"
 
-    :param data_series_dict: dict, A dictionary representing a single Plotly data series.
-    :param trace_style: string, the key name for what user wants to call the trace_style in the style, after extraction.
-    :return: dict, A dictionary containing only the formatting attributes.
+    Args:
+        data_series_dict (dict): A dictionary representing a single Plotly trace.
+        new_trace_style_name (str): Optional name to assign the extracted style. If empty, defaults to
+                                    the trace's `trace_style` key or "custom".
+        additional_attributes_to_extract (list, optional): Additional non-standard attributes to include.
+        extract_colors (bool): Whether to include color-related values like 'marker.color' and 'fillcolor'
+    
+    Returns:
+        dict: A trace style dictionary with the format {style_name: formatting_attributes}.
+
     """  
     if additional_attributes_to_extract is None: #in python, it's not good to make an empty list a default argument.
         additional_attributes_to_extract = []
@@ -2797,6 +2831,20 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
 
 #export a single trace_style dictionary to .json.
 def write_trace_style_to_file(trace_style_dict, trace_style_name, filename):
+    """
+    Exports a single trace style dictionary to a JSON file.
+
+    Wraps the trace style under a standard JSON structure with a named identifier and writes it to disk.
+    Ensures the filename ends with ".json" for compatibility.
+
+    Args:
+        trace_style_dict (dict): A dictionary defining a single trace style.
+        trace_style_name (str): The name to assign to the trace style within the exported file.
+        filename (str): The target filename for the output JSON (with or without ".json").
+
+    Returns:
+        None
+    """
     # Ensure the filename ends with .json
     if not filename.lower().endswith(".json"):
         filename += ".json"
@@ -2816,6 +2864,21 @@ def write_trace_style_to_file(trace_style_dict, trace_style_name, filename):
 
 #export an entire trace_styles_collection to .json. The trace_styles_collection is dict.
 def write_trace_styles_collection_to_file(trace_styles_collection, trace_styles_collection_name, filename):   
+    """
+    Exports an entire trace styles collection to a JSON file.
+
+    Accepts a dictionary of trace styles and writes it to disk in a standard
+    JSONGrapher-compatible format. If a container dictionary is received (i.e., with a
+    top-level "trace_styles_collection" key), it extracts the inner collection.
+
+    Args:
+        trace_styles_collection (dict): The style definitions to export, either directly or within a container.
+        trace_styles_collection_name (str): The identifier to use for the exported collection.
+        filename (str): Name of the target file. Automatically appends ".json" if not provided.
+
+    Returns:
+        None
+    """
     if "trace_styles_collection" in trace_styles_collection: #We may receive a traces_style collection in a container. If so, we pull the traces_style_collection out.
         trace_styles_collection = trace_styles_collection[trace_styles_collection["name"]] 
     # Ensure the filename ends with .json
@@ -2836,6 +2899,23 @@ def write_trace_styles_collection_to_file(trace_styles_collection, trace_styles_
 
 #export an entire trace_styles_collection from .json. THe trace_styles_collection is dict.
 def import_trace_styles_collection(filename):
+    """
+    Imports a trace styles collection from a JSON file.
+
+    Reads a JSON-formatted file and extracts the trace styles collection
+    identified by its embedded name. The function validates structure and
+    ensures the expected format before returning the styles dictionary.
+
+    Args:
+        filename (str): The name of the JSON file to import from. If the extension is
+                        missing, ".json" will be appended automatically.
+
+    Returns:
+        dict: A dictionary containing the extracted trace styles collection.
+
+    Raises:
+        ValueError: If the JSON structure is malformed or the collection name is not found.
+    """
     # Ensure the filename ends with .json
     if not filename.lower().endswith(".json"):
         filename += ".json"
@@ -2858,6 +2938,23 @@ def import_trace_styles_collection(filename):
 
 #export an entire trace_styles_collection from .json. THe trace_styles_collection is dict.
 def import_trace_style(filename):
+    """
+    Imports a single trace style from a JSON file.
+
+    Reads a JSON-formatted file that contains a `trace_style` block and returns the
+    associated trace style dictionary identified by its embedded name. Validates structure
+    before returning the style.
+
+    Args:
+        filename (str): The name of the JSON file to import. If the extension is missing,
+                        ".json" will be appended automatically.
+
+    Returns:
+        dict: A dictionary representing the imported trace style.
+
+    Raises:
+        ValueError: If the JSON structure is malformed or the expected trace style is missing.
+    """
     # Ensure the filename ends with .json
     if not filename.lower().endswith(".json"):
         filename += ".json"

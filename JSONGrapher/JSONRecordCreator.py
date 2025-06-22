@@ -2453,10 +2453,11 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     This function also calls helper functions to populate the sizes for bubble2d and bubble3d plots.
 
     Args:
-        data_series (dict): A dictionary representing a single Plotly trace.
-        trace_styles_collection (str or dict): Name of the style library or a full trace style dictionary.
-        trace_style_to_apply (str or dict): A specific style name or full style definition to apply.
-            If empty, it tries to infer from `data_series["trace_style"]`.
+        data_series (dict): A dictionary representing a single data series / trace.
+        trace_styles_collection (str or dict): Name of the trace_styles_collection to use or a full trace_style_styles_collection dictionary. If
+            empty, the 'default' trace_styles_collection will be used.
+        trace_style_to_apply (str or dict): A specific trace_style name to pull from the trace_styles_collection or full style definition to apply. If
+            empty, the function will check `data_series["trace_style"]` before using the 'default' trace_style.
 
     Returns:
         dict: The updated data series dictionary with applied style formatting.

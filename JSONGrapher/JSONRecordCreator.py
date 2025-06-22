@@ -2182,8 +2182,8 @@ def parse_plot_style(plot_style):
     Args:
         plot_style (None, str, list, or dict): The style input. Can be:
             - A dictionary with one or both expected keys
-            - A single string to use for both layout and trace styles
             - A list of two strings: [layout_style, trace_styles_collection]
+            - A single string to use for both layout and trace styles
             - None
 
     Returns:

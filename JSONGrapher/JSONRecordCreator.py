@@ -2416,7 +2416,7 @@ def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collecti
     Applies a trace style preset to each trace in a Plotly figure dictionary.
 
     Iterates over all traces in `fig_dict["data"]` and updates their appearance using the
-    provided `trace_styles_collection`. Also attaches the applied style name to `fig_dict["plot_style"]`.
+    provided `trace_styles_collection`. Also sets/updates the applied trace_styles_collection name in `fig_dict["plot_style"]`.
 
     Args:
         fig_dict (dict): A dictionary containing a Plotly-style `data` list of traces.

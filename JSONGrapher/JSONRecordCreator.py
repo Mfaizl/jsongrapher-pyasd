@@ -2366,15 +2366,11 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     ax.legend()
     return fig
     
-
-#The below function works, but because it depends on the python plotly package, we avoid using it
-#To decrease the number of dependencies. 
 def convert_plotly_dict_to_matplotlib(fig_dict):
     """
     Converts a Plotly figure dictionary into a Matplotlib figure.
 
-    This function depends on the `plotly` Python package (via `plotly.io.from_json`) and is therefore avoided
-    in minimal-dependency environments. Supports basic translation of Bar Charts, Scatter Plots, and Spline curves
+    Supports basic translation of Bar Charts, Scatter Plots, and Spline curves
     (the latter simulated using a rolling polynomial fit).
 
     Args:

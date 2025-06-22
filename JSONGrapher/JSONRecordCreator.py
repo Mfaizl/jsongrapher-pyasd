@@ -2645,21 +2645,22 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
 
 def prepare_bubble_sizes(data_series):
     """
-    Prepares a Plotly data series for rendering as a bubble plot by scaling marker sizes based on z-values.
+    Prepares a bubble sizes list for a bubble plot based on the fields provided in the data series,
+    then inserts the bubble sizes list into the right field for a bubble plot.
 
-    This function extracts bubble size values from either the `z_points` or `z` field, normalizes them
-    to a maximum value, and multiplies by a scale factor (`max_bubble_size`). It also sets the `text` field
-    for hover display and ensures the required marker structure exists.
+    This function extracts bubble size values from a data_series field based on 'bubble_sizes' or the `z_points` or `z` field, 
+    then scales the bubble sizes to a maximum value, `max_bubble_size`, with a default used if not provided by the data_series. 
+    The function a also sets the `text` field of each marker point (each bubble) for hover display.
 
     Args:
-        data_series (dict): A dictionary representing a single Plotly data series with optional
-                            'z_points', 'z', and 'max_bubble_size' fields.
+        data_series (dict): A dictionary representing a single data series, with optional
+                            fields such as 'bubble_sizes', and 'max_bubble_size'.
 
     Returns:
-        dict: The updated data series with marker sizes and hover text configured.
+        dict: The updated data series with bubble sizes (marker sizes) and hover text inserted.
 
     Raises:
-        KeyError: If no valid source of size data is found and normalization cannot proceed.
+        KeyError: If no valid source of size data is found and/or bubble size scaling cannot proceed.
     """
     #To make a bubble plot with plotly, we are actually using a 2D plot
     #and are using the z values in a data_series to create the sizes of each point.

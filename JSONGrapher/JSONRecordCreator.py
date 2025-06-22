@@ -2227,8 +2227,10 @@ def apply_plot_style_to_plotly_dict(fig_dict, plot_style=None):
     """
     Applies both layout and trace styles to a Plotly figure dictionary based on the provided plot_style.
 
-    This is the only style-applying function that substitutes empty strings with "default" styles.
-    Input plot_style can be a string, list, or dictionary. It is internally normalized via `parse_plot_style()`.
+    Input plot_style can be a dictionary, list, or string. It is internally parsed and converted to a dictionary if needed via `parse_plot_style()`.
+    This is the only style-applying function that substitutes empty strings with "default" styles in the dictionary itself.
+    Having this as the only style-applying function that will convert empty strings to "default" within the dictionary is important for developers to maintain
+    for the algorithmic flow for how styles are applied.    
 
     Args:
         fig_dict (dict): The Plotly figure dictionary to which styles will be applied.

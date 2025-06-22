@@ -2377,7 +2377,7 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
         fig_dict (dict): A dictionary representing a Plotly figure.
 
     Returns:
-        matplotlib.figure.Figure: The converted Matplotlib figure object.
+        matplotlib.figure.Figure: The created Matplotlib figure object.
     """
     import plotly.io as pio
     import matplotlib.pyplot as plt

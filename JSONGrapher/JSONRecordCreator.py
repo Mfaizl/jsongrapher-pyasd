@@ -2736,16 +2736,19 @@ def remove_trace_style_from_single_data_series(data_series):
 
 def extract_trace_style_by_index(fig_dict, data_series_index, new_trace_style_name='', extract_colors=False):
     """
-    Extracts the trace style from a single data series in a Plotly figure by its index.
+    Pulls a data_series dictionary from a fig_dict by the index,
+    then creates a and returns a trace_style dictionary by extracting formatting attributes from that single data_series dictionary.
 
     This is a wrapper for `extract_trace_style_from_data_series_dict()` and allows optional renaming
-    of the extracted style and inclusion of color attributes.
+    of the extracted style and optional extraction of color attributes. Extraction of color for the
+    trace_style is not recommended for normal usage, since a color in a trace_style
+    that overrides auto-coloring schemes when multiple series are present.
 
     Args:
-        fig_dict (dict): The Plotly figure dictionary containing the `data` list.
+        fig_dict (dict): A fig_dict with a `data` field containing a list of data_series dictionaries.
         data_series_index (int): Index of the target data series within the `data` list.
-        new_trace_style_name (str): Optional new name to assign to the extracted style.
-        extract_colors (bool): Whether to include color-related attributes in the extracted style.
+        new_trace_style_name (str): Optional new name to assign to the extracted trace_style.
+        extract_colors (bool): Whether to include color-related attributes in the extracted trace_style.
 
     Returns:
         dict: A dictionary containing the extracted trace style.
@@ -2756,11 +2759,12 @@ def extract_trace_style_by_index(fig_dict, data_series_index, new_trace_style_na
 
 def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_name='', additional_attributes_to_extract=None, extract_colors=False):
     """
-    Extracts formatting attributes from a single Plotly data series dictionary.
+    Creates a and returns a trace_style dictionary by extracting formatting attributes from a single data_series dictionary.
 
-    This function returns a dictionary containing only style-related fields—such as line, marker,
-    and text formatting—under a user-defined name. Color values (e.g., fill, marker color) can optionally
-    be excluded to support general-purpose styling templates.
+    This function returns a trace_style dictionary containing only style-format related fields such as line, marker,
+    and text formatting. Color values (e.g., fill, marker color) can optionally  be included in the extracted trace_style. 
+    Extraction of color for the trace_style is not recommended for normal usage,
+    since a color in a trace_style that overrides auto-coloring schemes when multiple series are present.
 
     Examples of formatting attributes extracted:
     - "type"
@@ -2776,11 +2780,12 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
     - "textfont"
 
     Args:
-        data_series_dict (dict): A dictionary representing a single Plotly trace.
-        new_trace_style_name (str): Optional name to assign the extracted style. If empty, defaults to
-                                    the trace's `trace_style` key or "custom".
-        additional_attributes_to_extract (list, optional): Additional non-standard attributes to include.
-        extract_colors (bool): Whether to include color-related values like 'marker.color' and 'fillcolor'
+        data_series_dict (dict): A data_series dictionary for a single trace.
+        new_trace_style_name (str): Optional name to assign the extracted style. If empty, the value in
+                                    the `trace_style` field of the existing data_series dict will be used (if it is a string),
+                                    and if no string is present there then "custom" will be used.
+        additional_attributes_to_extract (list, optional): Additional formatting attributes to extract.
+        extract_colors (bool): If set to True, will also extract color-related values like 'marker.color' and 'fillcolor'. Not recommended for typical trace_style usage.
     
     Returns:
         dict: A trace style dictionary with the format {style_name: formatting_attributes}.
@@ -2865,16 +2870,17 @@ def write_trace_style_to_file(trace_style_dict, trace_style_name, filename):
 #export an entire trace_styles_collection to .json. The trace_styles_collection is dict.
 def write_trace_styles_collection_to_file(trace_styles_collection, trace_styles_collection_name, filename):   
     """
-    Exports an entire trace styles collection to a JSON file.
+    Exports a trace_styles_collection dictionary to a JSON file.
 
-    Accepts a dictionary of trace styles and writes it to disk in a standard
-    JSONGrapher-compatible format. If a container dictionary is received (i.e., with a
-    top-level "trace_styles_collection" key), it extracts the inner collection.
+    Accepts a trace_styles_collection dictionary and writes it to disk. 
+    The trace_styeles_collection could be provided in a containing dictionary.
+    So the function, first checks if the dictionary recieved has a key named "traces_tyles_collection".
+    If that key is present, the function, pulls the traces_style_collection out of that field and uses it.
 
     Args:
-        trace_styles_collection (dict): The style definitions to export, either directly or within a container.
-        trace_styles_collection_name (str): The identifier to use for the exported collection.
-        filename (str): Name of the target file. Automatically appends ".json" if not provided.
+        trace_styles_collection (dict): trace_styles_collection dictionary to export. Or a container with a trace_styles_collection inside.
+        trace_styles_collection_name (str): The name for the trace_styles_collection to export, so it can later be used in the JSONGrapher styles_library
+        filename (str): filename to write to. The function Automatically appends ".json" if a filename without file extension is provided.
 
     Returns:
         None
@@ -2897,21 +2903,21 @@ def write_trace_styles_collection_to_file(trace_styles_collection, trace_styles_
 
 
 
-#export an entire trace_styles_collection from .json. THe trace_styles_collection is dict.
+#import an entire trace_styles_collection from .json. THe trace_styles_collection is dict.
 def import_trace_styles_collection(filename):
     """
-    Imports a trace styles collection from a JSON file.
+    Imports a trace_styles_collection dictionary from a JSON file.
 
-    Reads a JSON-formatted file and extracts the trace styles collection
+    Reads a JSON-formatted file and extracts the trace_styles_collection
     identified by its embedded name. The function validates structure and
-    ensures the expected format before returning the styles dictionary.
+    ensures the expected format before returning the trace_styles_dictionary.
 
     Args:
         filename (str): The name of the JSON file to import from. If the extension is
                         missing, ".json" will be appended automatically.
 
     Returns:
-        dict: A dictionary containing the extracted trace styles collection.
+        dict: A dictionary containing the imported trace_styles_collection.
 
     Raises:
         ValueError: If the JSON structure is malformed or the collection name is not found.
@@ -2935,8 +2941,7 @@ def import_trace_styles_collection(filename):
     # Return only the dictionary corresponding to the collection name
     return trace_styles_collection
 
-
-#export an entire trace_styles_collection from .json. THe trace_styles_collection is dict.
+#import a single trace_styles dict from  a .json file.
 def import_trace_style(filename):
     """
     Imports a single trace style from a JSON file.
@@ -2950,7 +2955,7 @@ def import_trace_style(filename):
                         ".json" will be appended automatically.
 
     Returns:
-        dict: A dictionary representing the imported trace style.
+        dict: A dictionary representing the imported trace_style.
 
     Raises:
         ValueError: If the JSON structure is malformed or the expected trace style is missing.
@@ -2978,7 +2983,7 @@ def import_trace_style(filename):
 
 def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default"):
     """
-    Apply a predefined style to a Plotly fig_dict while preserving non-cosmetic fields.
+    Apply a predefined layout_style to a fig_dict while preserving non-cosmetic fields.
     
     :param fig_dict: dict, Plotly style fig_dict
     :param layout_style_to_apply: str, Name of the style or journal, or a style dictionary to apply.

@@ -2134,19 +2134,23 @@ def validate_JSONGrapher_record(record):
 
 def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_interpolated_points=0, adjust_edges=True):
     """
-    Applies a rolling polynomial regression with a specified window size and degree,
-    interpolates additional points, and optionally adjusts edge points for smoother transitions.
+    Applies a rolling polynomial regression to the data using a sliding window.
+
+    Fits a polynomial of the specified degree to segments of the input data and optionally interpolates additional
+    points between each segment. Edge behavior can be adjusted for smoother curve boundaries.
 
     Args:
-        x_values (list): List of x coordinates.
-        y_values (list): List of y coordinates.
-        window_size (int): Number of points per rolling fit (default: 3).
-        degree (int): Degree of polynomial to fit (default: 2).
-        num_interpolated_points (int): Number of interpolated points per segment (default: 3). Set to 0 to only return original points.
-        adjust_edges (bool): Whether to adjust edge cases based on window size (default: True).
+        x_values (list): List of x-coordinate values.
+        y_values (list): List of y-coordinate values.
+        window_size (int): Number of data points per rolling fit window (default: 3).
+        degree (int): Degree of the polynomial to fit within each window (default: 2).
+        num_interpolated_points (int): Number of interpolated points between each pair of x-values (default: 0).
+        adjust_edges (bool): If True, expands window size near edges for smoother transitions (default: True).
 
     Returns:
-        tuple: (smoothed_x, smoothed_y) lists for plotting.
+        tuple:
+            - smoothed_x (list): List of x-values including interpolated points.
+            - smoothed_y (list): List of corresponding y-values from the polynomial fits.
     """
     import numpy as np
 
@@ -2205,11 +2209,23 @@ def rolling_polynomial_fit(x_values, y_values, window_size=3, degree=2, num_inte
 
 def parse_plot_style(plot_style):
     """
-    Parse the given plot style and return a structured dictionary for layout and data series styles.
-    If plot_style is missing a layout_style or trace_styles_collection then will set them as an empty string.
-    
-    :param plot_style: None, str, list of two items, or a dictionary with at least one valid field.
-    :return: dict with "layout_style" and "trace_styles_collection", ensuring defaults if missing.
+    Parses the given plot style and returns a structured dictionary for layout and trace styles.
+
+    Accepts a variety of input formats and ensures a dictionary with "layout_style" and
+    "trace_styles_collection" keys is returned. Defaults are applied if fields are missing.
+    Also issues warnings for common key misspellings in dictionary input.
+
+    Args:
+        plot_style (None, str, list, or dict): The style input. Can be:
+            - A dictionary with one or both expected keys
+            - A list of two strings: [layout_style, trace_styles_collection]
+            - A single string to use for both layout and trace styles
+            - None
+
+    Returns:
+        dict: A dictionary with keys:
+            - "layout_style" (str or None)
+            - "trace_styles_collection" (str or None)
     """
     if plot_style is None:
         parsed_plot_style = {"layout_style": None, "trace_styles_collection": None}
@@ -2244,6 +2260,25 @@ def parse_plot_style(plot_style):
 #IMPORTANT: This is the only function that will set a layout_style or trace_styles_collection that is an empty string into 'default'.
 # all other style applying functions (including parse_plot_style) will pass on the empty string or will do nothing if receiving an empty string.
 def apply_plot_style_to_plotly_dict(fig_dict, plot_style=None):
+    """
+    Applies both layout and trace styles to a Plotly figure dictionary based on the provided plot_style.
+
+    Input plot_style can be a dictionary, list, or string. It is internally parsed and converted to a dictionary if needed via `parse_plot_style()`.
+    This is the only style-applying function that substitutes empty strings with "default" styles in the dictionary itself.
+    Having this as the only style-applying function that will convert empty strings to "default" within the dictionary is important for developers to maintain
+    for the algorithmic flow for how styles are applied.    
+
+    Args:
+        fig_dict (dict): The Plotly figure dictionary to which styles will be applied.
+        plot_style (str, list, or dict, optional): The style(s) to apply. Acceptable formats:
+            - A single string (applied to both layout and trace styles).
+            - A list of two strings: [layout_style, trace_styles_collection].
+            - A dictionary with "layout_style" and/or "trace_styles_collection" keys.
+            Defaults to {"layout_style": {}, "trace_styles_collection": {}}.
+
+    Returns:
+        dict: The modified Plotly figure dictionary with styles applied.
+    """
     if plot_style is None:  # should not initialize mutable objects in arguments line, so doing here.
         plot_style = {"layout_style": {}, "trace_styles_collection": {}}  # Fresh dictionary per function call
     #We first parse style_to_apply to get a properly formatted plot_style dictionary of form: {"layout_style":"default", "trace_styles_collection":"default"}
@@ -2268,10 +2303,16 @@ def apply_plot_style_to_plotly_dict(fig_dict, plot_style=None):
 
 def remove_plot_style_from_plotly_dict(fig_dict):
     """
-    Remove both layout and data series styles from a Plotly figure dictionary.
+    Removes both layout and trace styles from a Plotly figure dictionary.
 
-    :param fig_dict: dict, Plotly style fig_dict
-    :return: dict, Updated Plotly style fig_dict with default formatting.
+    This function strips custom layout and trace styling, resetting the figure
+    to a default format suitable for clean export or re-styling.
+
+    Args:
+        fig_dict (dict): The Plotly figure dictionary to clean.
+
+    Returns:
+        dict: The updated figure dictionary with styles removed.
     """
     fig_dict = remove_layout_style_from_plotly_dict(fig_dict)
     fig_dict = remove_trace_styles_collection_from_plotly_dict(fig_dict)
@@ -2280,13 +2321,17 @@ def remove_plot_style_from_plotly_dict(fig_dict):
 
 def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     """
-    Converts a Plotly figure dictionary into a Matplotlib figure without using pio.from_json.
+    Converts a Plotly figure dictionary into a Matplotlib figure without relying on Plotly's `pio.from_json`.
+
+    Currently supports basic conversion of bar and scatter-style traces. For `scatter_spline` and `spline`,
+    a rolling polynomial fit is used as an approximation. Layout metadata such as title and axis labels
+    are also extracted and applied to the Matplotlib figure.
 
     Args:
         fig_dict (dict): A dictionary representing a Plotly figure.
 
     Returns:
-        matplotlib.figure.Figure: The corresponding Matplotlib figure.
+        matplotlib.figure.Figure: The corresponding Matplotlib figure object.
     """
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
@@ -2357,22 +2402,18 @@ def convert_JSONGrapher_dict_to_matplotlib_fig(fig_dict):
     ax.legend()
     return fig
     
-
-#The below function works, but because it depends on the python plotly package, we avoid using it
-#To decrease the number of dependencies. 
 def convert_plotly_dict_to_matplotlib(fig_dict):
     """
     Converts a Plotly figure dictionary into a Matplotlib figure.
 
-    Supports: Bar Charts, Scatter Plots, Spline curves using rolling polynomial regression.
-
-    This functiony has a dependency on the plotly python package (pip install plotly)
+    Supports basic translation of Bar Charts, Scatter Plots, and Spline curves
+    (the latter simulated using a rolling polynomial fit).
 
     Args:
         fig_dict (dict): A dictionary representing a Plotly figure.
 
     Returns:
-        matplotlib.figure.Figure: The corresponding Matplotlib figure.
+        matplotlib.figure.Figure: The created Matplotlib figure object.
     """
     import plotly.io as pio
     import matplotlib.pyplot as plt
@@ -2408,16 +2449,18 @@ def convert_plotly_dict_to_matplotlib(fig_dict):
 
 def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collection="", trace_style_to_apply=""):
     """
-    Iterates over all traces in the `data` list of a Plotly figure dictionary 
-    and applies styles to each one.
+    Applies a trace style preset to each trace in a Plotly figure dictionary.
+
+    Iterates over all traces in `fig_dict["data"]` and updates their appearance using the
+    provided `trace_styles_collection`. Also sets/updates the applied trace_styles_collection name in `fig_dict["plot_style"]`.
 
     Args:
-        fig_dict (dict): A dictionary containing a `data` field with Plotly traces.
-        trace_style_to_apply (str): Optional style preset to apply. Default is "default".
+        fig_dict (dict): A dictionary containing a Plotly-style `data` list of traces.
+        trace_styles_collection (str or dict): A named style collection or a full style definition dictionary.
+        trace_style_to_apply (str): Optional specific trace style to apply to each series (default is "").
 
     Returns:
-        dict: Updated Plotly figure dictionary with defaults applied to each trace.
-
+        dict: The updated Plotly figure dictionary with applied trace styles.
     """
     if type(trace_styles_collection) == type("string"):
         trace_styles_collection_name = trace_styles_collection
@@ -2438,14 +2481,28 @@ def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collecti
 # compared to how plotly treats 'type' for a data series. So later in the process, when actually plotting with plotly, the 'type' field will get overwritten.
 def apply_trace_style_to_single_data_series(data_series, trace_styles_collection="", trace_style_to_apply=""):
     """
-    Applies predefined styles to a single Plotly data series while preserving relevant fields.
+    Applies a predefined or custom trace style to a single data series while preserving other fields.
+
+    This trace_style_to_apply can be passed in as a dictionary or as a string that is a trace_style name to find in a trace_styles_collection 
+    The function applies type-specific formatting (e.g., spline, scatterd3d, bubble2d), and conditionally injects colorscale mappings
+    when specified via a trace-style suffix after a double underscore "__" delimeter  (e.g., "scatter__viridis").
+    This function also calls helper functions to populate the sizes for bubble2d and bubble3d plots.
 
     Args:
-        data_series (dict): A dictionary representing a single Plotly data series.
-        trace_style_to_apply (str or dict): Name of the style preset or a custom style dictionary. Default is "default".
+        data_series (dict): A dictionary representing a single data series / trace.
+        trace_styles_collection (str or dict): Name of the trace_styles_collection to use or a full trace_style_styles_collection dictionary. If
+            empty, the 'default' trace_styles_collection will be used.
+        trace_style_to_apply (str or dict): A specific trace_style name to pull from the trace_styles_collection or full style definition to apply. If
+            empty, the function will check `data_series["trace_style"]` before using the 'default' trace_style.
 
     Returns:
-        dict: Updated data series with style applied.
+        dict: The updated data series dictionary with applied style formatting.
+
+    Notes:
+        - Trace styles support 2D and 3D formats including "scatter", "scatter3d", "mesh3d", "heatmap", and "bubble".
+        - A style suffix like "__viridis" triggers automatic colorscale assignment for markers, lines, or intensity maps.
+        - If no valid style is found, the function falls back to the first available style in the collection.
+        - None values in color-mapped data are converted to 0 and produce a warning.
     """
     if not isinstance(data_series, dict):
         return data_series  # Return unchanged if the data series is invalid.
@@ -2623,6 +2680,24 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     return data_series
 
 def prepare_bubble_sizes(data_series):
+    """
+    Prepares a bubble sizes list for a bubble plot based on the fields provided in the data series,
+    then inserts the bubble sizes list into the right field for a bubble plot.
+
+    This function extracts bubble size values from a data_series field based on 'bubble_sizes' or the `z_points` or `z` field, 
+    then scales the bubble sizes to a maximum value, `max_bubble_size`, with a default used if not provided by the data_series. 
+    The function a also sets the `text` field of each marker point (each bubble) for hover display.
+
+    Args:
+        data_series (dict): A dictionary representing a single data series, with optional
+                            fields such as 'bubble_sizes', and 'max_bubble_size'.
+
+    Returns:
+        dict: The updated data series with bubble sizes (marker sizes) and hover text inserted.
+
+    Raises:
+        KeyError: If no valid source of size data is found and/or bubble size scaling cannot proceed.
+    """
     #To make a bubble plot with plotly, we are actually using a 2D plot
     #and are using the z values in a data_series to create the sizes of each point.
     #We also will scale them to some maximum bubble size that is specifed.

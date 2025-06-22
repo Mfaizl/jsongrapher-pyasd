@@ -3065,9 +3065,9 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
     annotations, and update button labels) are retained even after the style is applied.
 
     Args:
-        fig_dict (dict): A figure dictionary in which layout_style will be applied.
-        layout_style_to_apply (str or dict, optional): The name of a layout_style or a dictionary 
-            defining a layout_style to apply. Defaults to "default".
+        fig_dict (dict): A figure dictionary in which the specified or provided layout_style will be applied.
+        layout_style_to_apply (str or dict, optional): The name of a layout_style or a layout_style dictionary 
+            to apply. Defaults to "default".
 
     Returns:
         dict: The updated fig_dict with the applied layout_style and preserved layout elements.
@@ -3157,9 +3157,9 @@ def apply_layout_style_to_plotly_dict(fig_dict, layout_style_to_apply="default")
 # So the main class function will also be broken into two and/or need to take an optional argument in
 def remove_layout_style_from_plotly_dict(fig_dict):
     """
-    Removes applied layout_style from a fig_dict while retaining core layout content.
+    Removes any layout field formatting from a fig_dict while retaining any essential layout field content.
 
-    This function strips visual style customizations from a fig_dict, such as font and background 
+    This function strips formatting aspects in the layout field from a fig_dict, such as font and background 
     settings, while preserving non-cosmetic fields like axis titles, annotation texts, and interactive labels.
 
     Args:
@@ -3236,17 +3236,17 @@ def remove_layout_style_from_plotly_dict(fig_dict):
 
 def extract_layout_style_from_plotly_dict(fig_dict):
     """
-    Extracts a layout_style dictionary from a fig_dict by capturing cosmetic layout properties.
+    Extracts a layout_style dictionary from a fig_dict by pulling out the cosmetic formatting layout properties.
 
     This function pulls visual configuration details—such as fonts, background colors, margins,
     grid lines, tick styling, and legend positioning—from a given fig_dict to construct a layout_style
     dictionary that can be reused or applied elsewhere.
 
     Args:
-        fig_dict (dict): A fig_dict containing layout configuration from which styling is extracted.
+        fig_dict (dict): A fig_dict from which layout formatting fields will be extracted.
 
     Returns:
-        dict: A dictionary capturing the extracted layout_style from the fig_dict.
+        dict: A layout_style dictionary capturing the extracted layout formatting.
     """
 
 
@@ -3371,22 +3371,28 @@ def extract_layout_style_from_plotly_dict(fig_dict):
 
 def update_implicit_data_series_x_ranges(fig_dict, range_dict):
     """
-    Updates the x_range_default values for equation and simulate data_series entries in a fig_dict.
+    Updates the x_range_default values for any implicit data_series a fig_dict.  Specifically,
+    those defined by an 'equation' field or by a 'simulate' feid.
 
-    This function modifies the x_range_default values based on a supplied range_dict. It targets
-    only the "equation" and "simulate" keys within the data_series dictionary and leaves the rest 
-    of the figure data untouched. Deep copying ensures the original fig_dict remains unaltered.
+    This function modifies the x_range_default field in each data_series field based on 
+    the values in a supplied range_dict. The x_range_default field will only be changed
+    within the "equation" and "simulate" fields of data_series dictionaries.
+    The rest of the fig_dict is unchanged. A new fig_dict is returned.
+    Deep copying ensures the original fig_dict remains unaltered.
+    This is function is primarily used for updating the x and y axis scales where an equation or simulation
+    will be used in order to match the range that other data series span, to create a properly ranged
+    implicit data series production for the final plot.
 
     Args:
-        fig_dict (dict): A fig_dict containing one or more data_series entries.
+        fig_dict (dict): A fig_dict containing one or more data_series entries that may have 'simulate' or 'equation' fields.
         range_dict (dict): Dictionary with optional keys "min_x" and "max_x" specifying global
             x-axis bounds to apply.
 
     Returns:
-        dict: A new fig_dict with updated x_range_default values in applicable data_series.
+        dict: A new fig_dict with updated x_range_default values in applicable data_series, within their 'simulate' or 'equation' fields.
 
     Notes:
-        If "min_x" or "max_x" in range_dict is None, the corresponding existing value is preserved.
+        If "min_x" or "max_x" in range_dict is None, the existing value for it in the data_series dictionary is preserved.
     """
     import copy  # Import inside function to limit scope
 
@@ -3423,22 +3429,28 @@ def update_implicit_data_series_x_ranges(fig_dict, range_dict):
 
 def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
     """
-    Extracts per-series and overall min/max x/y values from a fig_dict.
+    Extracts the x and y ranges for a fig_dict, returning both overall min/max x/y values and per-series min/max x/y values.
 
     This function examines each data_series in the fig_dict and computes individual and aggregate
     x/y range boundaries. It accounts for simulation or equation series that include x-range
     metadata, as well as raw data series with explicit "x" and "y" lists. Optional arguments
-    allow filtering out simulations or equations entirely from the calculation.
+    allow filtering out simulations or equations from consideration for the overall min/max x/y values,
+    and will append None values for those per-series range max values.
+    This function is for extracting display limits for a plot, not for evaluation limits.
+    That is why equation and simulate fields may have None as their limits.
 
     Args:
-        fig_dict (dict): The fig_dict containing data_series entries to analyze.
-        skip_equations (bool, optional): Whether to exclude equation-based data_series. Defaults to False.
-        skip_simulations (bool, optional): Whether to exclude simulation-based data_series. Defaults to False.
+        fig_dict (dict): The fig_dict containing data_series from which ranges will be extracted.
+        skip_equations (bool, optional): True will give a fig_range that excludes the ranges from equation-based data_series. Defaults to False.
+        skip_simulations (bool, optional): True will give a fig_range that excludes the ranges from simulation-based data_series. Defaults to False.
 
     Returns:
         tuple:
-            - fig_dict_ranges (dict): A dictionary with overall min_x, max_x, min_y, and max_y.
-            - data_series_ranges (dict): A dictionary containing per-series min_x, max_x, min_y, and max_y values.
+            - fig_dict_ranges (dict): A dictionary with overall ranges and keys of "min_x", "max_x", "min_y", and "max_y".
+            - data_series_ranges (dict): A dictionary containing per-series range limits in four lists with dictionary keys
+                    of "min_x", "max_x", "min_y", and "max_y". The Indices in the list match the data_series indices,
+                    with the indices of skipped data_series being populated with None as their values.
+                    
 
     Notes:
         - If x_range_default or x_range_limits are unavailable, raw x/y values are used instead.
@@ -3550,21 +3562,29 @@ def get_fig_dict_ranges(fig_dict, skip_equations=False, skip_simulations=False):
 # print("Data Series Values:", data_series_ranges)
 # print("Extreme Values:", fig_dict_ranges)
 
-### Start of section of code with functions for extracting and updating x and y ranges of data series ###
+### End of section of code with functions for extracting and updating x and y ranges of data series ###
 
 
 ### Start section of code with functions for cleaning fig_dicts for plotly compatibility ###
 
 def update_title_field(fig_dict_or_subdict, depth=1, max_depth=10):
     """
-    Recursively converts all 'title' string fields in a fig_dict or sub-dictionary to dictionary format.
+    Checks 'title' fields in a fig_dict and its sub-dictionary to see if they are strings,
+    and if they are, then converts them into a dictionary format.
 
+    JSONGrapher already makes title fields as dictionaries.
+    This function is to allow JSONGrapher to be take in fields from old plotly records.
+    
+    This is a past-compatibilty function. Plotly previously allowed strings for title fields,
+    but now recommends (or on some cases requires) a dictionary with field of text because
+    the dictionary can then include additional formatting.
+    
     This function prepares a JSONGrapher fig_dict for compatibility with updated layout formatting
-    conventions, where titles must be dictionaries with a 'text' key. It traverses nested dictionaries 
+    conventions, where titles must be dictionaries with a 'text' key. The function  traverses nested dictionaries 
     and lists, transforming any title field that is a plain string into the proper dictionary structure.
 
     Args:
-        fig_dict_or_subdict (dict): The fig_dict or any sub-dictionary to be updated recursively.
+        fig_dict_or_subdict (dict): The fig_dict or any sub-dictionary to be checked and updated recursively.
         depth (int, optional): Current recursive depth, used internally to limit recursion. Defaults to 1.
         max_depth (int, optional): Maximum allowed recursion depth to avoid infinite loops. Defaults to 10.
 
@@ -3613,9 +3633,20 @@ def replace_superscripts(input_string):
     Replaces superscript-like strings in titles and data series names within a fig_dict.
 
     This function scans through the fig_dict or sub-dictionary recursively, updating all
-    string content where superscripts are found—such as in titles and legend names—
-    using a replace_superscripts transformation utility. Useful for making fig_dicts
-    compatible with rendering environments that require modernized formatting.
+    display string content where superscripts are found—such as in titles and legend names
+    so that superscripts of display strings will appear correctly in Plotly figures.
+
+    Some example inputs and outputs:
+    In : x^(2) + y**(-3) = z^(test)	
+    Out: x<sup>2</sup> + y<sup>-3</sup> = z<sup>test</sup>
+    In : E = mc**(2)	
+    Out: E = mc<sup>2</sup>
+    In : a^(b) + c**(d)	
+    Out: a<sup>b</sup> + c<sup>d</sup>
+    In : r^(theta) and s**(x)	
+    Out: r<sup>theta</sup> and s<sup>x</sup>
+    In : v^(1) + u^(-1)	
+    Out: v<sup>1</sup> + u^(-1)
 
     Args:
         fig_dict_or_subdict (dict): A fig_dict or sub-dictionary to process recursively.
@@ -3642,17 +3673,20 @@ def replace_superscripts(input_string):
 
 def convert_to_3d_layout(layout):
     """
-    Converts a 2D layout into a 3D layout by nesting axis fields under the 'scene' key.
+    Converts a standard JSONGrapher layout_dict into the format needed for a plotly 3D layout_dict by nesting axis fields under the 'scene' key.
 
-    This function reorganizes xaxis, yaxis, and zaxis fields from a flat 2D layout structure
-    into a 3D-compatible format by moving them into the 'scene' dictionary, as required for
-    3D plotting workflows. A deep copy is made to preserve the original layout.
-
+    This function reorganizes xaxis, yaxis, and zaxis fields from a standard JSONGrapher layout_dict
+    into a Plotly 3D layout_dict by moving axes fields into the 'scene' field, as required for
+    the current plotly schema for 3D plots. A deep copy of the layout_dict is used so the original layout_dict remains untouched.
+    This way of doing things is so JSONGrapher layout_dicts are consistent across 2D and 3D plots 
+    whereas Plotly does things differently for 3D plots, so this function converts a
+    standard JSONGrapher layout_dict into what is expected for Plotly 3D plots.
+    
     Args:
-        layout (dict): A layout-style dictionary, typically extracted from a fig_dict.
+        layout (dict): A  standard JSONGrapher layout_dict, typically extracted from a fig_dict.
 
     Returns:
-        dict: A new layout dictionary with axes embedded under the 'scene' key for 3D rendering.
+        dict: A Plotly 3D layout_dict with axes fields moved to 'scene' field.
     """
     import copy
     # Create a deep copy to avoid modifying the original layout
@@ -3673,6 +3707,7 @@ def convert_to_3d_layout(layout):
 
     #A bubble plot uses z data, but that data is then
     #moved into the size field and the z field must be removed.
+
 def remove_bubble_fields(fig_dict):
     #This code will modify the data_series inside the fig_dict, directly.
     bubble_found = False #initialize with false case.

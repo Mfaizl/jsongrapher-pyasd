@@ -2445,11 +2445,12 @@ def apply_trace_styles_collection_to_plotly_dict(fig_dict, trace_styles_collecti
 # compared to how plotly treats 'type' for a data series. So later in the process, when actually plotting with plotly, the 'type' field will get overwritten.
 def apply_trace_style_to_single_data_series(data_series, trace_styles_collection="", trace_style_to_apply=""):
     """
-    Applies a predefined or custom trace style to a single Plotly data series.
+    Applies a predefined or custom trace style to a single data series while preserving other fields.
 
-    This function handles multiple style systems, validates presets from a `trace_styles_collection`,
-    applies type-specific formatting (e.g., 3D, bubble, spline), and conditionally injects colorscale mappings
-    when specified via a trace-style suffix (e.g., "scatter_spline__viridis").
+    This trace_style_to_apply can be passed in as a dictionary or as a string that is a trace_style name to find in a trace_styles_collection 
+    The function applies type-specific formatting (e.g., spline, scatterd3d, bubble2d), and conditionally injects colorscale mappings
+    when specified via a trace-style suffix after a double underscore "__" delimeter  (e.g., "scatter__viridis").
+    This function also calls helper functions to populate the sizes for bubble2d and bubble3d plots.
 
     Args:
         data_series (dict): A dictionary representing a single Plotly trace.

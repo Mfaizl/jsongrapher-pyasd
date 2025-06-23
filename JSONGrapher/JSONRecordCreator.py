@@ -2314,7 +2314,13 @@ def prepare_bubble_sizes(data_series):
     #We also will scale them to some maximum bubble size that is specifed.
     if "marker" not in data_series:
         data_series["marker"] = {}   
-    if "z_points" in data_series:
+    if "bubble_sizes" in data_series:
+        if isinstance(data_series["bubble_sizes"], str): #if bubble sizes is a string, it must be a variable name to use for the bubble sizes.
+            bubble_sizes_variable_name = data_series["bubble_sizes"]
+            data_series["marker"]["size"] = data_series[bubble_sizes_variable_name]
+        else:
+            data_series["marker"]["size"] = data_series["bubble_sizes"]
+    elif "z_points" in data_series:
         data_series["marker"]["size"] = data_series["z_points"]
     elif "z" in data_series:
         data_series["marker"]["size"] = data_series["z"]

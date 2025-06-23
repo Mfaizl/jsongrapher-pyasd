@@ -3128,8 +3128,8 @@ def convert_to_3d_layout(layout):
     #A bubble plot uses z data, but that data is then
     #moved into the size field and the z field must be removed.
 def remove_bubble_fields(fig_dict):
-    # This code will modify the data_series inside the fig_dict, directly.
-    bubble_found = False  # initialize with false case.
+    #This code will modify the data_series inside the fig_dict, directly.
+    bubble_found = False #initialize with false case.
     for data_series in fig_dict["data"]:
         trace_style = data_series.get("trace_style") #trace_style will be None of the key is not present.
 

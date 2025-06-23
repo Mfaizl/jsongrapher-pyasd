@@ -650,14 +650,33 @@ class SyncedDict(dict):
 class JSONGrapherDataSeries(dict): #inherits from dict.
     def __init__(self, uid="", name="", trace_style="", x=None, y=None, **kwargs):
         """
-        Initializes a data series dictionary with synchronized attribute-style access.
+        Initializes a JSONGrapher data_series object which is a dictionary with custom functions and synchronized attribute-style access.
 
         This constructor sets default fields such as 'uid', 'name', 'trace_style', 'x', and 'y',
         and allows additional configuration via keyword arguments. The underlying structure behaves
         like both a dictionary and an object with attributes, supporting synced access patterns.
 
+        Here are some fields that can be included, with example values.
+
+        "uid": data_series_dict["uid"] = "123ABC",  # (string) a unique identifier
+        "name": data_series_dict["name"] = "Sample Data Series",  # (string) name of the data_series
+        "trace_style": data_series_dict["trace_style"] = "scatter",  # (string) type of trace (e.g., scatter, bar)
+        "x": data_series_dict["x"] = [1, 2, 3, 4, 5],  # (list) x-axis values
+        "y": data_series_dict["y"] = [10, 20, 30, 40, 50],  # (list) y-axis values
+        "mode": data_series_dict["mode"] = "lines",  # (string) plot mode (e.g., "lines", "markers")
+        "marker_size": data_series_dict["marker"]["size"] = 6,  # (integer) marker size
+        "marker_color": data_series_dict["marker"]["color"] = "blue",  # (string) marker color
+        "marker_symbol": data_series_dict["marker"]["symbol"] = "circle",  # (string) marker shape/symbol
+        "line_width": data_series_dict["line"]["width"] = 2,  # (integer) line thickness
+        "line_dash": data_series_dict["line"]["dash"] = "solid",  # (string) line style (solid, dash, etc.)
+        "opacity": data_series_dict["opacity"] = 0.8,  # (float) transparency level (0-1)
+        "visible": data_series_dict["visible"] = True,  # (boolean) whether the trace is visible
+        "hoverinfo": data_series_dict["hoverinfo"] = "x+y",  # (string) format for hover display
+        "legend_group": data_series_dict["legend_group"] = None,  # (string or None) optional grouping for legend
+
+
         Args:
-            uid (str, optional): Unique identifier for the data series. Defaults to an empty string.
+            uid (str, optional): Unique identifier for the data_series. Defaults to an empty string.
             name (str, optional): Display name of the series. Defaults to an empty string.
             trace_style (str, optional): Type of plot trace (e.g., 'scatter', 'bar'). Defaults to an empty string.
             x (list, optional): X-axis data values. Defaults to an empty list.
@@ -690,14 +709,14 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def update_while_preserving_old_terms(self, series_dict):
         """
-        Updates the current data series with new values while retaining previously set terms that are not overwritten.
+        Updates the current data_series dictionary with new values while retaining previously set terms that are not overwritten.
 
         This method applies a partial update to the internal dictionary by using the built-in `update()` method.
         Existing keys in `series_dict` will overwrite corresponding keys in the object, while all other existing
         keys and values will be preserved. Attributes on the owning object remain synchronized.
 
         Args:
-            series_dict (dict): A dictionary containing updated fields for the data series.
+            series_dict (dict): A dictionary containing updated fields for the data_series.
 
         Example:
             # Before: {'x': [1, 2], 'color': 'blue'}
@@ -708,9 +727,9 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
     def get_data_series_dict(self):
         
         """
-        Returns the underlying dictionary representation of the data series.
+        Returns the underlying dictionary representation of the data_series dictionary.
 
-        This method provides a clean snapshot of the current state of the data series object
+        This method provides a clean snapshot of the current state of the data_series object
         by converting it into a standard Python dictionary. It is useful for serialization,
         debugging, or passing the data to plotting libraries like Plotly.
 
@@ -723,7 +742,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         """
         Updates the x-axis data for the series with a new set of values.
 
-        This method replaces the current list of x-values in the data series. If no values are provided 
+        This method replaces the current list of x-values in the data_series. If no values are provided 
         (i.e., None or empty), it safely defaults to an empty list. The update is synchronized through 
         the internal dictionary mechanism for consistency.
 
@@ -736,7 +755,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         """
         Updates the y-axis data for the series with a new set of values.
 
-        This method replaces the current list of y-values in the data series. If no values are provided 
+        This method replaces the current list of y-values in the data_series. If no values are provided 
         (i.e., None or empty), it defaults to an empty list. The assignment ensures consistency with the 
         internal dictionary and allows for flexible input formats.
 
@@ -745,36 +764,50 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         """
         self["y"] = list(y_values) if y_values else []
 
+    def set_z_values(self, z_values):
+        """
+        Updates the z-axis data for the series with a new set of values.
+
+        This method replaces the current list of z-values in the data_series. If no values are provided 
+        (i.e., None or empty), it safely defaults to an empty list. The update is synchronized through 
+        the internal dictionary mechanism for consistency.
+
+        Args:
+            z_values (list): A list of numerical or categorical values to assign to the 'z' axis.
+        """
+        self["z"] = list(z_values) if z_values else []
+
+
     def set_name(self, name):
         """
-        Sets the name of the data series to the provided value.
+        Sets the name of the data_series to the provided value.
 
-        This method assigns a human-readable identifier or label to the data series, which is 
+        This method assigns a human-readable identifier or label to the data_series, which is 
         typically used for legend display and trace identification in visualizations.
 
         Args:
-            name (str): The new name or label to assign to the data series.
+            name (str): The new name or label to assign to the data_series.
         """
         self["name"] = name
 
     def set_uid(self, uid):
         """
-        Sets or updates the unique identifier (UID) for the data series.
+        Sets or updates the unique identifier (UID) for the data_series.
 
-        This method assigns a UID to the data series, which can be used to uniquely identify
+        This method assigns a UID to the data_series, which can be used to uniquely identify
         the trace within a larger figure or dataset. UIDs are helpful for referencing, comparing,
         or updating specific traces, especially in dynamic or interactive plotting environments.
 
         Args:
-            uid (str): A unique identifier string for the data series.
+            uid (str): A unique identifier string for the data_series.
         """
         self["uid"] = uid
 
     def set_trace_style(self, style):
         """
-        Updates the trace style of the data series to control its rendering behavior.
+        Updates the trace style of the data_series to control its rendering behavior.
 
-        This method sets the 'trace_style' field, which typically defines how the data series
+        This method sets the 'trace_style' field, which typically defines how the data_series
         appears visually in plots (e.g., 'scatter', 'bar', 'scatter_line', 'scatter_spline').
 
         Args:
@@ -848,7 +881,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         self.set_text(text) 
 
     def set_text(self, text):
-        #text should be a list of strings teh same length as the data series, one string per point.
+        #text should be a list of strings teh same length as the data_series, one string per point.
         """Update the annotations with a list of text as long as the number of data points."""
         if text == type("string"): 
             text = [text] * len(self["x"])  # Repeat the text to match x-values length
@@ -924,8 +957,8 @@ class JSONGrapherRecord:
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
         datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name.
         graph_title: Title of the graph or the dataset being represented.
-        data_objects_list (list): List of data series dictionaries to pre-populate the record. These may contain 'simulate' fields in them to call javascript source code for simulating on the fly.
-        simulate_as_added: Boolean. True by default. If true, any data series that are added with a simulation field will have an immediate simulation call attempt.
+        data_objects_list (list): List of data_series dictionaries to pre-populate the record. These may contain 'simulate' fields in them to call javascript source code for simulating on the fly.
+        simulate_as_added: Boolean. True by default. If true, any data_series that are added with a simulation field will have an immediate simulation call attempt.
         x_data: Single series x data in a list or array-like structure. 
         y_data: Single series y data in a list or array-like structure.
         x_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
@@ -934,7 +967,7 @@ class JSONGrapherRecord:
                 comments, and general formatting options.
     
     Methods:
-        add_data_series: Adds a new data series to the record.
+        add_data_series: Adds a new data_series to the record.
         add_data_series_as_equation: Adds a new equation to plot, which will be evaluated on the fly.
         set_layout_fields: Updates the layout configuration for the graph.
         export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.

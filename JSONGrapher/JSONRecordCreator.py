@@ -3729,17 +3729,16 @@ def convert_to_3d_layout(layout):
 
 def remove_bubble_fields(fig_dict):
     """
-    Removes 3D-specific fields from bubble plot entries in a fig_dict to convert them to 2D-compatible format.
+    Removes JSONGrapher bubble plot creation fields to make a JSONGrapher fig_dict Plotly compatible.
 
-    This function iterates over data_series entries in the fig_dict and removes 'z', 'z_points',
-    and 'max_bubble_size' fields from entries marked as bubble plots. If at least one bubble plot
-    is found, it also removes the 'zaxis' entry from the layout.
-
+    This function iterates over data_series entries in the fig_dict and removes 'bubble_size',
+    and 'max_bubble_size' fields from entries marked as bubble plots. 
+    
     Args:
-        fig_dict (dict): A fig_dict potentially containing bubble-style data_series.
+        fig_dict (dict): A fig_dict potentially containing JSONGrapher bubble plot data_series.
 
     Returns:
-        dict: The updated fig_dict with bubble-specific fields removed for 2D rendering compatibility.
+        dict: The updated fig_dict with JSONGrapher bubble plot creation fields removed for Plotly graphing compatibility.
     """
     #This code will modify the data_series inside the fig_dict, directly.
     bubble_found = False #initialize with false case.
@@ -3761,18 +3760,18 @@ def remove_bubble_fields(fig_dict):
 
 def update_3d_axes(fig_dict):
     """
-    Converts a 2D layout to 3D and modifies associated data_series to comply with 3D plotting requirements.
+    Converts a JSONGrapher 3D graph fig_dict to be compatible with Plotly 3D plotting. Modifies layout_dict and data_series dictionaries.
 
-    This function upgrades the layout of a fig_dict to a 3D format by nesting axis fields under 'scene',
-    and cleans or adjusts data_series entries based on their 3D plot types. For scatter3d and mesh3d traces,
+    This function converts the layout of a fig_dict to a Plotly 3D format by nesting axis fields under 'scene',
+    and also adjusts data_series entries as needed, based on their 3D plot types. For scatter3d and mesh3d traces,
     any 'z_matrix' fields are removed. For surface plots, 'z' is removed if 'z_matrix' is present and
     a notice is printed indicating the need for further transformation.
 
     Args:
-        fig_dict (dict): A fig_dict that may contain 3D axes or trace_style fields requiring format updates.
+        fig_dict (dict): A fig_dict that may contain JSONGrapher format denoting 3D axes and/or trace_style fields.
 
     Returns:
-        dict: The updated fig_dict prepared for valid 3D rendering.
+        dict: The updated fig_dict prepared for Plotly 3D rendering.
     """
     if "zaxis" in fig_dict["layout"]:
         fig_dict['layout'] = convert_to_3d_layout(fig_dict['layout'])
@@ -3791,13 +3790,13 @@ def update_3d_axes(fig_dict):
 
 def remove_extra_information_field(fig_dict, depth=1, max_depth=10):
     """
-    Recursively removes 'extraInformation' or 'extra_information' fields from a fig_dict for compatibility.
+    Recursively removes 'extraInformation' or 'extra_information' fields from a fig_dict for Plotly plotting compatibility.
 
     This function traverses a fig_dict or sub-dictionary structure to eliminate keys related to extra metadata
-    that are not supported by current layout format expectations. It supports deeply nested dictionaries and lists.
+    that are not supported by current Plotly layout format expectations. It supports deeply nested dictionaries and lists.
 
     Args:
-        fig_dict (dict): The figure dictionary or nested sub-dictionary to sanitize.
+        fig_dict (dict): A fig_dict or nested sub-dictionary.
         depth (int, optional): The current recursion depth during traversal. Defaults to 1.
         max_depth (int, optional): Maximum depth to avoid infinite recursion. Defaults to 10.
 
@@ -3877,9 +3876,9 @@ def remove_equation_field(json_fig_dict):
     Removes all 'equation' fields from the data_series in a fig_dict.
 
     This function scans through each item in the 'data' list of a fig_dict and deletes the
-    'equation' field if it is present. This is useful when stripping out symbolic definitions
-    or expression metadata from visualizations that no longer require analytical context.
-
+    'equation' field if it is present. This is useful for stripping out symbolic definitions
+    or expression metadata for use cases where the equation metadata is unnecessary or unsupported.
+    
     Args:
         json_fig_dict (dict): A fig_dict containing a list of data_series entries.
 
@@ -3919,7 +3918,7 @@ def remove_custom_units_chevrons(json_fig_dict):
 
     This function scans the xaxis, yaxis, and zaxis title text strings in the layout of a fig_dict
     and removes any chevrons that may exist. It is useful for cleaning up units or labels that
-    were enclosed in angle brackets for display or metadata purposes.
+    were enclosed in angle brackets for processing purposes.
 
     Args:
         json_fig_dict (dict): A fig_dict containing axis title text to sanitize.

@@ -3608,41 +3608,6 @@ def update_title_field(fig_dict_or_subdict, depth=1, max_depth=10):
 
 def update_superscripts_strings(fig_dict_or_subdict, depth=1, max_depth=10):
     """
-    Replaces superscript string patterns in fig_dict titles and legend labels for compatibility.
-
-    This function recursively traverses a fig_dict or sub-dictionary and updates any superscript-like
-    strings found within "title" or "data" fields. Titles with a "text" key and data series "name" 
-    entries are scanned and reformatted using replace_superscripts to ensure consistent rendering
-    across platforms that rely on structured string formatting.
-
-    Args:
-        fig_dict_or_subdict (dict): A fig_dict or nested dictionary to process.
-        depth (int, optional): Current recursion depth for traversal. Defaults to 1.
-        max_depth (int, optional): Maximum recursion depth. Defaults to 10.
-
-    Returns:
-        dict: The updated dictionary with superscript strings replaced.
-    """
-    if depth > max_depth or not isinstance(fig_dict_or_subdict, dict):
-        return fig_dict_or_subdict
-    
-    for key, value in fig_dict_or_subdict.items():
-        if key == "title": #This is for axes labels and graph title.
-            if "text" in fig_dict_or_subdict[key]:
-                fig_dict_or_subdict[key]["text"] = replace_superscripts(fig_dict_or_subdict[key]["text"])
-        if key == "data": #This is for the legend.
-            for data_dict in fig_dict_or_subdict[key]:
-                if "name" in data_dict:
-                    data_dict["name"] = replace_superscripts(data_dict["name"])
-        elif isinstance(value, dict):  # Nested dictionary
-            fig_dict_or_subdict[key] = update_superscripts_strings(value, depth + 1, max_depth)
-        elif isinstance(value, list):  # Lists can contain nested dictionaries
-            fig_dict_or_subdict[key] = [update_superscripts_strings(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
-    return fig_dict_or_subdict
-
-#The below function was made with the help of copilot.
-def replace_superscripts(input_string):
-    """
     Replaces superscript-like strings in titles and data series names within a fig_dict.
 
     This function scans through the fig_dict or sub-dictionary recursively, updating all
@@ -3668,6 +3633,47 @@ def replace_superscripts(input_string):
 
     Returns:
         dict: The updated dictionary with superscript replacements applied where needed.
+    """
+    if depth > max_depth or not isinstance(fig_dict_or_subdict, dict):
+        return fig_dict_or_subdict
+    
+    for key, value in fig_dict_or_subdict.items():
+        if key == "title": #This is for axes labels and graph title.
+            if "text" in fig_dict_or_subdict[key]:
+                fig_dict_or_subdict[key]["text"] = replace_superscripts(fig_dict_or_subdict[key]["text"])
+        if key == "data": #This is for the legend.
+            for data_dict in fig_dict_or_subdict[key]:
+                if "name" in data_dict:
+                    data_dict["name"] = replace_superscripts(data_dict["name"])
+        elif isinstance(value, dict):  # Nested dictionary
+            fig_dict_or_subdict[key] = update_superscripts_strings(value, depth + 1, max_depth)
+        elif isinstance(value, list):  # Lists can contain nested dictionaries
+            fig_dict_or_subdict[key] = [update_superscripts_strings(item, depth + 1, max_depth) if isinstance(item, dict) else item for item in value]
+    return fig_dict_or_subdict
+
+#The below function was made with the help of copilot.
+def replace_superscripts(input_string):
+    """
+    Takes a string, finds superscripts denoted symbolically (** or ^), and replaces the
+    symbolic superscript syntax with tagged markup syntax (<sup> </sup>)
+
+    Some example inputs and outputs:
+    In : x^(2) + y**(-3) = z^(test)	
+    Out: x<sup>2</sup> + y<sup>-3</sup> = z<sup>test</sup>
+    In : E = mc**(2)	
+    Out: E = mc<sup>2</sup>
+    In : a^(b) + c**(d)	
+    Out: a<sup>b</sup> + c<sup>d</sup>
+    In : r^(theta) and s**(x)	
+    Out: r<sup>theta</sup> and s<sup>x</sup>
+    In : v^(1) + u^(-1)	
+    Out: v<sup>1</sup> + u^(-1)
+
+    Args:
+        input_string (str): A string possibly including superscripts denoted by ** or ^
+       
+    Returns:
+        str: A string with superscript symbolic notation replaced with tagged markup (<sup> </sup>) notation.
     """
     #Example usage: print(replace_superscripts("x^(2) + y**(-3) = z^(test)"))
     import re

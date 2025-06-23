@@ -3865,12 +3865,11 @@ local_python_functions_dictionary = {} #This is a global variable that works wit
 
 def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbose = False):
     """
-    Downloads a JavaScript file using its URL, extracts the filename, appends an export statement,
-    executes it with Node.js, and parses the output.
+    Runs a JavaScript-based simulation by downloading and executing a js file with a simulate function from a URL.
 
-    Parameters:
-    javascript_simulator_url (str): URL of the raw JavaScript file to download and execute. Must have a function named simulate.
-    simulator_input_json_dict (dict): Input parameters for the JavaScript simulator.
+    This function fetches a JavaScript file containing a simulate function, appends a module export,
+    and invokes it using Node.js with the provided simulation input dictionary. The resulting simulation output,
+    if properly formatted, is returned as parsed JSON.
 
     # Example inputs
     javascript_simulator_url = "https://github.com/AdityaSavara/JSONGrapherExamples/blob/main/ExampleSimulators/Langmuir_Isotherm.js"
@@ -3883,9 +3882,13 @@ def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbo
         }
     }
 
+    Args:
+        javascript_simulator_url (str): URL pointing to the raw JavaScript file containing a 'simulate' function.
+        simulator_input_json_dict (dict): Dictionary of inputs to pass to the simulate function.
+        verbose (bool, optional): If True, prints standard output and error streams from Node.js execution. Defaults to False.
 
     Returns:
-    dict: Parsed JSON output from the JavaScript simulation, or None if an error occurred.
+        dict or None: Parsed dictionary output from the simulation, or None if an error occurred.
     """
     import requests
     import subprocess
@@ -3944,8 +3947,17 @@ def run_js_simulation(javascript_simulator_url, simulator_input_json_dict, verbo
 
 def convert_to_raw_github_url(url):
     """
-    Converts a GitHub file URL to its raw content URL if necessary, preserving the filename.
-    This function is really a support function for run_js_simulation
+    Checks for and converts any GitHub file URLs to its raw content URL format for direct access to file contents. Non Github urls are unchanged.
+
+    This utility rewrites standard GitHub URLs (with or without 'blob') into their raw content
+    equivalents on raw.githubusercontent.com. It preserves the full file path and is used as a 
+    helper for code that dynamically executes JavaScript files from GitHub.
+
+    Args:
+        url (str): A URL possibly pointing to a GitHub file.
+
+    Returns:
+        str: An unchanged url if not a Github url, or a raw GitHub URL suitable for direct content download.
     """
     from urllib.parse import urlparse
     parsed_url = urlparse(url)
@@ -3978,6 +3990,23 @@ def convert_to_raw_github_url(url):
 #because it returns extra fields that need to be parsed out.
 #and because it does not do unit conversions as needed after the simulation resultss are returned.
 def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
+    """
+    Runs a simulation for a data_series_dict using either a local Python function or a remote JavaScript simulator.
+
+    This function determines which simulator to invoke—based on the provided simulator_link or the data_series_dict["simulate"]["model"]  
+    field, and calls the appropriate method to generate simulation results. It can handle both local Python-based
+    simulation functions and compatible remote JavaScript simulate modules. Intended for internal use, this function 
+    may return additional fields that require further parsing and does not perform post-simulation unit conversions.
+
+    Args:
+        data_series_dict (dict): Dictionary describing a single data_series, including simulation parameters.
+        simulator_link (str, optional): Either the name of a local Python simulator or a URL to a JS simulator.
+            If not provided, this function extracts the value from data_series_dict["simulate"]["model"] and follows that.
+        verbose (bool, optional): Whether to print raw simulation output and error details. Defaults to False.
+
+    Returns:
+        dict or None: The simulated data_series dictionary or None if an error occurred during execution.
+    """
     if simulator_link == '':
         simulator_link = data_series_dict["simulate"]["model"]  
     if simulator_link == "local_python": #this is the local python case.
@@ -4005,6 +4034,23 @@ def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
 #Function that goes through a fig_dict data series and simulates each data series as needed.
 #If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.
 def simulate_as_needed_in_fig_dict(fig_dict, simulator_link='', verbose=False):
+    """
+    Iterates through the data_series in a fig_dict and performs simulation for each as needed.
+
+    This function checks each data_series in the fig_dict and applies simulation using either
+    a specified simulator_link or the model defined within each entry. If the simulation result
+    includes 'x_label' or 'y_label' with units, those are used to scale the data before removing 
+    the label fields.
+
+    Args:
+        fig_dict (dict): A fig_dict containing a 'data' list with data_series dictionary entries to simulate.
+        simulator_link (str, optional): An override simulator link or label to apply across all series.
+            Defaults to an empty string, in which case this function checks each data_series dictionary to determine the simulator to use.
+        verbose (bool, optional): Whether to log/output updates and warnings during the simulation process. Defaults to False.
+
+    Returns:
+        dict: The updated fig_dict with simulated results entered into those data_series dictionary fields.
+    """
     data_dicts_list = fig_dict['data']    
     for data_dict_index in range(len(data_dicts_list)):
         fig_dict = simulate_specific_data_series_by_index(fig_dict, data_dict_index, simulator_link=simulator_link, verbose=verbose)
@@ -4013,6 +4059,24 @@ def simulate_as_needed_in_fig_dict(fig_dict, simulator_link='', verbose=False):
 #Function that takes fig_dict and dataseries index and simulates if needed. Also performs unit conversions as needed.
 #If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.
 def simulate_specific_data_series_by_index(fig_dict, data_series_index, simulator_link='', verbose=False):
+    """
+    Simulates a specific data_series within a fig_dict and applies unit scaling if required.
+
+    This function targets a single data_series by index in the fig_dict, performs simulation
+    using either a specified or embedded simulator, and scales the results to match the units
+    found in the fig_dict layout. If x_label or y_label with units are present in the simulation
+    output, corresponding unit conversions are applied to the data and those fields are removed.
+
+    Args:
+        fig_dict (dict): The figure dictionary containing a list of data_series.
+        data_series_index (int): Index of the data_series to simulate and update.
+        simulator_link (str, optional): Path or URL to the simulator to use. If empty, 
+            the simulator is inferred from the data_series entry. Defaults to ''.
+        verbose (bool, optional): If True, prints diagnostic details including scaling ratios. Defaults to False.
+
+    Returns:
+        dict: The updated fig_dict with any simulated results entered into the appropriate data_series dictionary.
+    """
     data_dicts_list = fig_dict['data']
     data_dict_index = data_series_index
     data_dict = data_dicts_list[data_dict_index]
@@ -4045,6 +4109,19 @@ def simulate_specific_data_series_by_index(fig_dict, data_series_index, simulato
     return fig_dict
 
 def evaluate_equations_as_needed_in_fig_dict(fig_dict):
+    """
+    Evaluates and updates any equation-based data_series entries in a fig_dict.
+
+    This function scans the fig_dict for data_series entries that contain an 'equation' field.
+    For each such entry, it invokes the appropriate equation evaluation logic to generate
+    x/y data, replacing or augmenting the original data_series with the computed results.
+
+    Args:
+        fig_dict (dict): A figure dictionary potentially containing equation-based data_series.
+
+    Returns:
+        dict: The updated fig_dict with equation data_series evaluated and populated with data.
+    """
     data_dicts_list = fig_dict['data']
     for data_dict_index, data_dict in enumerate(data_dicts_list):
         if 'equation' in data_dict:
@@ -4053,6 +4130,22 @@ def evaluate_equations_as_needed_in_fig_dict(fig_dict):
 
 #TODO: Should add z units ratio scaling here (just to change units when merging records). Should do the same for the simulate_specific_data_series_by_index function.
 def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verbose="auto"):   
+    """
+    Evaluates a symbolic equation for the data_series at the specified index of the provided fig_dict and performs units conversion / scaling as needed.
+
+    This function targets an indexed data_series entry with an 'equation' field and uses an external 
+    equation engine to evaluate and populate x/y/z data values. If axis labels include units, the values 
+    are converted/scaled to match the units defined in the fig_dict layout. The function also assigns default 
+    trace types based on the dimensionality of the evaluated data.
+
+    Args:
+        fig_dict (dict): A fig_dict containing a list of data_series and corresponding layout metadata.
+        data_series_index (int): The index of the data_series containing the equation to evaluate.
+        verbose (str or bool, optional): Controls verbosity of the evaluation engine. Defaults to "auto".
+
+    Returns:
+        dict: The updated fig_dict with the specified data_series evaluated and replaced with numeric values.
+    """
     try:
         # Attempt to import from the json_equationer package
         import json_equationer.equation_creator as equation_creator
@@ -4121,24 +4214,22 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
 
 def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_structure=True, modify_target_directly = False):
     """
-    Updates the x and y values of implicit data series (equation/simulate) in target_fig_dict 
-    using values from the corresponding series in source_fig_dict.
+    Synchronizes x, y, and z data for implicit data series between two fig_dicts.
+
+    This function transfers numerical data values from a source fig_dict into matching entries
+    in a target fig_dict for all data_series that include a 'simulate' or 'equation' block.
+    It supports both parallel updates by index and matching by series name.
 
     Args:
-        target_fig_dict (dict): The figure dictionary that needs updated data.
-        source_fig_dict (dict): The figure dictionary that provides x and y values.
-        parallel_structure (bool, optional): If True, assumes both data lists are the same 
-                                             length and updates using zip(). If False, 
-                                             matches by name instead. Default is True.
+        target_fig_dict (dict): The figure dictionary to update.
+        source_fig_dict (dict): The source figure dictionary providing updated values.
+        parallel_structure (bool, optional): If True, updates by index order (zip). If False,
+            matches series by their "name" field. Defaults to True.
+        modify_target_directly (bool, optional): If True, modifies target_fig_dict in-place.
+            If False, operates on a deep copy. Defaults to False.
 
     Returns:
-        dict: A new figure dictionary with updated x and y values for implicit data series.
-
-    Notes:
-        - If parallel_structure=True and both lists have the same length, updates use zip().
-        - If parallel_structure=False, matching is done by the "name" field.
-        - Only updates data series that contain "simulate" or "equation".
-        - Ensures deep copying to avoid modifying the original structures.
+        dict: The updated target_fig_dict with new x, y, and optionally z values for matched implicit series.
     """
     if modify_target_directly == False:
         import copy  # Import inside function to limit scope   
@@ -4176,38 +4267,24 @@ def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_
 
 def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
     """
-    This function is designed to be called during creation of a plotly or matplotlib figure creation.
-    Processes implicit data series (equation/simulate), adjusting ranges, performing simulations,
-    and evaluating equations as needed.
+    Processes data_series dicts in a fig_dict, executing simulate/equation-based series as needed, including setting the simulate/equation evaluation ranges as needed,
+    then provides the simulated/equation-evaluated data into the original fig_dict without altering original fig_dict implicit ranges.
 
-    The important thing is that this function creates a "fresh" fig_dict, does some manipulation, then then gets the data from that
-    and adds it to the original fig_dict.
-    That way the original fig_dict is not changed other than getting the simulated/evaluated data.
-
-    The reason the function works this way is that the x_range_default of the implicit data series (equations and simulations)
-    are adjusted to match the data in the fig_dict, but we don't want to change the x_range_default of our main record.
-    That's why we make a copy for creating simulated/evaluated data from those adjusted ranges, and then put the simulated/evaluated data
-    back into the original dict.
-
-    
+    This function evaluates and simulates any data_series entries in the fig_dict that use "simulate"
+    or "equation" blocks. It creates a deep copy of the figure to avoid overwriting original range
+    configurations (such as x_range_default). Simulated and evaluated data is extracted from the copy
+    and merged back into the original fig_dict for use in rendering.
 
     Args:
-        fig_dict (dict): The figure dictionary containing data series.
-        simulate_all_series (bool): If True, performs simulations for applicable series.
-        evaluate_all_equations (bool): If True, evaluates all equation-based series.
-        adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+        fig_dict (dict): The main figure dictionary that may contain implicit (simulate/equation) data_series.
+        simulate_all_series (bool, optional): Whether to simulate all series requiring it. Defaults to True.
+        evaluate_all_equations (bool, optional): Whether to evaluate all equation-based series. Defaults to True.
+        adjust_implicit_data_ranges (bool, optional): Whether to adapt x-axis ranges of implicit series 
+            using non-implicit data ranges. Defaults to True.
 
     Returns:
-        dict: Updated figure dictionary with processed implicit data series.
-
-    Notes:
-        - If adjust_implicit_data_ranges=True, retrieves min/max values from regular data series 
-          (those that are not equations and not simulations) and applies them to implicit data.
-        - If simulate_all_series=True, executes simulations for all series that require them 
-          and transfers the computed data back to fig_dict without copying ranges.
-        - If evaluate_all_equations=True, solves equations as needed and transfers results 
-          back to fig_dict without copying ranges.
-        - Uses deepcopy to avoid modifying the original input dictionary.
+        dict: The updated fig_dict with fresh data inserted into simulated or equation-driven series,
+        while preserving their original metadata and x_range_default boundaries.
     """
     import copy  # Import inside function for modularity
 

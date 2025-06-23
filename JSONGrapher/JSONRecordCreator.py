@@ -2453,7 +2453,11 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
         additional_attributes_to_extract = []
 
     if new_trace_style_name=='':
-        new_trace_style_name = data_series_dict.get("trace_style", "") #keep blank if not present.
+        #Check if there is a current trace style that is a string, and use that for the name if present.
+        current_trace_style = data_series_dict.get("trace_style", "")
+        if isinstance(current_trace_style, str):
+           new_trace_style_name = current_trace_style
+    #if there is still no new_trace_style_name, we will name it 'custom'
     if new_trace_style_name=='':
         new_trace_style_name = "custom"
 

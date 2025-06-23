@@ -3140,10 +3140,11 @@ def remove_bubble_fields(fig_dict):
             if ("bubble" in trace_style.lower()) or ("max_bubble_size" in data_series):
                 bubble_found = True
             if bubble_found is True:
-                if "z" in data_series:
-                    data_series.pop("z")
-                if "z_points" in data_series:
-                    data_series.pop("z_points")
+                if "bubble2d" in trace_style.lower(): #pop the z variable if it's a bubble2d.
+                    if "z" in data_series:
+                        data_series.pop("z")
+                    if "z_points" in data_series:
+                        data_series.pop("z_points")
                 if "max_bubble_size" in data_series:
                     data_series.pop("max_bubble_size")
                 if "bubble_sizes" in data_series:

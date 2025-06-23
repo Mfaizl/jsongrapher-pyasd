@@ -2324,6 +2324,8 @@ def prepare_bubble_sizes(data_series):
         data_series["marker"]["size"] = data_series["z_points"]
     elif "z" in data_series:
         data_series["marker"]["size"] = data_series["z"]
+    elif "y" in data_series:
+        data_series["marker"]["size"] = data_series["y"]
 
     #now need to normalize to the max value in the list.
     def normalize_to_max(starting_list):

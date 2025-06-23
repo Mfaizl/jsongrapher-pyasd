@@ -717,59 +717,116 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_marker_shape(self, shape):
         """
-        Update the marker shape (symbol).
+        Sets the visual symbol used for markers in the data series.
 
-        Supported marker shapes in Plotly:
-        - 'circle' (default)
-        - 'square'
-        - 'diamond'
-        - 'cross'
-        - 'x'
-        - 'triangle-up'
-        - 'triangle-down'
-        - 'triangle-left'
-        - 'triangle-right'
-        - 'pentagon'
-        - 'hexagon'
-        - 'star'
-        - 'hexagram'
-        - 'star-triangle-up'
-        - 'star-triangle-down'
-        - 'star-square'
-        - 'star-diamond'
-        - 'hourglass'
-        - 'bowtie'
+        This method updates the shape of marker symbols (used in scatter plots, etc.) 
+        based on supported Plotly marker types. It ensures the internal marker dictionary 
+        exists and assigns the specified symbol string to the 'symbol' field.
 
-        :param shape: String representing the desired marker shape.
+        Supported Shapes:
+            - circle, square, diamond, cross, x
+            - triangle-up/down/left/right
+            - pentagon, hexagon, star, hexagram
+            - star-triangle-up/down, star-square, star-diamond
+            - hourglass, bowtie
+
+        Args:
+            shape (str): The name of the marker symbol to use. Must be one of the supported Plotly shapes.
         """
         self.setdefault("marker", {})["symbol"] = shape
 
     def add_data_point(self, x_val, y_val):
-        """Append a new data point to the series."""
+        """
+        Adds a new x-y data point to the data series.
+
+        This method appends the provided x and y values to their respective lists
+        within the internal data structure. It is typically used to incrementally
+        build or extend a dataset for plotting or analysis.
+
+        Args:
+            x_val (any): The x-axis value of the data point.
+            y_val (any): The y-axis value of the data point.
+        """
         self["x"].append(x_val)
         self["y"].append(y_val)
 
     def set_marker_size(self, size):
-        """Update the marker size."""
+        """
+        Updates the size of the markers used in the data series visualization.
+
+        This method modifies the 'size' field within the 'marker' dictionary of the data series.
+        If the 'marker' dictionary doesn't already exist, it is created. The marker size controls 
+        the visual prominence of data points in charts like scatter plots.
+
+        Args:
+            size (int or float): The desired marker size, typically a positive number.
+        """
         self.setdefault("marker", {})["size"] = size
 
     def set_marker_color(self, color):
-        """Update the marker color."""
+        """
+        Sets the color of the markers in the data series visualization.
+
+        This method ensures that the 'marker' dictionary exists within the data series,
+        and then updates its 'color' key with the provided value. Marker color can be a
+        standard named color (e.g., "blue"), a hex code (e.g., "#1f77b4"), or an RGB/RGBA string.
+
+        Args:
+            color (str): The color to use for the data series markers.
+        """
         self.setdefault("marker", {})["color"] = color
 
     def set_mode(self, mode):
-        """Update the mode (options: 'lines', 'markers', 'text', 'lines+markers', 'lines+text', 'markers+text', 'lines+markers+text')."""
-        # Check if 'line' is in the mode but 'lines' is not. Then correct for user if needed.
+        """
+        Sets the rendering mode for the data series, correcting common input patterns.
+
+        This method updates the 'mode' field to control how data points are visually represented 
+        in plots (e.g., as lines, markers, text, or combinations). If the user accidentally uses 
+        "line" instead of "lines", it automatically corrects the term to maintain compatibility 
+        with plotting libraries like Plotly.
+
+        Supported Modes:
+            - 'lines'
+            - 'markers'
+            - 'text'
+            - 'lines+markers'
+            - 'lines+text'
+            - 'markers+text'
+            - 'lines+markers+text'
+
+        Args:
+            mode (str): Desired rendering mode. Common typos like 'line' will be corrected.
+        """
         if "line" in mode and "lines" not in mode:
             mode = mode.replace("line", "lines")
         self["mode"] = mode
 
     def set_annotations(self, text): #just a convenient wrapper.
+        """
+        Sets text annotations for the data series by delegating to the internal set_text method.
+
+        This is a convenience wrapper that allows assigning label text to individual data points 
+        in the series. Annotations can enhance readability and provide contextual information 
+        in visualizations such as tooltips or direct text labels on plots.
+
+        Args:
+            text (str or list): Annotation text for the data points. Can be a single string 
+                                or a list of strings corresponding to each data point.
+        """
         self.set_text(text) 
 
     def set_text(self, text):
-        #text should be a list of strings teh same length as the data series, one string per point.
-        """Update the annotations with a list of text as long as the number of data points."""
+        """
+        Sets annotation text for the data series, ensuring alignment with the number of x-values.
+
+        This method allows the user to assign either a single string or a list of strings to annotate
+        each point in the series. If a single string is provided, it is replicated to match the number
+        of data points; otherwise, the provided list is used as-is. Useful for adding tooltips or labels.
+
+        Args:
+            text (str or list): Annotation text—either a single string (applied to all points) or a list
+                                of strings, one for each point in the series.
+        """
         if text == type("string"): 
             text = [text] * len(self["x"])  # Repeat the text to match x-values length
         else:
@@ -778,55 +835,101 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
 
     def set_line_width(self, width):
-        """Update the line width, should be a number, normally an integer."""
+        """
+        Sets the width of the line used to draw the data series.
+
+        This method ensures that the 'line' dictionary exists within the data series and then sets
+        the 'width' attribute to the specified value. This affects the thickness of lines in charts
+        like line plots and splines.
+
+        Args:
+            width (int or float): The thickness value for the line. Typically a positive number.
+        """
         line = self.setdefault("line", {})
         line.setdefault("width", width)  # Ensure width is set
 
     def set_line_dash(self, dash_style):
         """
-        Update the line dash style.
+        Sets the dash style of the line used in the data series visualization.
 
-        Supported dash styles in Plotly:
-        - 'solid' (default) → Continuous solid line
-        - 'dot' → Dotted line
-        - 'dash' → Dashed line
-        - 'longdash' → Longer dashed line
-        - 'dashdot' → Dash-dot alternating pattern
-        - 'longdashdot' → Long dash-dot alternating pattern
+        This method modifies the 'dash' attribute inside the 'line' dictionary, which controls
+        the appearance of the line in the chart. It allows for various visual styles, such as
+        dashed, dotted, or solid lines, aligning with the supported Plotly dash patterns.
 
-        :param dash_style: String representing the desired line style.
+        Supported Styles:
+            - 'solid'
+            - 'dot'
+            - 'dash'
+            - 'longdash'
+            - 'dashdot'
+            - 'longdashdot'
+
+        Args:
+            dash_style (str): The desired dash pattern for the line. Must match one of Plotly’s accepted styles.
         """
         self.setdefault("line", {})["dash"] = dash_style
 
     def set_transparency(self, transparency_value):
         """
-        Update the transparency level by converting it to opacity.
+        Converts a transparency value into an opacity setting and applies it to the data series.
 
-        Transparency ranges from:
-        - 0 (completely opaque) → opacity = 1
-        - 1 (fully transparent) → opacity = 0
-        - Intermediate values adjust partial transparency.
+        This method accepts a transparency value—ranging from 0 (fully opaque) to 1 (fully transparent)—
+        and calculates the corresponding opacity value used by plotting libraries. It inverts the input
+        so that increasing transparency reduces opacity.
 
-        :param transparency_value: Float between 0 and 1, where 0 is opaque and 1 is transparent.
+        Args:
+            transparency_value (float): A decimal between 0 and 1 where:
+                - 0 means fully visible (opacity = 1),
+                - 1 means fully invisible (opacity = 0),
+                - intermediate values create partial see-through effects.
         """
         self["opacity"] = 1 - transparency_value
 
     def set_opacity(self, opacity_value):
-        """Update the opacity level between 0 and 1."""
+        """
+        Sets the opacity level for the data series.
+
+        This method directly assigns an opacity value to the data series, which controls the visual
+        transparency of the trace in the plot. An opacity of 1.0 means fully opaque, while 0.0 is fully
+        transparent. Intermediate values allow for layering effects and visual blending.
+
+        Args:
+            opacity_value (float): A number between 0 (transparent) and 1 (opaque) representing the opacity level.
+        """
         self["opacity"] = opacity_value
 
     def set_visible(self, is_visible):
-        """Update the visibility of the trace.
-            "True" → The trace is fully visible.
-            "False" → The trace is completely hidden.
-            "legendonly" → The trace is hidden from the plot but still appears in the legend.
-        
+        """
+        Sets the visibility state of the data series in the plot.
+
+        This method allows control over how the trace is displayed. It accepts a boolean value
+        or the string "legendonly" to indicate the desired visibility mode. This feature is 
+        particularly useful for managing clutter in complex visualizations or toggling traces dynamically.
+
+        Args:
+            is_visible (bool or str): 
+                - True → Fully visible in the plot.
+                - False → Hidden entirely.
+                - "legendonly" → Hidden from the plot but shown in the legend.
         """
         
         self["visible"] = is_visible
 
     def set_hoverinfo(self, hover_format):
-        """Update hover information format."""
+        """
+        Sets the formatting for hover labels in interactive visualizations.
+
+        This method defines what information appears when the user hovers over data points in the plot.
+        Accepted formats include combinations of "x", "y", "text", "name", etc., joined with "+" symbols.
+
+        Example formats:
+            - "x+y" → Shows x and y values
+            - "x+text" → Shows x value and text annotation
+            - "none" → Disables hover info
+
+        Args:
+            hover_format (str): A string specifying what data to display on hover.
+        """
         self["hoverinfo"] = hover_format
 
 

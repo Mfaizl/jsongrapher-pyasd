@@ -3123,23 +3123,38 @@ def convert_to_3d_layout(layout):
     #A bubble plot uses z data, but that data is then
     #moved into the size field and the z field must be removed.
 def remove_bubble_fields(fig_dict):
-    #This code will modify the data_series inside the fig_dict, directly.
-    bubble_found = False #initialize with false case.
+    # This code will modify the data_series inside the fig_dict, directly.
+    bubble_found = False  # initialize with false case.
     for data_series in fig_dict["data"]:
-        if "trace_style" in data_series:
-            if isinstance(data_series["trace_style"],str):
-                if ("bubble" in data_series["trace_style"].lower()) or ("max_bubble_size" in data_series):
-                    bubble_found = True
-            if bubble_found == True:
+        trace_style = data_series.get("trace_style") #trace_style will be None of the key is not present.
+        if isinstance(trace_style, str):
+            if ("bubble" in trace_style.lower()) or ("max_bubble_size" in data_series):
+                bubble_found = True
+            if bubble_found is True:
                 if "z" in data_series:
                     data_series.pop("z")
                 if "z_points" in data_series:
                     data_series.pop("z_points")
                 if "max_bubble_size" in data_series:
                     data_series.pop("max_bubble_size")
-    if bubble_found == True:
-        if "zaxis" in fig_dict["layout"]:
-            fig_dict["layout"].pop("zaxis")
+                if "bubble_sizes" in data_series:
+                    # Now, need to check if the bubble_size is a variable that should be deleted.
+                    # That will be if it is a string, and also not a standard variable. 
+                    if isinstance(data_series["bubble_sizes"], str):
+                        bubble_sizes_variable_name = data_series["bubble_sizes"]
+                        # For bubble2d case, will remove anything that is not x or y.
+                        if "bubble2d" in trace_style.lower():
+                            if bubble_sizes_variable_name not in ("x", "y"):
+                                data_series.pop(bubble_sizes_variable_name, None)
+                        if "bubble3d" in trace_style.lower():
+                            if bubble_sizes_variable_name not in ("x", "y", "z"):
+                                data_series.pop(bubble_sizes_variable_name, None)
+                    # next, remove bubble_sizes since it's not needed anymore and should be removed.
+                    data_series.pop("bubble_sizes")
+                # need to remove "zaxis" if making a bubble2d.
+                if "bubble2d" in trace_style.lower():
+                    if "zaxis" in fig_dict["layout"]:
+                        fig_dict["layout"].pop("zaxis")
     return fig_dict
 
 def update_3d_axes(fig_dict):

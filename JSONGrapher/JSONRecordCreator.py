@@ -3607,9 +3607,22 @@ def update_title_field(fig_dict_or_subdict, depth=1, max_depth=10):
 
 
 def update_superscripts_strings(fig_dict_or_subdict, depth=1, max_depth=10):
-    """ This function is intended to make JSONGrapher .json files compatible with the newer plotly recommended title field formatting
-    which is necessary to do things like change the font, and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects.
-    Recursively checks for 'title' fields and converts them to dictionary format. """
+    """
+    Replaces superscript string patterns in fig_dict titles and legend labels for compatibility.
+
+    This function recursively traverses a fig_dict or sub-dictionary and updates any superscript-like
+    strings found within "title" or "data" fields. Titles with a "text" key and data series "name" 
+    entries are scanned and reformatted using replace_superscripts to ensure consistent rendering
+    across platforms that rely on structured string formatting.
+
+    Args:
+        fig_dict_or_subdict (dict): A fig_dict or nested dictionary to process.
+        depth (int, optional): Current recursion depth for traversal. Defaults to 1.
+        max_depth (int, optional): Maximum recursion depth. Defaults to 10.
+
+    Returns:
+        dict: The updated dictionary with superscript strings replaced.
+    """
     if depth > max_depth or not isinstance(fig_dict_or_subdict, dict):
         return fig_dict_or_subdict
     
@@ -3709,6 +3722,19 @@ def convert_to_3d_layout(layout):
     #moved into the size field and the z field must be removed.
 
 def remove_bubble_fields(fig_dict):
+    """
+    Removes 3D-specific fields from bubble plot entries in a fig_dict to convert them to 2D-compatible format.
+
+    This function iterates over data_series entries in the fig_dict and removes 'z', 'z_points',
+    and 'max_bubble_size' fields from entries marked as bubble plots. If at least one bubble plot
+    is found, it also removes the 'zaxis' entry from the layout.
+
+    Args:
+        fig_dict (dict): A fig_dict potentially containing bubble-style data_series.
+
+    Returns:
+        dict: The updated fig_dict with bubble-specific fields removed for 2D rendering compatibility.
+    """
     #This code will modify the data_series inside the fig_dict, directly.
     bubble_found = False #initialize with false case.
     for data_series in fig_dict["data"]:
@@ -3728,6 +3754,20 @@ def remove_bubble_fields(fig_dict):
     return fig_dict
 
 def update_3d_axes(fig_dict):
+    """
+    Converts a 2D layout to 3D and modifies associated data_series to comply with 3D plotting requirements.
+
+    This function upgrades the layout of a fig_dict to a 3D format by nesting axis fields under 'scene',
+    and cleans or adjusts data_series entries based on their 3D plot types. For scatter3d and mesh3d traces,
+    any 'z_matrix' fields are removed. For surface plots, 'z' is removed if 'z_matrix' is present and
+    a notice is printed indicating the need for further transformation.
+
+    Args:
+        fig_dict (dict): A fig_dict that may contain 3D axes or trace_style fields requiring format updates.
+
+    Returns:
+        dict: The updated fig_dict prepared for valid 3D rendering.
+    """
     if "zaxis" in fig_dict["layout"]:
         fig_dict['layout'] = convert_to_3d_layout(fig_dict['layout'])
         for data_series_index, data_series in enumerate(fig_dict["data"]):
@@ -3744,9 +3784,20 @@ def update_3d_axes(fig_dict):
     return fig_dict
 
 def remove_extra_information_field(fig_dict, depth=1, max_depth=10):
-    """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects.
-    Recursively checks for 'extraInformation' fields and removes them."""
+    """
+    Recursively removes 'extraInformation' or 'extra_information' fields from a fig_dict for compatibility.
+
+    This function traverses a fig_dict or sub-dictionary structure to eliminate keys related to extra metadata
+    that are not supported by current layout format expectations. It supports deeply nested dictionaries and lists.
+
+    Args:
+        fig_dict (dict): The figure dictionary or nested sub-dictionary to sanitize.
+        depth (int, optional): The current recursion depth during traversal. Defaults to 1.
+        max_depth (int, optional): Maximum depth to avoid infinite recursion. Defaults to 10.
+
+    Returns:
+        dict: The updated dictionary with all 'extraInformation' fields removed.
+    """
     if depth > max_depth or not isinstance(fig_dict, dict):
         return fig_dict
 
@@ -3765,9 +3816,21 @@ def remove_extra_information_field(fig_dict, depth=1, max_depth=10):
     
 
 def remove_nested_comments(data, top_level=True):
-    """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. 
-    Removes 'comments' fields that are not at the top level of the JSON-dict. Starts with 'top_level = True' when dict is first passed in then becomes false after that. """
+    """
+    Removes all nested 'comments' fields from a fig_dict while preserving top-level comments.
+
+    This function recursively traverses a fig_dict or sub-dictionary, removing any 'comments'
+    entries found below the top level. This ensures compatibility with layout formats that
+    do not support metadata fields in nested locations.
+
+    Args:
+        data (dict): The fig_dict or sub-dictionary to process.
+        top_level (bool, optional): Indicates whether the current recursion level is the top level.
+            Defaults to True.
+
+    Returns:
+        dict: The updated dictionary with nested 'comments' fields removed.
+    """
     if not isinstance(data, dict):
         return data
     # Process nested structures
@@ -3784,6 +3847,19 @@ def remove_nested_comments(data, top_level=True):
     return data
 
 def remove_simulate_field(json_fig_dict):
+    """
+    Removes all 'simulate' fields from the data_series in a fig_dict.
+
+    This function iterates through each entry in the fig_dict's 'data' list and deletes
+    the 'simulate' field if it exists. This prepares the fig_dict for use cases where
+    simulation metadata is unnecessary or unsupported.
+
+    Args:
+        json_fig_dict (dict): A fig_dict containing a list of data_series entries.
+
+    Returns:
+        dict: The updated fig_dict with 'simulate' fields removed from each data_series.
+    """
     data_dicts_list = json_fig_dict['data']
     for data_dict in data_dicts_list:
         data_dict.pop('simulate', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
@@ -3791,6 +3867,19 @@ def remove_simulate_field(json_fig_dict):
     return json_fig_dict
 
 def remove_equation_field(json_fig_dict):
+    """
+    Removes all 'equation' fields from the data_series in a fig_dict.
+
+    This function scans through each item in the 'data' list of a fig_dict and deletes the
+    'equation' field if it is present. This is useful when stripping out symbolic definitions
+    or expression metadata from visualizations that no longer require analytical context.
+
+    Args:
+        json_fig_dict (dict): A fig_dict containing a list of data_series entries.
+
+    Returns:
+        dict: The updated fig_dict with 'equation' fields removed from each data_series.
+    """
     data_dicts_list = json_fig_dict['data']
     for data_dict in data_dicts_list:
         data_dict.pop('equation', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
@@ -3798,6 +3887,19 @@ def remove_equation_field(json_fig_dict):
     return json_fig_dict
 
 def remove_trace_style_field(json_fig_dict):
+    """
+    Removes 'trace_style' and 'tracetype' fields from all data_series entries in a fig_dict.
+
+    This function iterates through the 'data' list of a fig_dict and deletes styling hints such as 
+    'trace_style' and 'tracetype' from each data_series. This is useful for stripping out internal 
+    metadata before serialization or external use.
+
+    Args:
+        json_fig_dict (dict): A fig_dict containing a list of data_series entries.
+
+    Returns:
+        dict: The updated fig_dict with trace style metadata removed from all data_series.
+    """
     data_dicts_list = json_fig_dict['data']
     for data_dict in data_dicts_list:
         data_dict.pop('trace_style', None) #Some people recommend using pop over if/del as safer. Both ways should work under normal circumstances.
@@ -3806,6 +3908,19 @@ def remove_trace_style_field(json_fig_dict):
     return json_fig_dict
 
 def remove_custom_units_chevrons(json_fig_dict):
+    """
+    Removes angle bracket characters ('<' and '>') from axis title text fields in a fig_dict.
+
+    This function scans the xaxis, yaxis, and zaxis title text strings in the layout of a fig_dict
+    and removes any chevrons that may exist. It is useful for cleaning up units or labels that
+    were enclosed in angle brackets for display or metadata purposes.
+
+    Args:
+        json_fig_dict (dict): A fig_dict containing axis title text to sanitize.
+
+    Returns:
+        dict: The updated fig_dict with angle brackets removed from axis title labels.
+    """
     try:
         json_fig_dict['layout']['xaxis']['title']['text'] = json_fig_dict['layout']['xaxis']['title']['text'].replace('<','').replace('>','')
     except KeyError:
@@ -3821,15 +3936,34 @@ def remove_custom_units_chevrons(json_fig_dict):
     return json_fig_dict
 
 def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
-    """ This function is intended to make JSONGrapher .json files compatible with the current plotly format expectations
-     and also necessary for being able to convert a JSONGrapher json_dict to python plotly figure objects. 
-     fields_to_update should be a list.
-     This function can also remove the 'simulate' field from data series. However, that is not the default behavior
-     because one would not want to do that by mistake before simulation is performed.
-     This function can also remove the 'equation' field from data series. However, that is not the default behavior
-     because one would not want to do that by mistake before the equation is evaluated.
-     The "superscripts" option is not normally used until right before plotting because that will affect unit conversions.
-     """
+    """
+    Cleans and updates a fig_dict by applying selected transformations for Plotly compatibility.
+
+    This function allows selective sanitization of a fig_dict by applying a set of transformations 
+    defined in fields_to_update. It prepares a JSONGrapher-compatible dictionary for use with 
+    Plotly figure objects by modifying or removing fields such as titles, equations, simulation 
+    definitions, custom units, and unused styling metadata.
+
+    Args:
+        json_fig_dict (dict): The original fig_dict containing layout and data_series.
+        fields_to_update (list, optional): A list of update operations to apply. Defaults to 
+            ["title_field", "extraInformation", "nested_comments"].
+
+    Returns:
+        dict: The cleaned and optionally transformed fig_dict.
+
+    Supported options in fields_to_update:
+        - "title_field": Updates title fields to dictionary format.
+        - "extraInformation": Removes extra metadata fields.
+        - "nested_comments": Removes non-top-level comments.
+        - "simulate": Removes simulate fields from data_series.
+        - "equation": Removes equation fields from data_series.
+        - "custom_units_chevrons": Removes angle brackets in axis titles.
+        - "bubble": Strips bubble-specific fields and removes zaxis.
+        - "trace_style": Removes internal style/tracetype metadata.
+        - "3d_axes": Updates layout and data_series for 3D plotting.
+        - "superscripts": Replaces superscript strings in titles and labels.
+    """
     if fields_to_update is None:  # should not initialize mutable objects in arguments line, so doing here.
         fields_to_update = ["title_field", "extraInformation", "nested_comments"]
     fig_dict = json_fig_dict

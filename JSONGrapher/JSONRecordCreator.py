@@ -2223,13 +2223,14 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
 
     colorscale_structure = "" #initialize this variable for use later. It tells us which fields to put the colorscale related values in. This should be done before regular trace_style fields are applied.
     #3D and bubble plots will have a colorscale by default.
-    if trace_style == "bubble": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
-        data_series = prepare_bubble_sizes(data_series)
-        colorscale_structure = "bubble"
-    elif trace_style == "mesh3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
-        colorscale_structure = "mesh3d"
-    elif trace_style == "scatter3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
-        colorscale_structure = "scatter3d"
+    if isinstance(trace_style,str):
+        if "bubble" in trace_style.lower(): #for bubble trace styles (both 2D and 3D), we need to prepare the bubble sizes. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+            data_series = prepare_bubble_sizes(data_series)
+            colorscale_structure = "bubble"
+        elif "mesh3d" in trace_style.lower(): 
+            colorscale_structure = "mesh3d"
+        elif "scatter3d" in trace_style.lower(): 
+            colorscale_structure = "scatter3d"
 
     if trace_style in styles_collection_dict:
         trace_style = styles_collection_dict.get(trace_style)

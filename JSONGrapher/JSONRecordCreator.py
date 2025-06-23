@@ -735,9 +735,9 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         """
         self.setdefault("marker", {})["symbol"] = shape
 
-    def add_data_point(self, x_val, y_val):
+    def add_xy_data_point(self, x_val, y_val):
         """
-        Adds a new x-y data point to the data series.
+        Adds a new x-y data point to the data_series.
 
         This method appends the provided x and y values to their respective lists
         within the internal data structure. It is typically used to incrementally
@@ -750,11 +750,29 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         self["x"].append(x_val)
         self["y"].append(y_val)
 
+    def add_xyz_data_point(self, x_val, y_val, z_val):
+        """
+        Adds a new x-y-z data point to the data_series.
+
+        This method appends the provided x and y and z values to their respective lists
+        within the internal data structure. It is typically used to incrementally
+        build or extend a dataset for plotting or analysis.
+
+        Args:
+            x_val (any): The x-axis value of the data point.
+            y_val (any): The y-axis value of the data point.
+            z_val (any): The z-axis value of the data point.
+        """
+        self["x"].append(x_val)
+        self["y"].append(y_val)
+        self["z"].append(z_val)
+
+
     def set_marker_size(self, size):
         """
-        Updates the size of the markers used in the data series visualization.
+        Updates the size of the markers used in the data_series visualization.
 
-        This method modifies the 'size' field within the 'marker' dictionary of the data series.
+        This method modifies the 'size' field within the 'marker' dictionary of the data_series.
         If the 'marker' dictionary doesn't already exist, it is created. The marker size controls 
         the visual prominence of data points in charts like scatter plots.
 
@@ -765,20 +783,20 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_marker_color(self, color):
         """
-        Sets the color of the markers in the data series visualization.
+        Sets the color of the markers in the data_series visualization.
 
-        This method ensures that the 'marker' dictionary exists within the data series,
+        This method ensures that the 'marker' dictionary exists within the data_series,
         and then updates its 'color' key with the provided value. Marker color can be a
         standard named color (e.g., "blue"), a hex code (e.g., "#1f77b4"), or an RGB/RGBA string.
 
         Args:
-            color (str): The color to use for the data series markers.
+            color (str): The color to use for the data_series markers.
         """
         self.setdefault("marker", {})["color"] = color
 
     def set_mode(self, mode):
         """
-        Sets the rendering mode for the data series, correcting common input patterns.
+        Sets the rendering mode for the data_series, correcting common input patterns.
 
         This method updates the 'mode' field to control how data points are visually represented 
         in plots (e.g., as lines, markers, text, or combinations). If the user accidentally uses 
@@ -795,7 +813,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
             - 'lines+markers+text'
 
         Args:
-            mode (str): Desired rendering mode. Common typos like 'line' will be corrected.
+            mode (str): Desired rendering mode. Common typos like 'line' may be corrected.
         """
         if "line" in mode and "lines" not in mode:
             mode = mode.replace("line", "lines")
@@ -803,7 +821,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_annotations(self, text): #just a convenient wrapper.
         """
-        Sets text annotations for the data series by delegating to the internal set_text method.
+        Sets text annotations for the data_series by delegating to the internal set_text method.
 
         This is a convenience wrapper that allows assigning label text to individual data points 
         in the series. Annotations can enhance readability and provide contextual information 
@@ -817,11 +835,13 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_text(self, text):
         """
-        Sets annotation text for the data series, ensuring alignment with the number of x-values.
+        Sets annotation text for each point in the data_series. The a list of text values must be provided, equal to
+        the number of points. If a single string value is provided, it will be repeated to be the same for each point.
 
         This method allows the user to assign either a single string or a list of strings to annotate
         each point in the series. If a single string is provided, it is replicated to match the number
         of data points; otherwise, the provided list is used as-is. Useful for adding tooltips or labels.
+        The number of values received being equal to the number of points is checked by comparing to the x values.
 
         Args:
             text (str or list): Annotation text—either a single string (applied to all points) or a list
@@ -836,9 +856,9 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_line_width(self, width):
         """
-        Sets the width of the line used to draw the data series.
+        Sets the width of the line used for the trace of the data_series.
 
-        This method ensures that the 'line' dictionary exists within the data series and then sets
+        This method ensures that the 'line' dictionary exists within the data_series and then sets
         the 'width' attribute to the specified value. This affects the thickness of lines in charts
         like line plots and splines.
 
@@ -850,7 +870,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_line_dash(self, dash_style):
         """
-        Sets the dash style of the line used in the data series visualization.
+        Sets the dash style of the line used in the data_series visualization.
 
         This method modifies the 'dash' attribute inside the 'line' dictionary, which controls
         the appearance of the line in the chart. It allows for various visual styles, such as
@@ -871,7 +891,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_transparency(self, transparency_value):
         """
-        Converts a transparency value into an opacity setting and applies it to the data series.
+        Converts a transparency value into an opacity setting and applies it to the data_series.
 
         This method accepts a transparency value—ranging from 0 (fully opaque) to 1 (fully transparent)—
         and calculates the corresponding opacity value used by plotting libraries. It inverts the input
@@ -887,9 +907,9 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_opacity(self, opacity_value):
         """
-        Sets the opacity level for the data series.
+        Sets the opacity level for the data_series.
 
-        This method directly assigns an opacity value to the data series, which controls the visual
+        This method directly assigns an opacity value to the data_series, which controls the visual
         transparency of the trace in the plot. An opacity of 1.0 means fully opaque, while 0.0 is fully
         transparent. Intermediate values allow for layering effects and visual blending.
 
@@ -900,7 +920,7 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
     def set_visible(self, is_visible):
         """
-        Sets the visibility state of the data series in the plot.
+        Sets the visibility state of the data_series in the plot.
 
         This method allows control over how the trace is displayed. It accepts a boolean value
         or the string "legendonly" to indicate the desired visibility mode. This feature is 
@@ -947,17 +967,18 @@ class JSONGrapherRecord:
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
         datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name.
         graph_title: Title of the graph or the dataset being represented.
-        data_objects_list (list): List of data series dictionaries to pre-populate the record. These may contain 'simulate' fields in them to call javascript source code for simulating on the fly.
-        simulate_as_added: Boolean. True by default. If true, any data series that are added with a simulation field will have an immediate simulation call attempt.
+        data_objects_list (list): List of data_series dictionaries to pre-populate the record. These may contain 'simulate' fields in them to call javascript source code for simulating on the fly.
+        simulate_as_added: Boolean. True by default. If true, any data_series that are added with a simulation field will have an immediate simulation call attempt.
         x_data: Single series x data in a list or array-like structure. 
         y_data: Single series y data in a list or array-like structure.
         x_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
         y_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
         layout: A dictionary defining the layout of the graph, including axis titles,
+        layout: A dictionary defining the layout of the graph, including axis titles,
                 comments, and general formatting options.
     
     Methods:
-        add_data_series: Adds a new data series to the record.
+        add_data_series: Adds a new data_series to the record.
         add_data_series_as_equation: Adds a new equation to plot, which will be evaluated on the fly.
         set_layout_fields: Updates the layout configuration for the graph.
         export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.

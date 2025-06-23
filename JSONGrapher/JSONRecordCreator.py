@@ -3127,8 +3127,9 @@ def remove_bubble_fields(fig_dict):
     bubble_found = False #initialize with false case.
     for data_series in fig_dict["data"]:
         if "trace_style" in data_series:
-            if (data_series["trace_style"] == "bubble") or ("max_bubble_size" in data_series):
-                bubble_found = True
+            if isinstance(data_series["trace_style"],str):
+                if ("bubble" in data_series["trace_style"].lower()) or ("max_bubble_size" in data_series):
+                    bubble_found = True
             if bubble_found == True:
                 if "z" in data_series:
                     data_series.pop("z")

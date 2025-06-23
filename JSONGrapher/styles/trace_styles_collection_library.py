@@ -42,6 +42,15 @@ styles_library = {
                             "showscale": True
                         }
         },        
+        "bubble2d": {
+            "type": "scatter",
+            "mode": "markers",
+            "marker": {
+                            "color": "auto",
+                            "colorscale": "viridis_r",
+                            "showscale": True
+                        }
+        },     
         "spline": {
             "type": "scatter",
             "mode": "lines",
@@ -75,6 +84,11 @@ styles_library = {
             "intensity" : [],
             "colorscale":"rainbow", 
             "showscale":True
+        },
+        "bubble3d": {
+            "mode": "markers",
+            "type": "scatter3d",
+            "marker": {"color" : "","colorscale":"rainbow", "showscale":True}
         },
         "heatmap": {
             "type": "heatmap",

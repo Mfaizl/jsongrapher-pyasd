@@ -2220,6 +2220,8 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     if isinstance(trace_style, str): #check if it is a string type.
         if "__" in trace_style:
             trace_style, colorscale = trace_style.split("__")
+        if ("bubble" in trace_style) and ("bubble3d" not in trace_style) and ("bubble2d" not in trace_style):
+            trace_style = trace_style.replace("bubble", "bubble2d")
 
     colorscale_structure = "" #initialize this variable for use later. It tells us which fields to put the colorscale related values in. This should be done before regular trace_style fields are applied.
     #3D and bubble plots will have a colorscale by default.
@@ -3130,7 +3132,11 @@ def remove_bubble_fields(fig_dict):
     bubble_found = False  # initialize with false case.
     for data_series in fig_dict["data"]:
         trace_style = data_series.get("trace_style") #trace_style will be None of the key is not present.
+
         if isinstance(trace_style, str):
+            #If the style is just "bubble" (not explicitly 2D or 3D), default to bubble2d for backward compatibility
+            if ("bubble" in trace_style) and ("bubble3d" not in trace_style) and ("bubble2d" not in trace_style):
+                trace_style = trace_style.replace("bubble", "bubble2d") 
             if ("bubble" in trace_style.lower()) or ("max_bubble_size" in data_series):
                 bubble_found = True
             if bubble_found is True:

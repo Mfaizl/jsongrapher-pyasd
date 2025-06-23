@@ -649,26 +649,30 @@ class SyncedDict(dict):
 
 class JSONGrapherDataSeries(dict): #inherits from dict.
     def __init__(self, uid="", name="", trace_style="", x=None, y=None, **kwargs):
-        """Initialize a data series with synced dictionary behavior.
-        Here are some fields that can be included, with example values.
+        """
+        Initializes a data series dictionary with synchronized attribute-style access.
 
-        "uid": data_series_dict["uid"] = "123ABC",  # (string) a unique identifier
-        "name": data_series_dict["name"] = "Sample Data Series",  # (string) name of the data series
-        "trace_style": data_series_dict["trace_style"] = "scatter",  # (string) type of trace (e.g., scatter, bar)
-        "x": data_series_dict["x"] = [1, 2, 3, 4, 5],  # (list) x-axis values
-        "y": data_series_dict["y"] = [10, 20, 30, 40, 50],  # (list) y-axis values
-        "mode": data_series_dict["mode"] = "lines",  # (string) plot mode (e.g., "lines", "markers")
-        "marker_size": data_series_dict["marker"]["size"] = 6,  # (integer) marker size
-        "marker_color": data_series_dict["marker"]["color"] = "blue",  # (string) marker color
-        "marker_symbol": data_series_dict["marker"]["symbol"] = "circle",  # (string) marker shape/symbol
-        "line_width": data_series_dict["line"]["width"] = 2,  # (integer) line thickness
-        "line_dash": data_series_dict["line"]["dash"] = "solid",  # (string) line style (solid, dash, etc.)
-        "opacity": data_series_dict["opacity"] = 0.8,  # (float) transparency level (0-1)
-        "visible": data_series_dict["visible"] = True,  # (boolean) whether the trace is visible
-        "hoverinfo": data_series_dict["hoverinfo"] = "x+y",  # (string) format for hover display
-        "legend_group": data_series_dict["legend_group"] = None,  # (string or None) optional grouping for legend
-        "text": data_series_dict["text"] = "Data Point Labels",  # (string or None) optional text annotations
+        This constructor sets default fields such as 'uid', 'name', 'trace_style', 'x', and 'y',
+        and allows additional configuration via keyword arguments. The underlying structure behaves
+        like both a dictionary and an object with attributes, supporting synced access patterns.
 
+        Args:
+            uid (str, optional): Unique identifier for the data series. Defaults to an empty string.
+            name (str, optional): Display name of the series. Defaults to an empty string.
+            trace_style (str, optional): Type of plot trace (e.g., 'scatter', 'bar'). Defaults to an empty string.
+            x (list, optional): X-axis data values. Defaults to an empty list.
+            y (list, optional): Y-axis data values. Defaults to an empty list.
+            **kwargs: Additional optional plot configuration (e.g., mode, marker, line, opacity).
+
+        Example Fields Supported via kwargs:
+            - mode: Plot mode such as "lines", "markers", or "lines+markers".
+            - marker: Dictionary with subfields like "size", "color", and "symbol".
+            - line: Dictionary with subfields like "width" and "dash".
+            - opacity: Float value for transparency (0 to 1).
+            - visible: Boolean to control trace visibility.
+            - hoverinfo: String format for hover data.
+            - legend_group: Optional grouping label for legends.
+            - text: String or list of annotations.
         """
         super().__init__()  # Initialize as a dictionary
 
@@ -685,34 +689,110 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         self.update(kwargs)
 
     def update_while_preserving_old_terms(self, series_dict):
-        """Update instance attributes from a dictionary. Overwrites existing terms and preserves other old terms."""
+        """
+        Updates the current data series with new values while retaining previously set terms that are not overwritten.
+
+        This method applies a partial update to the internal dictionary by using the built-in `update()` method.
+        Existing keys in `series_dict` will overwrite corresponding keys in the object, while all other existing
+        keys and values will be preserved. Attributes on the owning object remain synchronized.
+
+        Args:
+            series_dict (dict): A dictionary containing updated fields for the data series.
+
+        Example:
+            # Before: {'x': [1, 2], 'color': 'blue'}
+            # After update_while_preserving_old_terms({'x': [3, 4]}): {'x': [3, 4], 'color': 'blue'}
+        """
         self.update(series_dict)
 
     def get_data_series_dict(self):
-        """Return the dictionary representation of the trace."""
+        
+        """
+        Returns the underlying dictionary representation of the data series.
+
+        This method provides a clean snapshot of the current state of the data series object
+        by converting it into a standard Python dictionary. It is useful for serialization,
+        debugging, or passing the data to plotting libraries like Plotly.
+
+        Returns:
+            dict: A dictionary containing all data fields of the series.
+        """
         return dict(self)
 
     def set_x_values(self, x_values):
-        """Update the x-axis values."""
+        """
+        Updates the x-axis data for the series with a new set of values.
+
+        This method replaces the current list of x-values in the data series. If no values are provided 
+        (i.e., None or empty), it safely defaults to an empty list. The update is synchronized through 
+        the internal dictionary mechanism for consistency.
+
+        Args:
+            x_values (list): A list of numerical or categorical values to assign to the 'x' axis.
+        """
         self["x"] = list(x_values) if x_values else []
 
     def set_y_values(self, y_values):
-        """Update the y-axis values."""
+        """
+        Updates the y-axis data for the series with a new set of values.
+
+        This method replaces the current list of y-values in the data series. If no values are provided 
+        (i.e., None or empty), it defaults to an empty list. The assignment ensures consistency with the 
+        internal dictionary and allows for flexible input formats.
+
+        Args:
+            y_values (list): A list of numerical or categorical values to assign to the 'y' axis.
+        """
         self["y"] = list(y_values) if y_values else []
 
     def set_name(self, name):
-        """Update the name of the data series."""
+        """
+        Sets the name of the data series to the provided value.
+
+        This method assigns a human-readable identifier or label to the data series, which is 
+        typically used for legend display and trace identification in visualizations.
+
+        Args:
+            name (str): The new name or label to assign to the data series.
+        """
         self["name"] = name
 
     def set_uid(self, uid):
-        """Update the unique identifier (uid) of the data series."""
+        """
+        Sets or updates the unique identifier (UID) for the data series.
+
+        This method assigns a UID to the data series, which can be used to uniquely identify
+        the trace within a larger figure or dataset. UIDs are helpful for referencing, comparing,
+        or updating specific traces, especially in dynamic or interactive plotting environments.
+
+        Args:
+            uid (str): A unique identifier string for the data series.
+        """
         self["uid"] = uid
 
     def set_trace_style(self, style):
-        """Update the trace style (e.g., scatter, scatter_spline, scatter_line, bar)."""
+        """
+        Updates the trace style of the data series to control its rendering behavior.
+
+        This method sets the 'trace_style' field, which typically defines how the data series
+        appears visually in plots (e.g., 'scatter', 'bar', 'scatter_line', 'scatter_spline').
+
+        Args:
+            style (str): A string representing the desired visual trace style for plotting.
+        """
         self["trace_style"] = style
 
     def set_marker_symbol(self, symbol):
+        """
+        Sets the marker symbol for data points by delegating to the internal set_marker_shape method.
+
+        This method provides a user-friendly way to define the visual marker used for plotting individual
+        points on the graph. The symbol parameter is passed directly to set_marker_shape, which handles
+        the internal logic for updating the marker settings.
+
+        Args:
+            symbol (str): The symbol to use for markers (e.g., "circle", "square", "diamond", "x", "star").
+        """
         self.set_marker_shape(shape=symbol)
 
     def set_marker_shape(self, shape):

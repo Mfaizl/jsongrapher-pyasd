@@ -842,12 +842,12 @@ class JSONGrapherRecord:
 
     Arguments & Attributes (all are optional):
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
-        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name.
+        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name. May have underscore, should not have spaces.
         graph_title: Title of the graph or the dataset being represented.
         data_objects_list (list): List of data series dictionaries to pre-populate the record. These may contain 'simulate' fields in them to call javascript source code for simulating on the fly.
         simulate_as_added: Boolean. True by default. If true, any data series that are added with a simulation field will have an immediate simulation call attempt.
-        x_data: Single series x data in a list or array-like structure. 
-        y_data: Single series y data in a list or array-like structure.
+        x_data: Single series x data values in a list or array-like structure. 
+        y_data: Single series y data values in a list or array-like structure.
         x_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
         y_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
         layout: A dictionary defining the layout of the graph, including axis titles,
@@ -868,12 +868,12 @@ class JSONGrapherRecord:
         Parameters:
             comments (str): General metadata or description for the record. Stored in fig_dict["comments"].
             graph_title (str): Title of the graph, inserted into the layout_style.
-            datatype (str): Experimental or data type identifier. Can be a schema URL or descriptive label.
+            datatype (str): Experimental or data type identifier. Can be a schema URL or descriptive label. May have underscore, should not have spaces.
             data_objects_list (list): A list of data_series dictionaries to populate the record initially.
             simulate_as_added (bool): If True, will automatically attempt to simulate series containing 'simulate' fields.
             evaluate_equations_as_added (bool): If True, evaluates equation fields as they're added to the data_series.
-            x_data (list or array-like): Optional x-axis data for a single data series.
-            y_data (list or array-like): Optional y-axis data for a single data series.
+            x_data (list or array-like): Optional x-values data for a single data series.
+            y_data (list or array-like): Optional y-values data for a single data series.
             x_axis_label_including_units (str): Label for the x-axis, with units formatted in parentheses.
             y_axis_label_including_units (str): Label for the y-axis, with units formatted in parentheses.
             plot_style (str): Optional trace_style or visual theme to apply to the record.
@@ -1012,28 +1012,28 @@ class JSONGrapherRecord:
 
     def keys(self):
         """
-        Returns a view object of all keys in the fig_dict.
+        Returns a read-only pointer-like view object of all keys in the fig_dict.
 
         Returns:
-            A view of the fig_dict's keys.
+            A read-only pointer-like view of the fig_dict's keys.
         """
         return self.fig_dict.keys()  # Dictionary-like keys()
 
     def values(self):
         """
-        Returns a view object of all values in the fig_dict.
+        Returns  a read-only pointer-like view object of all values in the fig_dict.
 
         Returns:
-            A view of the fig_dict's values.
+            A  a read-only pointer-like view of the fig_dict's values.
         """
         return self.fig_dict.values()  # Dictionary-like values()
 
     def items(self):
         """
-        Returns a view object of all key-value pairs in the fig_dict.
+        Returns a read-only pointer-like view object of all key-value pairs in the fig_dict.
 
         Returns:
-            A view of the fig_dict's items.
+            A  a read-only pointer-like view of the fig_dict's items.
         """
         return self.fig_dict.items()  # Dictionary-like items()
     

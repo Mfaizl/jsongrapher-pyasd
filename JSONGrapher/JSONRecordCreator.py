@@ -623,25 +623,97 @@ def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_
 ## This is a special dictionary class that will allow a dictionary
 ## inside a main class object to be synchronized with the fields within it.
 class SyncedDict(dict):
-    """A dictionary that automatically updates instance attributes."""
+    """Enables an owner object that is not a dictionary to behave like a dictionary.
+    Each SyncedDict instance is a dictionary that automatically updates and synchronizes attributes with the owner object."""
     def __init__(self, owner):
+        """
+        Initialize a SyncedDict with an associated owner, where the fields of the owner will be synchronized.
+
+        This constructor sets up the base dictionary and stores a reference to the owner
+        object whose attributes should remain in sync with the dictionary entries.
+        This allows a non-dictionary class object (the owner) to behave like a dictionary.
+
+        Args:
+            owner (object): The parent object that holds this dictionary and will mirror its keys as attributes.
+
+        Returns:
+            None
+            
+        """
+
         super().__init__()
         self.owner = owner  # Store reference to the class instance
     def __setitem__(self, key, value):
-        """Update both dictionary and instance attribute."""
+        """
+        Set a key-value pair in the dictionary and update the owner's attribute.
+
+        Ensures that when a new item is added or updated in the dictionary, the corresponding
+        attribute on the owner object reflects the same value.
+
+        Args:
+            key (str): The key to assign.
+            value (any): The value to assign to the key and the owner's attribute.
+
+        Returns:
+            None
+            
+
+        """
+
         super().__setitem__(key, value)  # Set in the dictionary
         setattr(self.owner, key, value)  # Sync with instance attribute
     def __delitem__(self, key):
+        """
+        Delete a key from the dictionary and remove its attribute from the owner.
+
+        Removes both the dictionary entry and the corresponding attribute from the owner,
+        maintaining synchronization.
+
+        Args:
+            key (str): The key to delete.
+            
+        Returns:
+            None
+            
+        """
+
         super().__delitem__(key)  # Remove from dict
         if hasattr(self.owner, key):
             delattr(self.owner, key)  # Sync removal from instance
     def pop(self, key, *args):
-        """Remove item from dictionary and instance attributes."""
+        """
+        Remove a key from the dictionary and owner's attributes, returning the value.
+
+        Behaves like the built-in dict.pop(), but also deletes the attribute from the owner
+        if it exists.
+
+        Args:
+            key (str): The key to remove.
+            *args: Optional fallback value if the key does not exist.
+
+        Returns:
+            any: The value associated with the removed key, or the fallback value if the key did not exist.
+        """
+
         value = super().pop(key, *args)  # Remove from dictionary
         if hasattr(self.owner, key):
             delattr(self.owner, key)  # Remove from instance attributes
         return value
     def update(self, *args, **kwargs):
+        """
+        Update the dictionary with new key-value pairs and sync them to the owner's attributes.
+
+        This method extends the dictionary update logic to ensure that any added or modified
+        keys are also set as attributes on the owner object.
+
+        Args:
+            *args: Accepts a dictionary or iterable of key-value pairs.
+            **kwargs: Additional keyword pairs to add.
+            
+        Returns:
+            None
+        """
+
         super().update(*args, **kwargs)  # Update dict
         for key, value in self.items():
             setattr(self.owner, key, value)  # Sync attributes

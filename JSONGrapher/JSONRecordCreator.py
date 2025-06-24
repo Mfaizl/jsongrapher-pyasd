@@ -623,16 +623,22 @@ def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_
 ## This is a special dictionary class that will allow a dictionary
 ## inside a main class object to be synchronized with the fields within it.
 class SyncedDict(dict):
-    """A dictionary that automatically updates instance attributes."""
+    """Enables an owner object that is not a dictionary to behave like a dictionary.
+    Each SyncedDict instance is a dictionary that automatically updates and synchronizes attributes with the owner object."""
     def __init__(self, owner):
         """
-        Initialize a SyncedDict with an associated owner.
+        Initialize a SyncedDict with an associated owner, where the fields of the owner will be synchronized.
 
         This constructor sets up the base dictionary and stores a reference to the owner
         object whose attributes should remain in sync with the dictionary entries.
+        This allows a non-dictionary class object (the owner) to behave like a dictionary.
 
         Args:
             owner (object): The parent object that holds this dictionary and will mirror its keys as attributes.
+
+        Returns:
+            None
+            
         """
 
         super().__init__()
@@ -647,6 +653,11 @@ class SyncedDict(dict):
         Args:
             key (str): The key to assign.
             value (any): The value to assign to the key and the owner's attribute.
+
+        Returns:
+            None
+            
+
         """
 
         super().__setitem__(key, value)  # Set in the dictionary
@@ -660,6 +671,10 @@ class SyncedDict(dict):
 
         Args:
             key (str): The key to delete.
+            
+        Returns:
+            None
+            
         """
 
         super().__delitem__(key)  # Remove from dict
@@ -677,7 +692,7 @@ class SyncedDict(dict):
             *args: Optional fallback value if the key does not exist.
 
         Returns:
-            any: The value associated with the removed key.
+            any: The value associated with the removed key, or the fallback value if the key did not exist.
         """
 
         value = super().pop(key, *args)  # Remove from dictionary
@@ -694,6 +709,9 @@ class SyncedDict(dict):
         Args:
             *args: Accepts a dictionary or iterable of key-value pairs.
             **kwargs: Additional keyword pairs to add.
+            
+        Returns:
+            None
         """
 
         super().update(*args, **kwargs)  # Update dict

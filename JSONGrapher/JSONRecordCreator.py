@@ -967,7 +967,14 @@ class JSONGrapherRecord:
     #this function enables printing the current record.
     def __str__(self):
         """
-        Returns a JSON-formatted string of the record with an indent of 4.
+        Returns a JSON-formatted string representation of the fig_dict with 4-space indentation.
+
+        Returns:
+            str: A readable JSON string of the record's contents.
+
+        Notes:
+            This method does not perform automatic consistency updates or validation.
+            For a verified printout, use RecordObject.print_to_inspect() instead.
         """
         print("Warning: Printing directly will return the raw record without some automatic updates. It is recommended to use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
         return json.dumps(self.fig_dict, indent=4)
@@ -975,7 +982,27 @@ class JSONGrapherRecord:
 
     def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
         """
-        This is the normal way of adding an x,y data series.
+        Adds a new x,y data series to the fig_dict with optional styling, metadata, and simulation capabilities.
+
+        Parameters:
+            series_name (str): Name of the data series to be displayed on the graph.
+            x_values (list or array-like, optional): List of x-axis data points. Defaults to an empty list.
+            y_values (list or array-like, optional): List of y-axis data points. Defaults to an empty list.
+            simulate (dict, optional): Dictionary containing simulation instructions for dynamic evaluation. Defaults to an empty dict.
+            simulate_as_added (bool): If True (default), attempts to simulate the series immediately upon addition.
+            comments (str): Optional description or annotation for the data series.
+            trace_style (str): Visualization type for the trace (e.g., scatter, line, spline, bar).
+            uid (str): Optional unique identifier (e.g., DOI) for the series.
+            line (dict): Dictionary describing line formatting, such as shape or width.
+            extra_fields (dict): Additional key-value pairs to include in the data_series dictionary.
+
+        Returns:
+            JSONGrapherDataSeries: The full data_series dictionary object, optionally simulated and enhanced.
+
+        Notes:
+            - Data is validated and converted into list format to maintain consistency.
+            - If simulation fails, it is silently ignored to preserve runtime flow.
+            - Returned object is wrapped in a JSONGrapherDataSeries instance for extended method access.
         """
         # series_name: Name of the data series.
         # x: List of x-axis values. Or similar structure.
@@ -1035,8 +1062,28 @@ class JSONGrapherRecord:
 
     def add_data_series_as_equation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
         """
-        This is a way to add an equation that would be used to fill an x,y data series.
-        The equation will be a equation_dict of the json_equationer type
+        Adds a data series to the fig_dict using an equation definition rather than raw data.
+
+        Parameters:
+            series_name (str): Name of the data series.
+            graphical_dimensionality (int): The dimensionality of the data (typically 2 or 3).
+            x_values (list or array-like, optional): Optional x-axis values for evaluation or display.
+            y_values (list or array-like, optional): Optional y-axis values for display.
+            equation_dict (dict, optional): Dictionary defining the equation, following json_equationer formatting.
+            evaluate_equations_as_added (bool): If True (default), attempts to evaluate the equation immediately.
+            comments (str): Optional text describing the series or providing metadata.
+            trace_style (str): Visual trace_style for the graph (e.g., scatter, bar).
+            uid (str): Optional unique identifier for this series.
+            line (dict): Dictionary describing visual line attributes (e.g., width, shape).
+            extra_fields (dict): Any additional metadata fields to include in the data_series dictionary.
+
+        Returns:
+            JSONGrapherDataSeries: The completed data_series object added to the fig_dict.
+
+        Notes:
+            - The method appends graphical_dimensionality to the equation_dict.
+            - Equation evaluation occurs only after the series is added to fig_dict, to enable unit validation.
+            - If evaluation fails, it is silently ignored to prevent interruption.
         """
         # series_name: Name of the data series.
         # graphical_dimensionality is the number of geometric dimensions, so should be either 2 or 3.
@@ -1100,17 +1147,58 @@ class JSONGrapherRecord:
                 pass
         
     def change_data_series_name(self, series_index, series_name):
+        """
+        Updates the name of a data series at the specified index within the fig_dict.
+
+        Parameters:
+            series_index (int): The index of the data series to rename.
+            series_name (str): The new name to assign to the data series.
+
+        Notes:
+            - This directly modifies the 'name' field of the corresponding data_series dictionary.
+            - Indexing assumes the series exists; no bounds checking is performed here.
+        """
         self.fig_dict["data"][series_index]["name"] = series_name
 
     #this function forces the re-simulation of a particular dataseries.
     #The simulator link will be extracted from the record, by default.
     def simulate_data_series_by_index(self, data_series_index, simulator_link='', verbose=False):
+        """
+        Forces re-simulation of a specific data series in the fig_dict using its index.
+
+        Parameters:
+            data_series_index (int): Index of the data series to re-simulate.
+            simulator_link (str, optional): Override URL or path to the simulator to be used. If left empty, the link is taken from the existing record.
+            verbose (bool): If True, enables verbose output during simulation.
+
+        Returns:
+            dict: The updated data_series dictionary after re-simulation.
+
+        Notes:
+            - Replaces the existing fig_dict with its updated version after simulation.
+            - This operation is typically used to refresh series that contain a 'simulate' field.
+        """
         self.fig_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index, simulator_link=simulator_link, verbose=verbose)
         data_series_dict = self.fig_dict["data"][data_series_index] #implied return
         return data_series_dict #Extra regular return
     #this function returns the current record.
 
     def evaluate_eqution_of_data_series_by_index(self, series_index, equation_dict = None, verbose=False):
+        """
+        Evaluates the equation associated with a data series at the given index, updating the fig_dict.
+
+        Parameters:
+            series_index (int): Index of the data series to evaluate.
+            equation_dict (dict, optional): Optional equation dictionary to override or set before evaluation.
+            verbose (bool): If True, enables detailed output during the evaluation process.
+
+        Returns:
+            dict: The updated data_series dictionary after equation evaluation.
+
+        Notes:
+            - If an equation_dict is provided, it is assigned to the series before evaluation.
+            - The function modifies the fig_dict in-place with updated evaluation results.
+        """
         if equation_dict != None:
             self.fig_dict["data"][series_index]["equation"] = equation_dict
         data_series_dict = self.fig_dict["data"][series_index]

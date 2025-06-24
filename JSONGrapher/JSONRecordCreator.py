@@ -626,80 +626,76 @@ class SyncedDict(dict):
     """A dictionary that automatically updates instance attributes."""
     def __init__(self, owner):
         """
-        Initializes the object and stores a reference to the owner.
+        Initialize a SyncedDict with an associated owner.
 
-        This constructor calls the superclass initializer and assigns the provided owner
-        to an instance variable. It is commonly used in classes that are tightly coupled
-        to another object or rely on owner-based delegation or composition.
+        This constructor sets up the base dictionary and stores a reference to the owner
+        object whose attributes should remain in sync with the dictionary entries.
 
         Args:
-            owner (object): The parent or controlling instance associated with this object.
+            owner (object): The parent object that holds this dictionary and will mirror its keys as attributes.
         """
+
         super().__init__()
         self.owner = owner  # Store reference to the class instance
     def __setitem__(self, key, value):
         """
-        Sets a key-value pair in the internal dictionary and mirrors the change on the owning object.
+        Set a key-value pair in the dictionary and update the owner's attribute.
 
-        This method overrides the dictionary-style item assignment to ensure that any key added
-        to the internal structure is also reflected as an attribute on the associated owner object.
-        Useful in configurations or wrappers where dictionary keys need to behave like object properties.
+        Ensures that when a new item is added or updated in the dictionary, the corresponding
+        attribute on the owner object reflects the same value.
 
         Args:
-            key (str): The key to set in the dictionary and as an attribute on the owner.
-            value (any): The value to assign to both the dictionary and the owner's attribute.
+            key (str): The key to assign.
+            value (any): The value to assign to the key and the owner's attribute.
         """
-        """Update both dictionary and instance attribute."""
+
         super().__setitem__(key, value)  # Set in the dictionary
         setattr(self.owner, key, value)  # Sync with instance attribute
     def __delitem__(self, key):
         """
-        Deletes a key from the dictionary and removes the corresponding attribute from the owner object.
+        Delete a key from the dictionary and remove its attribute from the owner.
 
-        This method overrides the dictionary deletion behavior to ensure that when a key is removed
-        from the internal dictionary, the same key is also removed as an attribute from the associated
-        owner object—keeping both representations in sync.
+        Removes both the dictionary entry and the corresponding attribute from the owner,
+        maintaining synchronization.
 
         Args:
-            key (str): The key to remove from the dictionary and from the owner's attributes.
+            key (str): The key to delete.
         """
+
         super().__delitem__(key)  # Remove from dict
         if hasattr(self.owner, key):
             delattr(self.owner, key)  # Sync removal from instance
     def pop(self, key, *args):
         """
-        Removes a key from both the dictionary and the associated owner's attributes, if present.
+        Remove a key from the dictionary and owner's attributes, returning the value.
 
-        This method overrides the standard pop behavior by synchronizing the deletion: it removes the
-        specified key from the internal dictionary and also deletes the corresponding attribute from
-        the owner object. Useful for maintaining consistency between dict-like and attribute-based access.
+        Behaves like the built-in dict.pop(), but also deletes the attribute from the owner
+        if it exists.
 
         Args:
             key (str): The key to remove.
-            *args: Optional default value to return if key is not found.
+            *args: Optional fallback value if the key does not exist.
 
         Returns:
-            any: The value that was removed from the dictionary.
+            any: The value associated with the removed key.
         """
+
         value = super().pop(key, *args)  # Remove from dictionary
         if hasattr(self.owner, key):
             delattr(self.owner, key)  # Remove from instance attributes
         return value
     def update(self, *args, **kwargs):
         """
-        Updates the internal dictionary and reflects the new key-value pairs as attributes on the owner object.
+        Update the dictionary with new key-value pairs and sync them to the owner's attributes.
 
-        This method extends the default dictionary update behavior to maintain synchronization between
-        dictionary keys and the attributes of an associated owner object. Any keys added or modified 
-        through the update are mirrored as attributes.
+        This method extends the dictionary update logic to ensure that any added or modified
+        keys are also set as attributes on the owner object.
 
         Args:
-            *args: Positional arguments passed to the standard dict update method (e.g., another dict).
-            **kwargs: Keyword arguments representing additional key-value pairs to add or update.
-
-        Returns:
-            None
+            *args: Accepts a dictionary or iterable of key-value pairs.
+            **kwargs: Additional keyword pairs to add.
         """
+
         super().update(*args, **kwargs)  # Update dict
         for key, value in self.items():
             setattr(self.owner, key, value)  # Sync attributes

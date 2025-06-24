@@ -23,6 +23,6 @@ example_8_custom_formatting_advanced of how to further customize the formatting 
 
 example_9_scatter3d_and_mesh3d_plots shows an example of 3D plots (both scatter3d and mesh3d, where there latter is a surface plot)
 
-example_10_bubble_plot shows an example of how to create a bubble plot, which is another kind of 3D plot.
+example_10_bubble_plot shows an example of how to create a bubble2d plot and also a bubble3d plot. The bubble size adds an extra dimension to the image.
 
 example_11_local_python_call shows an example where the json record calls a local python function to simulate and populate a dataseries. This feature requires the user's script to call the feature, for security reasons. The JSON record cannot call functions "by itself".

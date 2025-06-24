@@ -1120,12 +1120,28 @@ class JSONGrapherRecord:
     #this function returns the current record.       
     def get_record(self):
         """
-        Returns a JSON-dict string of the record
+        Retrieves the current fig_dict representing the entire graph record.
+
+        Returns:
+            dict: The full structured JSON-compatible record stored in fig_dict.
         """
         return self.fig_dict
     #The update_and_validate function will clean for plotly.
     #TODO: the internal recommending "print_to_inspect" function should, by default, exclude printing the full dictionaries of the layout_style and the trace_collection_style.
     def print_to_inspect(self, update_and_validate=True, validate=True, clean_for_plotly = True, remove_remaining_hints=False):
+        """
+        Prints the current fig_dict in a human-readable JSON format, with optional updates and validation.
+
+        Parameters:
+            update_and_validate (bool): If True (default), performs automatic updates and cleaning before printing.
+            validate (bool): If True (default), runs validation even if updates are skipped.
+            clean_for_plotly (bool): If True (default), applies compatibility adjustments for clean rendering.
+            remove_remaining_hints (bool): If True, removes developer hint metadata before printing.
+
+        Notes:
+            - This function is recommended over __str__ for inspecting up-to-date and validated records.
+            - Future enhancements may limit output verbosity by default (e.g., exclude layout_style or trace_style fields).
+        """
         if remove_remaining_hints == True:
             self.remove_hints()
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -1136,8 +1152,14 @@ class JSONGrapherRecord:
 
     def populate_from_existing_record(self, existing_JSONGrapher_record):
         """
-        Populates attributes from an existing JSONGrapher record.
-        existing_JSONGrapher_record: A dictionary representing an existing JSONGrapher record.
+        Populates the fig_dict using an existing JSONGrapher record, which may be a dictionary or another JSONGrapherRecord instance.
+
+        Parameters:
+            existing_JSONGrapher_record (dict or JSONGrapherRecord): An existing record to extract attributes from.
+
+        Notes:
+            - If a dictionary is provided, only select top-level fields ('comments', 'datatype', 'data', 'layout') are copied.
+            - If a JSONGrapherRecord object is provided, its full fig_dict is assigned directly.
         """
         #While we expect a dictionary, if a JSONGrapher ojbect is provided, we will simply pull the dictionary out of that.
         if isinstance(existing_JSONGrapher_record, dict): 
@@ -1152,6 +1174,17 @@ class JSONGrapherRecord:
     #the below function takes in existin JSONGrpher record, and merges the data in.
     #This requires scaling any data as needed, according to units.
     def merge_in_JSONGrapherRecord(self, fig_dict_to_merge_in):
+        """
+        Merges data from another JSONGrapher record into the current fig_dict, with unit-based scaling applied as needed.
+
+        Parameters:
+            fig_dict_to_merge_in (dict, str, or JSONGrapherRecord): The record to merge. Can be a dictionary, a JSON string, or another JSONGrapherRecord object.
+
+        Notes:
+            - X and Y axis units are extracted from both records and used to calculate scaling ratios.
+            - All data series in the incoming record are scaled uniformly to match the current record's units.
+            - The incoming record's data series are deep-copied and appended to the existing fig_dict["data"] list.
+        """
         import copy
         fig_dict_to_merge_in = copy.deepcopy(fig_dict_to_merge_in)
         if type(fig_dict_to_merge_in) == type({}):
@@ -1181,17 +1214,35 @@ class JSONGrapherRecord:
         self.fig_dict["data"].extend(scaled_fig_dict["data"])
    
     def import_from_dict(self, fig_dict):
+        """
+        Imports a complete fig_dict into the current JSONGrapherRecord instance, replacing its contents.
+
+        Parameters:
+            fig_dict (dict): A dictionary representing a full JSONGrapher record to assign to the instance.
+
+        Notes:
+            - This method overwrites the current fig_dict without validation or merging.
+            - Ensure the incoming dictionary follows JSONGrapher formatting standards.
+        """
         self.fig_dict = fig_dict
     
     def import_from_file(self, record_filename_or_object):
         """
-        Determine the type of file or data and call the appropriate import function.
+        Imports a record from a supported file type or dictionary and processes it into fig_dict format.
 
-        Args:
-            record_filename_or_object (str or dict): Filename of the CSV/TSV/JSON file or a dictionary object.
+        Parameters:
+            record_filename_or_object (str or dict): File path to a CSV, TSV, or JSON file, or a dictionary representing a record.
 
         Returns:
-            dict: Processed JSON data.
+            dict: The processed JSON record extracted from the provided file or object.
+
+        Raises:
+            ValueError: If the file type is unsupported.
+
+        Notes:
+            - CSV and TSV files are handled via import_from_csv with the appropriate delimiter.
+            - JSON files and dictionaries are passed to import_from_json.
+            - This method automatically detects file type by its extension when a string path is provided.
         """
         import os  # Moved inside the function
 
@@ -1215,6 +1266,22 @@ class JSONGrapherRecord:
 
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
+        """
+        Imports a fig_dict from a JSON-formatted string, file, or dictionary.
+
+        Parameters:
+            json_filename_or_object (str or dict): Either a JSON-formatted string, a path to a JSON file, or a dictionary object.
+
+        Returns:
+            dict: Parsed JSON content loaded into fig_dict.
+
+        Notes:
+            - If a string is passed, the method first attempts to parse it as a JSON string.
+            - If parsing fails, it treats the string as a filename and attempts to open and load the JSON content.
+            - If the file is not found, the method appends ".json" and attempts to locate and load the file.
+            - If a dictionary is passed directly, it is assigned to fig_dict without modification.
+            - Improved error messages guide the user when JSON formatting fails (e.g., issues with quotes or booleans).
+        """
         if type(json_filename_or_object) == type(""): #assume it's a json_string or filename_and_path.
             try:
                 record = json.loads(json_filename_or_object) #first check if it's a json string.
@@ -1239,15 +1306,20 @@ class JSONGrapherRecord:
 
     def import_from_csv(self, filename, delimiter=","):
         """
-        Convert CSV file content into a JSON structure for Plotly.
+        Imports a CSV or TSV file and converts its contents into a structured fig_dict with metadata and data_series dictionaries.
 
-        Args:
-            filename (str): Path to the CSV file.
-            delimiter (str, optional): Delimiter used in CSV. Default is ",".
-                                    Use "\\t" for a tab-delimited file.
+        Parameters:
+            filename (str): Path to the CSV or TSV file. If no extension is present, ".csv" or ".tsv" is appended based on the delimiter.
+            delimiter (str, optional): Field separator. Defaults to ",". Use "\\t" for tab-delimited TSV files.
 
         Returns:
-            dict: JSON representation of the CSV data.
+            dict: A fig_dict populated with comments, datatype, layout_style, and a list of data_series dictionaries.
+
+        Notes:
+            - The file must follow a specific CSV structure where the first several lines contain config and labeling metadata.
+            - The sixth row is expected to contain series names, and data rows begin on the ninth line.
+            - All numeric data are cast to float and validated during parsing.
+            - UIDs are assigned to each data series based on their column index.
         """
         import os  
         # Modify the filename based on the delimiter and existing extension

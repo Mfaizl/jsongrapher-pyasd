@@ -1527,16 +1527,23 @@ class JSONGrapherRecord:
     #simulate all series will simulate any series as needed.
     def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
-        Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
+        Constructs and returns a matplotlib figure generated from fig_dict, with optional simulation, preprocessing, and styling.
 
-        Args:
-            simulate_all_series (bool): If True, performs simulations for applicable series.
-            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
-            evaluate_all_equations (bool): If True, evaluates all equation-based series.
-            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+        Parameters:
+            plot_style (str, dict, or list): Style configuration to apply. Accepts a string, dictionary, or list of layout and trace styles.
+            update_and_validate (bool): If True (default), performs layout cleanup and validation steps before conversion.
+            simulate_all_series (bool): If True (default), simulates all data series marked with a 'simulate' field.
+            evaluate_all_equations (bool): If True (default), evaluates all equation-based series.
+            adjust_implicit_data_ranges (bool): If True (default), modifies axis ranges to account for implicit series bounds.
 
         Returns:
-            plotly Figure: A validated matplotlib figure object based on fig_dict.
+            matplotlib.figure.Figure: A fully constructed and styled matplotlib figure object.
+
+        Notes:
+            - Internally calls execute_implicit_data_series_operations to handle simulation and equation evaluation.
+            - Applies styling before validation, using either the provided plot_style or the one embedded in fig_dict.
+            - Cleans the fig_dict of Plotly-incompatible fields prior to figure generation.
+            - Original fig_dict is restored after conversion to ensure non-destructive behavior.
         """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
@@ -1562,6 +1569,19 @@ class JSONGrapherRecord:
 
     #simulate all series will simulate any series as needed.
     def plot_with_matplotlib(self, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        """
+        Renders the current fig_dict as a matplotlib figure and displays it interactively.
+
+        Parameters:
+            update_and_validate (bool): If True (default), applies automatic cleanup and validation to the fig_dict.
+            simulate_all_series (bool): If True (default), simulates any series containing a 'simulate' field.
+            evaluate_all_equations (bool): If True (default), evaluates all equation-based data series.
+            adjust_implicit_data_ranges (bool): If True (default), adjusts axis ranges for implicit data series.
+
+        Notes:
+            - Wraps get_matplotlib_fig() to generate the figure and uses matplotlib's interactive renderer.
+            - Frees up system memory by calling plt.close() after display.
+        """
         import matplotlib.pyplot as plt
         fig = self.get_matplotlib_fig(simulate_all_series=simulate_all_series, 
                                       update_and_validate=update_and_validate, 
@@ -1572,6 +1592,18 @@ class JSONGrapherRecord:
 
     #simulate all series will simulate any series as needed.
     def export_to_matplotlib_png(self, filename, simulate_all_series = True, update_and_validate=True):
+        """
+        Exports the current fig_dict as a matplotlib figure and saves it as a PNG image.
+
+        Parameters:
+            filename (str): Output path for the PNG file. Appends ".png" if no extension is present.
+            simulate_all_series (bool): If True (default), simulates all series containing a 'simulate' field.
+            update_and_validate (bool): If True (default), applies validation and cleanup before rendering.
+
+        Notes:
+            - Uses get_matplotlib_fig to construct the figure and matplotlib’s savefig to export.
+            - Automatically releases memory with plt.close() after saving.
+        """
         import matplotlib.pyplot as plt
         # Ensure filename ends with .png
         if not filename.lower().endswith(".png"):
@@ -1583,9 +1615,13 @@ class JSONGrapherRecord:
 
     def add_hints(self):
         """
-        Adds hints to fields that are currently empty strings using self.hints_dictionary.
-        Dynamically parses hint keys (e.g., "['layout']['xaxis']['title']") to access and update fields in self.fig_dict.
-        The hints_dictionary is first populated during creation of the class object in __init__.
+        Populates empty fields in fig_dict with predefined hints from hints_dictionary.
+
+        Notes:
+            - Each key in hints_dictionary is a string representing a dotted path (e.g., "['layout']['xaxis']['title']") to a nested field in fig_dict.
+            - If a targeted field is an empty string, it is replaced by the corresponding hint text.
+            - Uses dynamic path parsing and setdefault to safely traverse and populate nested structures.
+            - Hints are typically injected during class initialization and provide editing guidance without modifying populated fields.
         """
         for hint_key, hint_text in self.hints_dictionary.items():
             # Parse the hint_key into a list of keys representing the path in the record.
@@ -1613,9 +1649,13 @@ class JSONGrapherRecord:
                         
     def remove_hints(self):
         """
-        Removes hints by converting fields back to empty strings if their value matches the hint text in self.hints_dictionary.
-        Dynamically parses hint keys (e.g., "['layout']['xaxis']['title']") to access and update fields in self.fig_dict.
-        The hints_dictionary is first populated during creation of the class object in __init__.
+        Removes hint text from fig_dict fields where the current value matches the corresponding entry in hints_dictionary.
+
+        Notes:
+            - Each key in hints_dictionary is a string representing a nested path (e.g., "['layout']['xaxis']['title']").
+            - If a field's current value exactly matches the hint text, it is reset to an empty string.
+            - Uses safe traversal with .get() to avoid key errors when navigating nested dictionaries.
+            - Designed to clean fig_dict before export or validation, especially when hint values should not persist.
         """
         for hint_key, hint_text in self.hints_dictionary.items():
             # Parse the hint_key into a list of keys representing the path in the record.
@@ -1644,6 +1684,18 @@ class JSONGrapherRecord:
     ## Start of section of JSONGRapher class functions related to styles ##
 
     def apply_plot_style(self, plot_style= None): 
+        """
+        Applies a layout and trace styling configuration to fig_dict and stores it in the 'plot_style' field.
+
+        Parameters:
+            plot_style (str, dict, or list): Can be a string keyword, a dictionary with 'layout_style' and 'trace_styles_collection',
+                                             or a list containing both elements. If None, defaults to an empty style.
+
+        Notes:
+            - Updates fig_dict in place using apply_plot_style_to_plotly_dict().
+            - Saves the applied style to fig_dict['plot_style'] for future reuse during plotting or export.
+            - Supports flexible style formats to simplify reuse and customization.
+        """
         #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "trace_styles_collection":"default"} or a list of length two with those two items.
         #The plot_style dictionary can include a pair of dictionaries.
         #if apply style is called directly, we will first put the plot_style into the plot_style field
@@ -1653,16 +1705,51 @@ class JSONGrapherRecord:
         self.fig_dict['plot_style'] = plot_style
         self.fig_dict = apply_plot_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
     def remove_plot_style(self):
+        """
+        Removes styling information from fig_dict, including both the 'plot_style' key and any associated formatting.
+
+        Notes:
+            - Deletes the 'plot_style' field from fig_dict to prevent reuse of styling metadata.
+            - Applies remove_plot_style_from_plotly_dict to strip layout and trace formatting from the dictionary.
+            - Useful when resetting or preparing the figure for a different visual presentation.
+        """
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
         self.fig_dict = remove_plot_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
     def set_layout_style(self, layout_style):
+        """
+        Sets the layout_style field inside fig_dict['plot_style'] to define the visual layout configuration.
+
+        Parameters:
+            layout_style (str): Name or keyword representing the desired layout style.
+
+        Notes:
+            - Initializes fig_dict["plot_style"] if it does not already exist.
+            - Useful for assigning or updating the layout portion of a reusable plot style.
+        """
         if "plot_style" not in self.fig_dict: #create it not present.
             self.fig_dict["plot_style"] = {}  # Initialize if missing
         self.fig_dict["plot_style"]["layout_style"] = layout_style
     def remove_layout_style_setting(self):
+        """
+        Removes the 'layout_style' entry from fig_dict['plot_style'] if it exists.
+
+        Notes:
+            - Safely deletes the layout style setting without affecting other style components.
+            - Useful when resetting or overriding layout styling for the figure.
+        """
         if "layout_style" in self.fig_dict["plot_style"]:
             self.fig_dict["plot_style"].pop("layout_style")
     def extract_layout_style(self):
+        """
+        Extracts the layout_style from fig_dict using a helper function.
+
+        Returns:
+            str or dict: The extracted layout style from fig_dict, depending on how styles are stored.
+
+        Notes:
+            - Delegates to extract_layout_style_from_plotly_dict to parse styling information.
+            - Useful for inspecting or reusing existing layout configurations.
+        """
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
     def apply_trace_style_by_index(self, data_series_index, trace_styles_collection='', trace_style=''):

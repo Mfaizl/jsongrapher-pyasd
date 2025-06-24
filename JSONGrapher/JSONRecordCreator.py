@@ -838,9 +838,9 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
         Supported Shapes:
             - circle, square, diamond, cross, x
-            - triangle-up/down/left/right
+            - triangle-up, triangle-down, triangle-left, triangle-right
             - pentagon, hexagon, star, hexagram
-            - star-triangle-up/down, star-square, star-diamond
+            - star-triangle-up, star-triangle-down, star-square, star-diamond
             - hourglass, bowtie
 
         Args:

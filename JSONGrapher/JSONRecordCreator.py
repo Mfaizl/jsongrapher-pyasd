@@ -2272,6 +2272,8 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
 
     if colorscale_structure == "bubble":
         #data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        if colorscale != "": #this means there is a user specified colorscale.
+            data_series["marker"]["colorscale"] = colorscale
         data_series["marker"]["showscale"] = True
         if "z" in data_series:
             color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")
@@ -2281,6 +2283,8 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             data_series["marker"]["color"] = color_values
     elif colorscale_structure == "scatter3d":
         #data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        if colorscale != "": #this means there is a user specified colorscale.
+            data_series["marker"]["colorscale"] = colorscale
         data_series["marker"]["showscale"] = True
         if "z" in data_series:
             color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")
@@ -2290,6 +2294,8 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             data_series["marker"]["color"] = color_values
     elif colorscale_structure == "mesh3d":
         #data_series["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        if colorscale != "": #this means there is a user specified colorscale.
+            data_series["colorscale"] = colorscale
         data_series["showscale"] = True
         if "z" in data_series:
             color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")

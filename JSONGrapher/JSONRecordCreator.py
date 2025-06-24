@@ -2252,7 +2252,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
                 data_series[key] = value  # Direct assignment for non-dictionary values
 
     #Before applying colorscales, we check if we have recieved a colorscale from the user. If so, we'll need to parse the trace_type to assign the colorscale structure.
-    if colorscale != "":
+    if ((colorscale_structure == "") and (colorscale != "")):
         #If it is a scatter plot with markers, then the colorscale_structure will be marker. Need to check for this before the lines alone case.
         if ("markers" in data_series["mode"]) or ("markers+lines" in data_series["mode"]) or ("lines+markers" in data_series["mode"]):
             colorscale_structure = "marker"

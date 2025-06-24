@@ -58,21 +58,24 @@ Record_for_bubble_plot["data"][0]["max_bubble_size"] = 150
 #The "empty" areas of the plot actually have very small bubbles.  If one hovers over there, one can see the rate constant values in that region of parameter space.
 Record_for_bubble_plot.plot(evaluate_all_equations=False)
 
-#Let's now try making a bubble plot with the log of the rate constant.
+#Below is an example of how to change the bubble plot to use the log of the rate constant.
 #We can manually change to taking the log of the rate constant. Since this is a bubble size, we do not have to be as worried about the units.
 Record_for_bubble_plot.set_graph_title("Bubble plot for Ea vs Temperature for the Log of a Rate Constant")
 import numpy as np
 log_of_k = np.log(Record_for_bubble_plot['data'][0]["z"]) #This is natural log.
 #it turns out there is a negative value from the log of a small rate constant.
-#We can't ahve negative values in our bubble plot. We will replace that with a 0.001, though a 0 would also be okay.
+#We can't have negative values in our bubble plot. We will replace that with a 0.001, though a 0 would also be okay.
 log_of_k[9] = 0.001
 #Now put this back in to our record as a list.
 Record_for_bubble_plot['data'][0]["z"] = log_of_k.tolist()
+#Set a suitable bubble size.
+Record_for_bubble_plot["data"][0]["max_bubble_size"] = 25
 
 #This time it is important not to evaluate the equations again, since we have manually set the z values for the bubble sizes.
-#Wit the new bubble sizes set to be the log of the rate constant, we now we see a more "linear" change of bubble size across the graph.
-Record_for_bubble_plot["data"][0]["max_bubble_size"] = 25
-Record_for_bubble_plot.plot(evaluate_all_equations=False)
+#With the new bubble sizes set to be the log of the rate constant, we should see a more "linear" change of bubble size across the graph.
+#The actual plotting line is below, and is commented out. #To see the plot, simply uncommment and run. 
+# You will see that the bubble sizes change more linearly across the graph..
+#Record_for_bubble_plot.plot(evaluate_all_equations=False)
 
 
 #Now let's try to make a bubble3d plot. The equation's graphical dimensionality is still 3.

@@ -863,11 +863,29 @@ class JSONGrapherRecord:
 
     def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_style ="", layout=None, existing_JSONGrapher_record=None):
         """
-        Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
+        Constructs a JSONGrapherRecord instance to represent a structured graph record in fig_dict format.
 
-            layout (dict): Layout dictionary to pre-populate the graph configuration.
-            existing_JSONGrapher_record (dict): Existing JSONGrapher record to populate the instance.
-        """  
+        Parameters:
+            comments (str): General metadata or description for the record. Stored in fig_dict["comments"].
+            graph_title (str): Title of the graph, inserted into the layout_style.
+            datatype (str): Experimental or data type identifier. Can be a schema URL or descriptive label.
+            data_objects_list (list): A list of data_series dictionaries to populate the record initially.
+            simulate_as_added (bool): If True, will automatically attempt to simulate series containing 'simulate' fields.
+            evaluate_equations_as_added (bool): If True, evaluates equation fields as they're added to the data_series.
+            x_data (list or array-like): Optional x-axis data for a single data series.
+            y_data (list or array-like): Optional y-axis data for a single data series.
+            x_axis_label_including_units (str): Label for the x-axis, with units formatted in parentheses.
+            y_axis_label_including_units (str): Label for the y-axis, with units formatted in parentheses.
+            plot_style (str): Optional trace_style or visual theme to apply to the record.
+            layout (dict): A layout_style dictionary defining graph structure, titles, and axis configuration.
+            existing_JSONGrapher_record (dict): An existing JSONGrapher record to initialize the instance from.
+
+        Notes:
+            - fig_dict is initialized to hold the graph structure and content for export or use.
+            - Axis label fields are validated to ensure unit formatting.
+            - Simulation and equation evaluation are attempted safely with error handling.
+            - Using Record["key"] = value will update both the object and its fig_dict in sync.
+        """
         if layout == None: #it's bad to have an empty dictionary or list as a python argument.
             layout = {}
 
@@ -931,34 +949,102 @@ class JSONGrapherRecord:
     #That is, if someone uses something like Record["comments"]="frog", it will also put that into self.fig_dict
 
     def __getitem__(self, key):
+        """
+        Retrieves the value associated with the specified key from the fig_dict.
+
+        Parameters:
+            key: The key to look up in the fig_dict.
+
+        Returns:
+            The value corresponding to the given key.
+        """
         return self.fig_dict[key]  # Direct access
 
     def __setitem__(self, key, value):
+        """
+        Updates the fig_dict by assigning a value to the specified key.
+
+        Parameters:
+            key: The key to set in the fig_dict.
+            value: The value to associate with the given key.
+        """
         self.fig_dict[key] = value  # Direct modification
 
     def __delitem__(self, key):
+        """
+        Removes the key-value pair from the fig_dict associated with the provided key.
+
+        Parameters:
+            key: The key to delete from the fig_dict.
+        """
         del self.fig_dict[key]  # Support for deletion
 
     def __iter__(self):
+        """
+        Returns an iterator over the keys in the fig_dict.
+
+        Returns:
+            An iterator for iterating through the keys of fig_dict.
+        """
         return iter(self.fig_dict)  # Allow iteration
 
     def __len__(self):
+        """
+        Returns the number of top-level keys currently in the fig_dict.
+
+        Returns:
+            The total count of entries in the fig_dict.
+        """
         return len(self.fig_dict)  # Support len()
 
     def pop(self, key, default=None):
+        """
+        Removes the specified key from the fig_dict and returns its value.
+
+        Parameters:
+            key: The key to remove.
+            default: Optional value to return if the key does not exist.
+
+        Returns:
+            The value of the removed key, or the default if the key was not found.
+        """
         return self.fig_dict.pop(key, default)  # Implement pop()
 
     def keys(self):
+        """
+        Returns a view object of all keys in the fig_dict.
+
+        Returns:
+            A view of the fig_dict's keys.
+        """
         return self.fig_dict.keys()  # Dictionary-like keys()
 
     def values(self):
+        """
+        Returns a view object of all values in the fig_dict.
+
+        Returns:
+            A view of the fig_dict's values.
+        """
         return self.fig_dict.values()  # Dictionary-like values()
 
     def items(self):
+        """
+        Returns a view object of all key-value pairs in the fig_dict.
+
+        Returns:
+            A view of the fig_dict's items.
+        """
         return self.fig_dict.items()  # Dictionary-like items()
     
     def update(self, *args, **kwargs):
-        """Updates the dictionary with multiple key-value pairs."""
+        """
+        Updates the fig_dict with new key-value pairs.
+
+        Parameters:
+            *args: Positional arguments passed to the underlying update method.
+            **kwargs: Keyword arguments for keys and values to update in the fig_dict.
+        """
         self.fig_dict.update(*args, **kwargs)
 
 

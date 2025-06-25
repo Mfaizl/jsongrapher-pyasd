@@ -1120,27 +1120,27 @@ class JSONGrapherRecord:
     #this function returns the current record.       
     def get_record(self):
         """
-        Retrieves the current fig_dict representing the entire graph record.
+        Retrieves the full fig_dict representing the current graph record.
 
         Returns:
-            dict: The full structured JSON-compatible record stored in fig_dict.
+            dict: The complete structured record stored in fig_dict, ready for export or inspection.
         """
         return self.fig_dict
     #The update_and_validate function will clean for plotly.
     #TODO: the internal recommending "print_to_inspect" function should, by default, exclude printing the full dictionaries of the layout_style and the trace_collection_style.
     def print_to_inspect(self, update_and_validate=True, validate=True, clean_for_plotly = True, remove_remaining_hints=False):
         """
-        Prints the current fig_dict in a human-readable JSON format, with optional updates and validation.
+        Prints the current fig_dict in a human-readable JSON format, with optional consistency checks.
 
-        Parameters:
-            update_and_validate (bool): If True (default), performs automatic updates and cleaning before printing.
+        Args:
+            update_and_validate (bool): If True (default), applies automatic updates and data cleaning before printing.
             validate (bool): If True (default), runs validation even if updates are skipped.
-            clean_for_plotly (bool): If True (default), applies compatibility adjustments for clean rendering.
-            remove_remaining_hints (bool): If True, removes developer hint metadata before printing.
+            clean_for_plotly (bool): If True (default), adjusts structure for compatibility with rendering tools.
+            remove_remaining_hints (bool): If True, strips hint-related metadata before output.
 
         Notes:
-            - This function is recommended over __str__ for inspecting up-to-date and validated records.
-            - Future enhancements may limit output verbosity by default (e.g., exclude layout_style or trace_style fields).
+            - Recommended over __str__ for reviewing records with validated and updated content.
+            - Future updates may include options to limit verbosity (e.g., omit layout_style and trace_style sections).
         """
         if remove_remaining_hints == True:
             self.remove_hints()
@@ -1152,14 +1152,14 @@ class JSONGrapherRecord:
 
     def populate_from_existing_record(self, existing_JSONGrapher_record):
         """
-        Populates the fig_dict using an existing JSONGrapher record, which may be a dictionary or another JSONGrapherRecord instance.
+        Populates the fig_dict using an existing JSONGrapher record.
 
-        Parameters:
-            existing_JSONGrapher_record (dict or JSONGrapherRecord): An existing record to extract attributes from.
+        Args:
+            existing_JSONGrapher_record (dict or JSONGrapherRecord): Source record to use for populating the current instance.
 
         Notes:
-            - If a dictionary is provided, only select top-level fields ('comments', 'datatype', 'data', 'layout') are copied.
-            - If a JSONGrapherRecord object is provided, its full fig_dict is assigned directly.
+            - If a dictionary is provided, only the top-level fields ('comments', 'datatype', 'data', 'layout') are selectively extracted and applied.
+            - If a JSONGrapherRecord object is passed, its entire fig_dict is directly assigned to the current instance.
         """
         #While we expect a dictionary, if a JSONGrapher ojbect is provided, we will simply pull the dictionary out of that.
         if isinstance(existing_JSONGrapher_record, dict): 
@@ -1175,15 +1175,17 @@ class JSONGrapherRecord:
     #This requires scaling any data as needed, according to units.
     def merge_in_JSONGrapherRecord(self, fig_dict_to_merge_in):
         """
-        Merges data from another JSONGrapher record into the current fig_dict, with unit-based scaling applied as needed.
+        Merges data from another JSONGrapher record into the current fig_dict with appropriate unit scaling.
 
-        Parameters:
-            fig_dict_to_merge_in (dict, str, or JSONGrapherRecord): The record to merge. Can be a dictionary, a JSON string, or another JSONGrapherRecord object.
+        Args:
+            fig_dict_to_merge_in (dict, str, or JSONGrapherRecord): Source record to merge. Can be a dictionary,
+                a JSON-formatted string, or a JSONGrapherRecord instance.
 
         Notes:
-            - X and Y axis units are extracted from both records and used to calculate scaling ratios.
-            - All data series in the incoming record are scaled uniformly to match the current record's units.
-            - The incoming record's data series are deep-copied and appended to the existing fig_dict["data"] list.
+            - Extracts x and y axis units from both records and calculates scaling ratios.
+            - Applies uniform scaling to all data_series dictionaries in the incoming record.
+            - Supports string and object-based inputs by auto-converting them into a usable fig_dict format.
+            - New data series are deep-copied and appended to the current fig_dict["data"] list.
         """
         import copy
         fig_dict_to_merge_in = copy.deepcopy(fig_dict_to_merge_in)
@@ -1217,32 +1219,33 @@ class JSONGrapherRecord:
         """
         Imports a complete fig_dict into the current JSONGrapherRecord instance, replacing its contents.
 
-        Parameters:
-            fig_dict (dict): A dictionary representing a full JSONGrapher record to assign to the instance.
+        Args:
+            fig_dict (dict): A full structured JSONGrapher record to assign to the instance.
 
         Notes:
-            - This method overwrites the current fig_dict without validation or merging.
-            - Ensure the incoming dictionary follows JSONGrapher formatting standards.
+            - The current fig_dict is entirely overwritten without merging or validation.
+            - Caller is responsible for ensuring the input adheres to JSONGrapher format conventions.
         """
         self.fig_dict = fig_dict
     
     def import_from_file(self, record_filename_or_object):
         """
-        Imports a record from a supported file type or dictionary and processes it into fig_dict format.
+        Imports a record from a supported file type or directly from a dictionary, and converts it into fig_dict format.
 
-        Parameters:
-            record_filename_or_object (str or dict): File path to a CSV, TSV, or JSON file, or a dictionary representing a record.
+        Args:
+            record_filename_or_object (str or dict): A file path pointing to a CSV, TSV, or JSON file,
+                or a dictionary representing a JSONGrapher record.
 
         Returns:
-            dict: The processed JSON record extracted from the provided file or object.
+            dict: The structured fig_dict extracted from the file or provided object.
 
         Raises:
-            ValueError: If the file type is unsupported.
+            ValueError: If the file extension is unsupported (not .csv, .tsv, or .json).
 
         Notes:
-            - CSV and TSV files are handled via import_from_csv with the appropriate delimiter.
-            - JSON files and dictionaries are passed to import_from_json.
-            - This method automatically detects file type by its extension when a string path is provided.
+            - Automatically detects file type via extension when a string path is provided.
+            - CSV/TSV content is handled using import_from_csv with delimiter selection.
+            - JSON files and dictionaries are passed directly to import_from_json.
         """
         import os  # Moved inside the function
 
@@ -1267,20 +1270,22 @@ class JSONGrapherRecord:
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
         """
-        Imports a fig_dict from a JSON-formatted string, file, or dictionary.
+        Imports a fig_dict from a JSON-formatted string, file path, or dictionary.
 
-        Parameters:
-            json_filename_or_object (str or dict): Either a JSON-formatted string, a path to a JSON file, or a dictionary object.
+        Args:
+            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dictionary 
+                representing a valid fig_dict structure.
 
         Returns:
-            dict: Parsed JSON content loaded into fig_dict.
+            dict: The parsed and loaded fig_dict from the provided input.
 
         Notes:
-            - If a string is passed, the method first attempts to parse it as a JSON string.
-            - If parsing fails, it treats the string as a filename and attempts to open and load the JSON content.
-            - If the file is not found, the method appends ".json" and attempts to locate and load the file.
-            - If a dictionary is passed directly, it is assigned to fig_dict without modification.
-            - Improved error messages guide the user when JSON formatting fails (e.g., issues with quotes or booleans).
+            - If a string is passed, the method first attempts to parse it as a JSON-formatted string.
+            - If parsing fails, it attempts to treat the string as a file path to a JSON file.
+            - If the file isn’t found, it appends ".json" and tries again.
+            - If a dictionary is passed, it is directly assigned to fig_dict.
+            - Includes detailed error feedback if JSON parsing fails, highlighting common issues like 
+              improper quote usage or malformed booleans.
         """
         if type(json_filename_or_object) == type(""): #assume it's a json_string or filename_and_path.
             try:
@@ -1306,20 +1311,23 @@ class JSONGrapherRecord:
 
     def import_from_csv(self, filename, delimiter=","):
         """
-        Imports a CSV or TSV file and converts its contents into a structured fig_dict with metadata and data_series dictionaries.
+        Imports a CSV or TSV file and converts its contents into a structured fig_dict with metadata and data_series.
 
-        Parameters:
-            filename (str): Path to the CSV or TSV file. If no extension is present, ".csv" or ".tsv" is appended based on the delimiter.
-            delimiter (str, optional): Field separator. Defaults to ",". Use "\\t" for tab-delimited TSV files.
+        Args:
+            filename (str): File path to the CSV or TSV file. If no extension is provided,
+                ".csv" or ".tsv" is inferred based on the delimiter.
+            delimiter (str, optional): Field separator character. Defaults to ",". Use "\\t" for TSV files.
 
         Returns:
-            dict: A fig_dict populated with comments, datatype, layout_style, and a list of data_series dictionaries.
+            dict: A populated fig_dict containing top-level metadata and a list of data_series dictionaries.
 
         Notes:
-            - The file must follow a specific CSV structure where the first several lines contain config and labeling metadata.
-            - The sixth row is expected to contain series names, and data rows begin on the ninth line.
-            - All numeric data are cast to float and validated during parsing.
-            - UIDs are assigned to each data series based on their column index.
+            - The input file must follow a specific format:
+                * Lines 1–5 define config metadata (e.g., comments, datatype, axis labels).
+                * Line 6 defines series names.
+                * Data rows begin on line 9.
+            - Values are parsed as float and validated during import.
+            - Each series is assigned a UID based on its index.
         """
         import os  
         # Modify the filename based on the delimiter and existing extension

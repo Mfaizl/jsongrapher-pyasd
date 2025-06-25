@@ -863,28 +863,36 @@ class JSONGrapherRecord:
 
     def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_style ="", layout=None, existing_JSONGrapher_record=None):
         """
-        Constructs a JSONGrapherRecord instance to represent a structured graph record in fig_dict format.
+        Initializes a JSONGrapherRecord object that represents a structured fig_dict for graphing.
 
-        Parameters:
-            comments (str): General metadata or description for the record. Stored in fig_dict["comments"].
-            graph_title (str): Title of the graph, inserted into the layout_style.
-            datatype (str): Experimental or data type identifier. Can be a schema URL or descriptive label. May have underscore, should not have spaces.
-            data_objects_list (list): A list of data_series dictionaries to populate the record initially.
-            simulate_as_added (bool): If True, will automatically attempt to simulate series containing 'simulate' fields.
-            evaluate_equations_as_added (bool): If True, evaluates equation fields as they're added to the data_series.
-            x_data (list or array-like): Optional x-values data for a single data series.
-            y_data (list or array-like): Optional y-values data for a single data series.
-            x_axis_label_including_units (str): Label for the x-axis, with units formatted in parentheses.
-            y_axis_label_including_units (str): Label for the y-axis, with units formatted in parentheses.
-            plot_style (str): Optional trace_style or visual theme to apply to the record.
-            layout (dict): A layout_style dictionary defining graph structure, titles, and axis configuration.
-            existing_JSONGrapher_record (dict): An existing JSONGrapher record to initialize the instance from.
+        Optionally populates fields from an existing JSONGrapher record and applies immediate processing
+        such as simulation or equation evaluation on data series when applicable.
 
-        Notes:
-            - fig_dict is initialized to hold the graph structure and content for export or use.
-            - Axis label fields are validated to ensure unit formatting.
-            - Simulation and equation evaluation are attempted safely with error handling.
-            - Using Record["key"] = value will update both the object and its fig_dict in sync.
+        Args:
+            comments (str, optional): General description or metadata for the record.
+            graph_title (str, optional): Title for the graph; placed into layout title.
+            datatype (str, optional): Experiment or data type identifier used to classify records.
+            data_objects_list (list, optional): List of data_series dictionaries to pre-populate the record.
+            simulate_as_added (bool, optional): If True, attempts simulation on data with 'simulate' fields.
+            evaluate_equations_as_added (bool, optional): If True, immediately evaluates equations in data series.
+            x_data (list or array-like, optional): x-axis values for a single data series.
+            y_data (list or array-like, optional): y-axis values for a single data series.
+            x_axis_label_including_units (str, optional): x-axis label with units in parentheses, using SI or custom syntax.
+            y_axis_label_including_units (str, optional): y-axis label with units in parentheses, using SI or custom syntax.
+            plot_style (str, optional): Style applied to the overall plot; stored in fig_dict["plot_style"].
+            layout (dict, optional): layout_style dictionary configuring graph appearance.
+            existing_JSONGrapher_record (dict, optional): Dictionary representing an existing JSONGrapher record 
+                to populate the current instance.
+
+        Raises:
+            KeyError: If simulation attempts fail due to missing expected keys.
+            Exception: Catches and logs unexpected errors during simulation or equation evaluation.
+
+        Side Effects:
+            - Updates self.fig_dict with layout_style, data_series dictionaries, and metadata.
+            - Applies optional simulation or evaluation to fig_dict.
+            - Initializes a hints_dictionary to guide field-level edits within the fig_dict.
+
         """
         if layout == None: #it's bad to have an empty dictionary or list as a python argument.
             layout = {}
@@ -952,30 +960,30 @@ class JSONGrapherRecord:
         """
         Retrieves the value associated with the specified key from the fig_dict.
 
-        Parameters:
-            key: The key to look up in the fig_dict.
+        Args:
+            key: The field name to look up in the fig_dict.
 
         Returns:
-            The value corresponding to the given key.
+            The value mapped to the specified key within the fig_dict.
         """
         return self.fig_dict[key]  # Direct access
 
     def __setitem__(self, key, value):
         """
-        Updates the fig_dict by assigning a value to the specified key.
+        Updates the fig_dict by setting the specified key to the given value.
 
-        Parameters:
-            key: The key to set in the fig_dict.
-            value: The value to associate with the given key.
+        Args:
+            key: The field name to assign or update in the fig_dict.
+            value: The value to associate with the specified key in the fig_dict.
         """
         self.fig_dict[key] = value  # Direct modification
 
     def __delitem__(self, key):
         """
-        Removes the key-value pair from the fig_dict associated with the provided key.
+        Deletes the specified key and its associated value from the fig_dict.
 
-        Parameters:
-            key: The key to delete from the fig_dict.
+        Args:
+            key: The field name to remove from the fig_dict.
         """
         del self.fig_dict[key]  # Support for deletion
 
@@ -984,56 +992,56 @@ class JSONGrapherRecord:
         Returns an iterator over the keys in the fig_dict.
 
         Returns:
-            An iterator for iterating through the keys of fig_dict.
+            An iterator that allows traversal of all top-level keys in fig_dict.
         """
         return iter(self.fig_dict)  # Allow iteration
 
     def __len__(self):
         """
-        Returns the number of top-level keys currently in the fig_dict.
+        Returns the number of top-level fields currently stored in the fig_dict.
 
         Returns:
-            The total count of entries in the fig_dict.
+            The count of top-level keys present in the fig_dict.
         """
         return len(self.fig_dict)  # Support len()
 
     def pop(self, key, default=None):
         """
-        Removes the specified key from the fig_dict and returns its value.
+        Removes the specified key and returns its value from the fig_dict.
 
-        Parameters:
-            key: The key to remove.
-            default: Optional value to return if the key does not exist.
+        Args:
+            key: The field name to remove from the fig_dict.
+            default (optional): Value to return if the key is not found.
 
         Returns:
-            The value of the removed key, or the default if the key was not found.
+            The value previously associated with the key, or the default if the key was absent.
         """
         return self.fig_dict.pop(key, default)  # Implement pop()
 
     def keys(self):
         """
-        Returns a read-only pointer-like view object of all keys in the fig_dict.
+        Returns a dynamic, read-only view of all top-level keys in the fig_dict.
 
         Returns:
-            A read-only pointer-like view of the fig_dict's keys.
+            A view object that reflects the current set of keys in the fig_dict.
         """
         return self.fig_dict.keys()  # Dictionary-like keys()
 
     def values(self):
         """
-        Returns  a read-only pointer-like view object of all values in the fig_dict.
+        Returns a dynamic, read-only view of all values stored in the fig_dict.
 
         Returns:
-            A  a read-only pointer-like view of the fig_dict's values.
+            A view object that reflects the current set of values in the fig_dict.
         """
         return self.fig_dict.values()  # Dictionary-like values()
 
     def items(self):
         """
-        Returns a read-only pointer-like view object of all key-value pairs in the fig_dict.
+        Returns a dynamic, read-only view of all key-value pairs in the fig_dict.
 
         Returns:
-            A  a read-only pointer-like view of the fig_dict's items.
+            A view object that reflects the current set of key-value pairs in the fig_dict.
         """
         return self.fig_dict.items()  # Dictionary-like items()
     
@@ -1041,9 +1049,9 @@ class JSONGrapherRecord:
         """
         Updates the fig_dict with new key-value pairs.
 
-        Parameters:
-            *args: Positional arguments passed to the underlying update method.
-            **kwargs: Keyword arguments for keys and values to update in the fig_dict.
+        Args:
+            *args: Positional arguments containing mappings or iterable key-value pairs.
+            **kwargs: Arbitrary keyword arguments to be added as key-value pairs in the fig_dict.
         """
         self.fig_dict.update(*args, **kwargs)
 
@@ -1053,7 +1061,14 @@ class JSONGrapherRecord:
     #this function enables printing the current record.
     def __str__(self):
         """
-        Returns a JSON-formatted string of the record with an indent of 4.
+        Returns a JSON-formatted string representation of the current fig_dict.
+
+        Returns:
+            A string containing the fig_dict formatted as pretty-printed JSON (indent=4).
+        
+        Note:
+            This method outputs the raw record without performing consistency updates or validation.
+            For a safer, cleaner output, use Record.print_to_inspect(), which applies automatic checks.
         """
         print("Warning: Printing directly will return the raw record without some automatic updates. It is recommended to use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
         return json.dumps(self.fig_dict, indent=4)

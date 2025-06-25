@@ -1296,41 +1296,42 @@ class JSONGrapherRecord:
 
     def set_datatype(self, datatype):
         """
-        Sets the datatype field in the fig_dict, used to define the experiment type or schema reference.
+        Sets the 'datatype' field within the fig_dict to classify the record by experiment type or schema.
 
-        Parameters:
-            datatype (str): The value to assign to the 'datatype' field.
+        Args:
+            datatype (str): A string value that defines the experiment type, schema, or category of the record.
         """
         self.fig_dict['datatype'] = datatype
 
     def set_comments(self, comments):
         """
-        Updates the comments field in the fig_dict with a new description or metadata.
+        Updates the 'comments' field in the fig_dict with descriptive metadata.
 
-        Parameters:
-            comments (str): The comment string to assign to fig_dict["comments"].
+        Args:
+            comments (str): Textual notes or contextual remarks to assign to fig_dict["comments"].
         """
         self.fig_dict['comments'] = comments
 
     def set_graph_title(self, graph_title):
         """
-        Sets the graph title in the layout_style section of the fig_dict.
+        Sets the main title of the graph within the fig_dict's layout section.
 
-        Parameters:
-            graph_title (str): The new title text to assign to fig_dict["layout"]["title"]["text"].
+        Args:
+            graph_title (str): The title text to assign to fig_dict["layout"]["title"]["text"].
         """
         self.fig_dict['layout']['title']['text'] = graph_title
 
     def set_x_axis_label_including_units(self, x_axis_label_including_units, remove_plural_units=True):
         """
-        Sets the x-axis label in the layout_style of the fig_dict, including validation and optional unit formatting cleanup.
+        Sets and validates the x-axis label in the fig_dict's layout, with optional unit normalization.
 
-        Parameters:
-            x_axis_label_including_units (str): Label text for the x-axis, expected to include units in parentheses.
-            remove_plural_units (bool): If True (default), removes plural forms from units during validation.
+        Args:
+            x_axis_label_including_units (str): The full axis label text, including units in parentheses (e.g., "Time (s)").
+            remove_plural_units (bool): If True (default), converts plural unit terms to singular during validation.
 
         Notes:
-            - The label is validated for proper formatting and unit conventions via validate_JSONGrapher_axis_label.
+            - Utilizes validate_JSONGrapher_axis_label to enforce proper label formatting and unit conventions.
+            - Ensures the layout["xaxis"] structure is initialized safely before assignment.
             - The layout_style structure is safely initialized if missing.
         """
         if "xaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("xaxis"), dict):
@@ -1341,15 +1342,15 @@ class JSONGrapherRecord:
 
     def set_y_axis_label_including_units(self, y_axis_label_including_units, remove_plural_units=True):
         """
-        Sets the y-axis label in the layout_style of the fig_dict, with optional formatting and unit validation.
+        Sets and validates the y-axis label in the fig_dict's layout, applying formatting and optional unit normalization.
 
-        Parameters:
-            y_axis_label_including_units (str): Label text for the y-axis, expected to include units in parentheses.
-            remove_plural_units (bool): If True (default), attempts to simplify plural units during validation.
+        Args:
+            y_axis_label_including_units (str): Full label text for the y-axis, including units (e.g., "Voltage (V)").
+            remove_plural_units (bool): If True (default), converts pluralized unit terms to singular during validation.
 
         Notes:
-            - The label is checked and reformatted using validate_JSONGrapher_axis_label.
-            - Ensures layout_style keys are initialized safely before assignment.
+            - The label is validated and potentially reformatted via validate_JSONGrapher_axis_label.
+            - Safely initializes layout["yaxis"] if it doesn't already exist, ensuring robust assignment.
         """
         if "yaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("yaxis"), dict):
             self.fig_dict['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.       
@@ -1359,15 +1360,15 @@ class JSONGrapherRecord:
 
     def set_z_axis_label_including_units(self, z_axis_label_including_units, remove_plural_units=True):
         """
-        Sets the z-axis label in the layout_style of the fig_dict, with optional plural unit cleanup and validation.
+        Sets and validates the z-axis label in the fig_dict's layout, with optional cleanup of pluralized units.
 
-        Parameters:
-            z_axis_label_including_units (str): Label text for the z-axis, including units in parentheses.
-            remove_plural_units (bool): If True (default), removes plural unit forms during validation.
+        Args:
+            z_axis_label_including_units (str): Full axis label for the z-axis, including units (e.g., "Depth (m)").
+            remove_plural_units (bool): If True (default), simplifies plural unit terms during validation.
 
         Notes:
-            - Validates formatting and unit conventions using validate_JSONGrapher_axis_label.
-            - Ensures layout_style structure exists before assignment to prevent key errors.
+            - Uses validate_JSONGrapher_axis_label to enforce formatting and unit consistency.
+            - Ensures layout["zaxis"]["title"] is safely initialized before assignment to prevent key errors.
         """
         if "zaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("zaxis"), dict):
             self.fig_dict['layout']["zaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
@@ -1379,29 +1380,30 @@ class JSONGrapherRecord:
     #function to set the min and max of the x axis in plotly way.
     def set_x_axis_range(self, min_value, max_value):
         """
-        Sets the minimum and maximum range values for the x-axis in the layout section of fig_dict.
+        Sets the minimum and maximum range for the x-axis in the fig_dict's layout.
 
-        Parameters:
-            min_value (float): The lower bound of the x-axis.
-            max_value (float): The upper bound of the x-axis.
+        Args:
+            min_value (float): Lower limit of the x-axis range.
+            max_value (float): Upper limit of the x-axis range.
 
         Notes:
-            - This assigns the axis range in Plotly’s expected format as a two-element list.
+            - Assigns the Plotly-compatible range using a two-element list stored in fig_dict["layout"]["xaxis"]["range"].
+            - Overwrites any existing axis range setting for the x-axis.
         """
         self.fig_dict["layout"]["xaxis"][0] = min_value
         self.fig_dict["layout"]["xaxis"][1] = max_value
     #function to set the min and max of the y axis in plotly way.
     def set_y_axis_range(self, min_value, max_value):
         """
-        Sets the y-axis range in the layout section of fig_dict using Plotly-compatible formatting.
+        Sets the y-axis range in the fig_dict's layout using Plotly-compatible syntax.
 
-        Parameters:
-            min_value (float): The lower bound of the y-axis.
-            max_value (float): The upper bound of the y-axis.
+        Args:
+            min_value (float): Lower limit of the y-axis range.
+            max_value (float): Upper limit of the y-axis range.
 
         Notes:
-            - This method assigns a two-element list to fig_dict["layout"]["yaxis"]["range"].
-            - Ensures consistent behavior with Plotly's rendering engine.
+            - Updates fig_dict["layout"]["yaxis"]["range"] to a two-element list: [min_value, max_value].
+            - Ensures compatibility with Plotly's axis formatting expectations.
         """
         self.fig_dict["layout"]["yaxis"][0] = min_value
         self.fig_dict["layout"]["yaxis"][1] = max_value

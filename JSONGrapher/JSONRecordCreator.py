@@ -1665,22 +1665,20 @@ class JSONGrapherRecord:
     def extract_layout_style(self):
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
+
     def apply_trace_style_by_index(self, data_series_index, trace_styles_collection='', trace_style=''):
         """
-        Apply a specified trace_style to a single data series in fig_dict using index-based access.
+        Apply a trace_style to that data_series at a specified index in the fig_dict.
+            - Initializes fig_dict["plot_style"] if missing and defaults to embedded styling when needed.
 
         Args:
             data_series_index (int): Index of the target data series within fig_dict["data"].
-            trace_styles_collection (str or dict): Optional named collection or dictionary of trace styles. Falls back to fig_dict["plot_style"]["trace_styles_collection"] if empty.
-            trace_style (str or dict): The trace_style to apply. Can be a named key from the collection or a direct dictionary.
+            trace_styles_collection (str or dict): Optional named collection or dictionary of trace styles. Checks fig_dict["plot_style"]["trace_styles_collection"] if empty.
+            trace_style (str or dict): The trace_style to apply. Can be a string for a trace_style name to be retrieved from a trace_styles_collection or can be at trace_style dictionary.
 
         Returns:
             dict: The updated data_series dictionary with the applied trace_style.
 
-        Notes:
-            - Uses apply_trace_style_to_single_data_series to apply visual formatting.
-            - Initializes fig_dict["plot_style"] if missing and defaults to embedded styling when needed.
-            - Useful for customizing a single trace without affecting the rest of the figure.
         """
         if trace_styles_collection == '':
             self.fig_dict.setdefault("plot_style",{}) #create the plot_style dictionary if it's not there. Else, return current value.
@@ -1692,54 +1690,44 @@ class JSONGrapherRecord:
         return data_series
     def set_trace_style_one_data_series(self, data_series_index, trace_style):
         """
-        Assign a trace_style dictionary to a single data series in fig_dict by direct index.
+        Sets the trace_style at the data_series with the specified index in fig_dict.
+            - Overwrites any existing trace_style entry for the specified series.
 
         Args:
             data_series_index (int): Index of the target data series within fig_dict["data"].
-            trace_style (dict): Dictionary specifying visual styling for the selected data series.
+            trace_style (dict or string): Dictionary or string specifying visual styling for the selected data series.
 
         Returns:
-            dict: The updated data_series dictionary after applying the trace_style.
+            dict: The updated data_series dictionary after setting the trace_style.
 
-        Notes:
-            - Overwrites any existing trace_style entry for the specified series.
-            - Useful for applying ad hoc styling or bypassing named style collections.
         """
         self.fig_dict['data'][data_series_index]["trace_style"] = trace_style
         return self.fig_dict['data'][data_series_index]
     def set_trace_styles_collection(self, trace_styles_collection):
         """
-        Set the trace_styles_collection field in fig_dict['plot_style'] to define visual styles for all data series.
+        Set the trace_styles_collection field in fig_dict['plot_style']
+            - Initializes fig_dict['plot_style'] if it does not already exist.
 
         Args:
-            trace_styles_collection (str): Name of the trace_styles_collection to apply. Common options include 'scatter', 'spline', and 'scatter_spline'.
-
-        Notes:
-            - Initializes fig_dict['plot_style'] if it does not already exist.
-            - Affects the appearance of all traces when styles are applied via apply_plot_style or during rendering.
+            trace_styles_collection (str): Name of the trace_styles_collection to apply.
         """
         self.fig_dict["plot_style"]["trace_styles_collection"] = trace_styles_collection
     def remove_trace_styles_collection_setting(self):
         """
         Remove the 'trace_styles_collection' entry from fig_dict['plot_style'], if present.
-
-        Notes:
             - Deletes only the trace style setting, preserving other style-related fields like layout_style.
-            - Useful when resetting or customizing trace styling independently of layout styling.
+            - has an implied return since it modifies self.fig_dict in place.
+
         """
         if "trace_styles_collection" in self.fig_dict["plot_style"]:
             self.fig_dict["plot_style"].pop("trace_styles_collection")
     def set_trace_style_all_series(self, trace_style):
             """
-        Assign a specified trace_style to all data series in fig_dict.
+        Set all data_series in the fig_dict to have a speicfic trace_style.
 
         Args:
-            trace_style (dict or str): A dictionary or named key (e.g., 'scatter', 'spline', 'scatter_spline') defining visual properties for traces.
+            trace_style (dict or str): A dictionary or string naming a trace_style (e.g., 'scatter', 'spline', 'scatter_spline') defining visual properties for traces.
 
-        Notes:
-            - Iterates through fig_dict['data'] and applies the trace_style to each series.
-            - Uses set_trace_style_one_data_series to ensure consistent formatting.
-            - Useful for applying a uniform appearance across all traces in the figure.
         """
         for data_series_index in range(len(self.fig_dict['data'])): #works with array indexing.
             self.set_trace_style_one_data_series(data_series_index, trace_style)
@@ -1748,23 +1736,22 @@ class JSONGrapherRecord:
                                     new_trace_style_names_list=None, extract_colors=False):
         """
         Extract a collection of trace styles from selected data series and compile them into a named trace_styles_collection.
-
+            - Defaults to extracting from all series in fig_dict['data'] if no indices are provided.
+            - Generates indices based style names if none are supplied or found.
+            - Ensures that indices and style names are aligned before processing.
+            - Uses extract_trace_style_by_index to retrieve each style definition.
+            
         Args:
             new_trace_styles_collection_name (str): Name to assign to the new trace_styles_collection. If empty, a placeholder is used.
             indices_of_data_series_to_extract_styles_from (list of int): Indices of the data series to extract styles from. Defaults to all series.
             new_trace_style_names_list (list of str): Names to assign to each extracted style. Auto-generated if omitted.
-            extract_colors (bool): If True, includes color attributes in the extracted styles.
+            extract_colors (bool): If True, includes color attributes in the extracted styles. This is typically not recommended, because a trace_style with colors would prevent automatic coloring of series across a graph.
 
         Returns:
             tuple:
                 - str: Name of the created trace_styles_collection.
                 - dict: Dictionary mapping trace_style names to their definitions.
 
-        Notes:
-            - Defaults to extracting from all series in fig_dict['data'] if no indices are provided.
-            - Automatically generates unique style names if none are supplied or found.
-            - Ensures that indices and style names are aligned before processing.
-            - Uses extract_trace_style_by_index to retrieve each style definition.
         """
         if indices_of_data_series_to_extract_styles_from is None:  # should not initialize mutable objects in arguments line, so doing here.
             indices_of_data_series_to_extract_styles_from = []  
@@ -1799,23 +1786,21 @@ class JSONGrapherRecord:
                                     new_trace_style_names_list=None, filename='', extract_colors=False):
         """
         Extract a set of trace styles from selected data series and write them to a trace_styles_collection file.
-
+            - Uses extract_trace_styles_collection() to collect the styles.
+            - Saves the styles to file using write_trace_styles_collection_to_file().
+            
         Args:
             new_trace_styles_collection_name (str): Name of the new style collection. If empty, a placeholder name is used.
             indices_of_data_series_to_extract_styles_from (list of int): Indices of the data series to extract styles from. Defaults to all.
             new_trace_style_names_list (list of str): Names to assign to each extracted style. Auto-generated if not provided.
             filename (str): Name of the output file. If empty, the collection name is used as the filename.
-            extract_colors (bool): If True, includes color attributes in the extracted styles.
+            extract_colors (bool): If True, includes color attributes in the extracted styles. This is typically not recommended, because a trace_style with colors would prevent automatic coloring of series across a graph.
 
         Returns:
             tuple:
                 - str: The final name assigned to the trace_styles_collection.
                 - dict: Dictionary mapping trace_style names to their definitions.
 
-        Notes:
-            - Uses extract_trace_styles_collection() to collect the styles.
-            - Saves the styles to file using write_trace_styles_collection_to_file().
-            - Ensures safe handling of mutable defaults and preserves naming integrity.
         """
         if indices_of_data_series_to_extract_styles_from is None:  # should not initialize mutable objects in arguments line, so doing here.
             indices_of_data_series_to_extract_styles_from = []
@@ -1835,14 +1820,11 @@ class JSONGrapherRecord:
         Args:
             data_series_index (int): Index of the data series to extract the trace_style from.
             new_trace_style_name (str): Optional name to assign to the extracted style. A default is generated if omitted.
-            extract_colors (bool): If True, includes color-related properties in the extracted trace_style.
+            extract_colors (bool): If True, includes color attributes in the extracted styles. This is typically not recommended, because a trace_style with colors would prevent automatic coloring of series across a graph.
 
         Returns:
             dict: Dictionary containing the extracted trace_style, keyed by new_trace_style_name if provided.
 
-        Notes:
-            - Wraps extract_trace_style_by_index to operate on self.fig_dict.
-            - Useful for capturing reusable styling definitions from a single data series.
         """
         extracted_trace_style = extract_trace_style_by_index(self.fig_dict, data_series_index, new_trace_style_name=new_trace_style_name, extract_colors=extract_colors)
         return extracted_trace_style
@@ -1854,15 +1836,11 @@ class JSONGrapherRecord:
             data_series_index (int): Index of the data series to extract the trace style from.
             new_trace_style_name (str): Optional name to assign to the extracted style. Auto-generated if omitted.
             filename (str): File name to export the trace style to. Defaults to the trace style name.
-            extract_colors (bool): If True, includes color information in the extracted trace style.
+            extract_colors (bool): If True, includes color attributes in the extracted styles. This is typically not recommended, because a trace_style with colors would prevent automatic coloring of series across a graph.
 
         Returns:
             dict: A dictionary containing the exported trace style, keyed by its name.
 
-        Notes:
-            - Uses extract_trace_style_by_index to retrieve style from fig_dict.
-            - Writes the resulting style to disk via write_trace_style_to_file.
-            - Useful for saving and sharing reusable visual trace configurations.
         """
         extracted_trace_style = extract_trace_style_by_index(self.fig_dict, data_series_index, new_trace_style_name=new_trace_style_name, extract_colors=extract_colors)
         new_trace_style_name = list(extracted_trace_style.keys())[0] #the extracted_trace_style will have a single key which is the style name.
@@ -1877,9 +1855,6 @@ class JSONGrapherRecord:
         """
         Wrapper method that validates fig_dict using the external validate_JSONGrapher_record function.
 
-        Notes:
-            - Enables object-style syntax like record.validate_JSONGrapher_record() for convenience.
-            - Ensures fig_dict conforms to expected structure and validation rules.
         """
         validate_JSONGrapher_record(self)
     def update_and_validate_JSONGrapher_record(self, clean_for_plotly=True):
@@ -1889,9 +1864,6 @@ class JSONGrapherRecord:
         Args:
             clean_for_plotly (bool): If True (default), performs cleaning tailored for Plotly compatibility.
 
-        Notes:
-            - Enables method-style usage like record.update_and_validate_JSONGrapher_record().
-            - Delegates processing to the external function for in-place updates and consistency checks.
         """
         update_and_validate_JSONGrapher_record(self, clean_for_plotly=clean_for_plotly)
 

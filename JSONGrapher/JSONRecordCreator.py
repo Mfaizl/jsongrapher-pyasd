@@ -623,25 +623,97 @@ def scale_dataseries_dict(dataseries_dict, num_to_scale_x_values_by = 1, num_to_
 ## This is a special dictionary class that will allow a dictionary
 ## inside a main class object to be synchronized with the fields within it.
 class SyncedDict(dict):
-    """A dictionary that automatically updates instance attributes."""
+    """Enables an owner object that is not a dictionary to behave like a dictionary.
+    Each SyncedDict instance is a dictionary that automatically updates and synchronizes attributes with the owner object."""
     def __init__(self, owner):
+        """
+        Initialize a SyncedDict with an associated owner, where the fields of the owner will be synchronized.
+
+        This constructor sets up the base dictionary and stores a reference to the owner
+        object whose attributes should remain in sync with the dictionary entries.
+        This allows a non-dictionary class object (the owner) to behave like a dictionary.
+
+        Args:
+            owner (object): The parent object that holds this dictionary and will mirror its keys as attributes.
+
+        Returns:
+            None
+            
+        """
+
         super().__init__()
         self.owner = owner  # Store reference to the class instance
     def __setitem__(self, key, value):
-        """Update both dictionary and instance attribute."""
+        """
+        Set a key-value pair in the dictionary and update the owner's attribute.
+
+        Ensures that when a new item is added or updated in the dictionary, the corresponding
+        attribute on the owner object reflects the same value.
+
+        Args:
+            key (str): The key to assign.
+            value (any): The value to assign to the key and the owner's attribute.
+
+        Returns:
+            None
+            
+
+        """
+
         super().__setitem__(key, value)  # Set in the dictionary
         setattr(self.owner, key, value)  # Sync with instance attribute
     def __delitem__(self, key):
+        """
+        Delete a key from the dictionary and remove its attribute from the owner.
+
+        Removes both the dictionary entry and the corresponding attribute from the owner,
+        maintaining synchronization.
+
+        Args:
+            key (str): The key to delete.
+            
+        Returns:
+            None
+            
+        """
+
         super().__delitem__(key)  # Remove from dict
         if hasattr(self.owner, key):
             delattr(self.owner, key)  # Sync removal from instance
     def pop(self, key, *args):
-        """Remove item from dictionary and instance attributes."""
+        """
+        Remove a key from the dictionary and owner's attributes, returning the value.
+
+        Behaves like the built-in dict.pop(), but also deletes the attribute from the owner
+        if it exists.
+
+        Args:
+            key (str): The key to remove.
+            *args: Optional fallback value if the key does not exist.
+
+        Returns:
+            any: The value associated with the removed key, or the fallback value if the key did not exist.
+        """
+
         value = super().pop(key, *args)  # Remove from dictionary
         if hasattr(self.owner, key):
             delattr(self.owner, key)  # Remove from instance attributes
         return value
     def update(self, *args, **kwargs):
+        """
+        Update the dictionary with new key-value pairs and sync them to the owner's attributes.
+
+        This method extends the dictionary update logic to ensure that any added or modified
+        keys are also set as attributes on the owner object.
+
+        Args:
+            *args: Accepts a dictionary or iterable of key-value pairs.
+            **kwargs: Additional keyword pairs to add.
+            
+        Returns:
+            None
+        """
+
         super().update(*args, **kwargs)  # Update dict
         for key, value in self.items():
             setattr(self.owner, key, value)  # Sync attributes
@@ -649,11 +721,17 @@ class SyncedDict(dict):
 
 class JSONGrapherDataSeries(dict): #inherits from dict.
     def __init__(self, uid="", name="", trace_style="", x=None, y=None, **kwargs):
-        """Initialize a data series with synced dictionary behavior.
+        """
+        Initializes a JSONGrapher data_series object which is a dictionary with custom functions and synchronized attribute-style access.
+
+        This constructor sets default fields such as 'uid', 'name', 'trace_style', 'x', and 'y',
+        and allows additional configuration via keyword arguments. The underlying structure behaves
+        like both a dictionary and an object with attributes, supporting synced access patterns.
+
         Here are some fields that can be included, with example values.
 
         "uid": data_series_dict["uid"] = "123ABC",  # (string) a unique identifier
-        "name": data_series_dict["name"] = "Sample Data Series",  # (string) name of the data series
+        "name": data_series_dict["name"] = "Sample Data Series",  # (string) name of the data_series
         "trace_style": data_series_dict["trace_style"] = "scatter",  # (string) type of trace (e.g., scatter, bar)
         "x": data_series_dict["x"] = [1, 2, 3, 4, 5],  # (list) x-axis values
         "y": data_series_dict["y"] = [10, 20, 30, 40, 50],  # (list) y-axis values
@@ -667,8 +745,25 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         "visible": data_series_dict["visible"] = True,  # (boolean) whether the trace is visible
         "hoverinfo": data_series_dict["hoverinfo"] = "x+y",  # (string) format for hover display
         "legend_group": data_series_dict["legend_group"] = None,  # (string or None) optional grouping for legend
-        "text": data_series_dict["text"] = "Data Point Labels",  # (string or None) optional text annotations
 
+
+        Args:
+            uid (str, optional): Unique identifier for the data_series. Defaults to an empty string.
+            name (str, optional): Display name of the series. Defaults to an empty string.
+            trace_style (str, optional): Type of plot trace (e.g., 'scatter', 'bar'). Defaults to an empty string.
+            x (list, optional): X-axis data values. Defaults to an empty list.
+            y (list, optional): Y-axis data values. Defaults to an empty list.
+            **kwargs: Additional optional plot configuration (e.g., mode, marker, line, opacity).
+
+        Example Fields Supported via kwargs:
+            - mode: Plot mode such as "lines", "markers", or "lines+markers".
+            - marker: Dictionary with subfields like "size", "color", and "symbol".
+            - line: Dictionary with subfields like "width" and "dash".
+            - opacity: Float value for transparency (0 to 1).
+            - visible: Boolean to control trace visibility.
+            - hoverinfo: String format for hover data.
+            - legend_group: Optional grouping label for legends.
+            - text: String or list of annotations.
         """
         super().__init__()  # Initialize as a dictionary
 
@@ -685,90 +780,261 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
         self.update(kwargs)
 
     def update_while_preserving_old_terms(self, series_dict):
-        """Update instance attributes from a dictionary. Overwrites existing terms and preserves other old terms."""
+        """
+        Updates the current data_series dictionary with new values while retaining previously set terms that are not overwritten.
+
+        This method applies a partial update to the internal dictionary by using the built-in `update()` method.
+        Existing keys in `series_dict` will overwrite corresponding keys in the object, while all other existing
+        keys and values will be preserved. Attributes on the owning object remain synchronized.
+
+        Args:
+            series_dict (dict): A dictionary containing updated fields for the data_series.
+
+        Example:
+            # Before: {'x': [1, 2], 'color': 'blue'}
+            # After update_while_preserving_old_terms({'x': [3, 4]}): {'x': [3, 4], 'color': 'blue'}
+        """
         self.update(series_dict)
 
     def get_data_series_dict(self):
-        """Return the dictionary representation of the trace."""
+        
+        """
+        Returns the underlying dictionary representation of the data_series dictionary.
+
+        This method provides a clean snapshot of the current state of the data_series object
+        by converting it into a standard Python dictionary. It is useful for serialization,
+        debugging, or passing the data to plotting libraries like Plotly.
+
+        Returns:
+            dict: A dictionary containing all data fields of the series.
+        """
         return dict(self)
 
     def set_x_values(self, x_values):
-        """Update the x-axis values."""
+        """
+        Updates the x-axis data for the series with a new set of values.
+
+        This method replaces the current list of x-values in the data_series. If no values are provided 
+        (i.e., None or empty), it safely defaults to an empty list. The update is synchronized through 
+        the internal dictionary mechanism for consistency.
+
+        Args:
+            x_values (list): A list of numerical or categorical values to assign to the 'x' axis.
+        """
         self["x"] = list(x_values) if x_values else []
 
     def set_y_values(self, y_values):
-        """Update the y-axis values."""
+        """
+        Updates the y-axis data for the series with a new set of values.
+
+        This method replaces the current list of y-values in the data_series. If no values are provided 
+        (i.e., None or empty), it defaults to an empty list. The assignment ensures consistency with the 
+        internal dictionary and allows for flexible input formats.
+
+        Args:
+            y_values (list): A list of numerical or categorical values to assign to the 'y' axis.
+        """
         self["y"] = list(y_values) if y_values else []
 
+    def set_z_values(self, z_values):
+        """
+        Updates the z-axis data for the series with a new set of values.
+
+        This method replaces the current list of z-values in the data_series. If no values are provided 
+        (i.e., None or empty), it safely defaults to an empty list. The update is synchronized through 
+        the internal dictionary mechanism for consistency.
+
+        Args:
+            z_values (list): A list of numerical or categorical values to assign to the 'z' axis.
+        """
+        self["z"] = list(z_values) if z_values else []
+
+
     def set_name(self, name):
-        """Update the name of the data series."""
+        """
+        Sets the name of the data_series to the provided value.
+
+        This method assigns a human-readable identifier or label to the data_series, which is 
+        typically used for legend display and trace identification in visualizations.
+
+        Args:
+            name (str): The new name or label to assign to the data_series.
+        """
         self["name"] = name
 
     def set_uid(self, uid):
-        """Update the unique identifier (uid) of the data series."""
+        """
+        Sets or updates the unique identifier (UID) for the data_series.
+
+        This method assigns a UID to the data_series, which can be used to uniquely identify
+        the trace within a larger figure or dataset. UIDs are helpful for referencing, comparing,
+        or updating specific traces, especially in dynamic or interactive plotting environments.
+
+        Args:
+            uid (str): A unique identifier string for the data_series.
+        """
         self["uid"] = uid
 
     def set_trace_style(self, style):
-        """Update the trace style (e.g., scatter, scatter_spline, scatter_line, bar)."""
+        """
+        Updates the trace style of the data_series to control its rendering behavior.
+
+        This method sets the 'trace_style' field, which typically defines how the data_series
+        appears visually in plots (e.g., 'scatter', 'bar', 'scatter_line', 'scatter_spline').
+
+        Args:
+            style (str): A string representing the desired visual trace style for plotting.
+        """
         self["trace_style"] = style
 
     def set_marker_symbol(self, symbol):
+        """
+        Sets the marker symbol for data points by delegating to the internal set_marker_shape method.
+
+        This method provides a user-friendly way to define the visual marker used for plotting individual
+        points on the graph. The symbol parameter is passed directly to set_marker_shape, which handles
+        the internal logic for updating the marker settings.
+
+        Args:
+            symbol (str): The symbol to use for markers (e.g., "circle", "square", "diamond", "x", "star").
+        """
         self.set_marker_shape(shape=symbol)
 
     def set_marker_shape(self, shape):
         """
-        Update the marker shape (symbol).
+        Sets the visual symbol used for markers in the data series.
 
-        Supported marker shapes in Plotly:
-        - 'circle' (default)
-        - 'square'
-        - 'diamond'
-        - 'cross'
-        - 'x'
-        - 'triangle-up'
-        - 'triangle-down'
-        - 'triangle-left'
-        - 'triangle-right'
-        - 'pentagon'
-        - 'hexagon'
-        - 'star'
-        - 'hexagram'
-        - 'star-triangle-up'
-        - 'star-triangle-down'
-        - 'star-square'
-        - 'star-diamond'
-        - 'hourglass'
-        - 'bowtie'
+        This method updates the shape of marker symbols (used in scatter plots, etc.) 
+        based on supported Plotly marker types. It ensures the internal marker dictionary 
+        exists and assigns the specified symbol string to the 'symbol' field.
 
-        :param shape: String representing the desired marker shape.
+        Supported Shapes:
+            - circle, square, diamond, cross, x
+            - triangle-up, triangle-down, triangle-left, triangle-right
+            - pentagon, hexagon, star, hexagram
+            - star-triangle-up, star-triangle-down, star-square, star-diamond
+            - hourglass, bowtie
+
+        Args:
+            shape (str): The name of the marker symbol to use. Must be one of the supported Plotly shapes.
         """
         self.setdefault("marker", {})["symbol"] = shape
 
-    def add_data_point(self, x_val, y_val):
-        """Append a new data point to the series."""
+    def add_xy_data_point(self, x_val, y_val):
+        """
+        Adds a new x-y data point to the data_series.
+
+        This method appends the provided x and y values to their respective lists
+        within the internal data structure. It is typically used to incrementally
+        build or extend a dataset for plotting or analysis.
+
+        Args:
+            x_val (any): The x-axis value of the data point.
+            y_val (any): The y-axis value of the data point.
+        """
         self["x"].append(x_val)
         self["y"].append(y_val)
 
+    def add_xyz_data_point(self, x_val, y_val, z_val):
+        """
+        Adds a new x-y-z data point to the data_series.
+
+        This method appends the provided x and y and z values to their respective lists
+        within the internal data structure. It is typically used to incrementally
+        build or extend a dataset for plotting or analysis.
+
+        Args:
+            x_val (any): The x-axis value of the data point.
+            y_val (any): The y-axis value of the data point.
+            z_val (any): The z-axis value of the data point.
+        """
+        self["x"].append(x_val)
+        self["y"].append(y_val)
+        self["z"].append(z_val)
+
+
     def set_marker_size(self, size):
-        """Update the marker size."""
+        """
+        Updates the size of the markers used in the data_series visualization.
+
+        This method modifies the 'size' field within the 'marker' dictionary of the data_series.
+        If the 'marker' dictionary doesn't already exist, it is created. The marker size controls 
+        the visual prominence of data points in charts like scatter plots.
+
+        Args:
+            size (int or float): The desired marker size, typically a positive number.
+        """
         self.setdefault("marker", {})["size"] = size
 
     def set_marker_color(self, color):
-        """Update the marker color."""
+        """
+        Sets the color of the markers in the data_series visualization.
+
+        This method ensures that the 'marker' dictionary exists within the data_series,
+        and then updates its 'color' key with the provided value. Marker color can be a
+        standard named color (e.g., "blue"), a hex code (e.g., "#1f77b4"), or an RGB/RGBA string.
+
+        Args:
+            color (str): The color to use for the data_series markers.
+        """
         self.setdefault("marker", {})["color"] = color
 
     def set_mode(self, mode):
-        """Update the mode (options: 'lines', 'markers', 'text', 'lines+markers', 'lines+text', 'markers+text', 'lines+markers+text')."""
-        # Check if 'line' is in the mode but 'lines' is not. Then correct for user if needed.
+        """
+        Sets the rendering mode for the data_series, correcting common input patterns.
+
+        This method updates the 'mode' field to control how data points are visually represented 
+        in plots (e.g., as lines, markers, text, or combinations). If the user accidentally uses 
+        "line" instead of "lines", it automatically corrects the term to maintain compatibility 
+        with plotting libraries like Plotly.
+
+        Supported Modes:
+            - 'lines'
+            - 'markers'
+            - 'text'
+            - 'lines+markers'
+            - 'lines+text'
+            - 'markers+text'
+            - 'lines+markers+text'
+
+        Args:
+            mode (str): Desired rendering mode. Common typos like 'line' may be corrected.
+        """
         if "line" in mode and "lines" not in mode:
             mode = mode.replace("line", "lines")
         self["mode"] = mode
 
     def set_annotations(self, text): #just a convenient wrapper.
+        """
+        Sets text annotations for the data_series by delegating to the internal set_text method.
+
+        This is a convenience wrapper that allows assigning label text to individual data points 
+        in the series. Annotations can enhance readability and provide contextual information 
+        in visualizations such as tooltips or direct text labels on plots.
+
+        Args:
+            text (str or list): Annotation text for the data points. Can be a single string 
+                                or a list of strings corresponding to each data point.
+        """
         self.set_text(text) 
 
     def set_text(self, text):
-        #text should be a list of strings teh same length as the data series, one string per point.
+
+        """
+        Sets annotation text for each point in the data_series. The a list of text values must be provided, equal to
+        the number of points. If a single string value is provided, it will be repeated to be the same for each point.
+
+        This method allows the user to assign either a single string or a list of strings to annotate
+        each point in the series. If a single string is provided, it is replicated to match the number
+        of data points; otherwise, the provided list is used as-is. Useful for adding tooltips or labels.
+        The number of values received being equal to the number of points is checked by comparing to the x values.
+
+        Args:
+            text (str or list): Annotation text—either a single string (applied to all points) or a list
+                                of strings, one for each point in the series.
+        """
+
+        #text should be a list of strings teh same length as the data_series, one string per point.
         """Update the annotations with a list of text as long as the number of data points."""
         if text == type("string"): 
             text = [text] * len(self["x"])  # Repeat the text to match x-values length
@@ -778,55 +1044,101 @@ class JSONGrapherDataSeries(dict): #inherits from dict.
 
 
     def set_line_width(self, width):
-        """Update the line width, should be a number, normally an integer."""
+        """
+        Sets the width of the line used for the trace of the data_series.
+
+        This method ensures that the 'line' dictionary exists within the data_series and then sets
+        the 'width' attribute to the specified value. This affects the thickness of lines in charts
+        like line plots and splines.
+
+        Args:
+            width (int or float): The thickness value for the line. Typically a positive number.
+        """
         line = self.setdefault("line", {})
         line.setdefault("width", width)  # Ensure width is set
 
     def set_line_dash(self, dash_style):
         """
-        Update the line dash style.
+        Sets the dash style of the line used in the data_series visualization.
 
-        Supported dash styles in Plotly:
-        - 'solid' (default) → Continuous solid line
-        - 'dot' → Dotted line
-        - 'dash' → Dashed line
-        - 'longdash' → Longer dashed line
-        - 'dashdot' → Dash-dot alternating pattern
-        - 'longdashdot' → Long dash-dot alternating pattern
+        This method modifies the 'dash' attribute inside the 'line' dictionary, which controls
+        the appearance of the line in the chart. It allows for various visual styles, such as
+        dashed, dotted, or solid lines, aligning with the supported Plotly dash patterns.
 
-        :param dash_style: String representing the desired line style.
+        Supported Styles:
+            - 'solid'
+            - 'dot'
+            - 'dash'
+            - 'longdash'
+            - 'dashdot'
+            - 'longdashdot'
+
+        Args:
+            dash_style (str): The desired dash pattern for the line. Must match one of Plotly’s accepted styles.
         """
         self.setdefault("line", {})["dash"] = dash_style
 
     def set_transparency(self, transparency_value):
         """
-        Update the transparency level by converting it to opacity.
+        Converts a transparency value into an opacity setting and applies it to the data_series.
 
-        Transparency ranges from:
-        - 0 (completely opaque) → opacity = 1
-        - 1 (fully transparent) → opacity = 0
-        - Intermediate values adjust partial transparency.
+        This method accepts a transparency value—ranging from 0 (fully opaque) to 1 (fully transparent)—
+        and calculates the corresponding opacity value used by plotting libraries. It inverts the input
+        so that increasing transparency reduces opacity.
 
-        :param transparency_value: Float between 0 and 1, where 0 is opaque and 1 is transparent.
+        Args:
+            transparency_value (float): A decimal between 0 and 1 where:
+                - 0 means fully visible (opacity = 1),
+                - 1 means fully invisible (opacity = 0),
+                - intermediate values create partial see-through effects.
         """
         self["opacity"] = 1 - transparency_value
 
     def set_opacity(self, opacity_value):
-        """Update the opacity level between 0 and 1."""
+        """
+        Sets the opacity level for the data_series.
+
+        This method directly assigns an opacity value to the data_series, which controls the visual
+        transparency of the trace in the plot. An opacity of 1.0 means fully opaque, while 0.0 is fully
+        transparent. Intermediate values allow for layering effects and visual blending.
+
+        Args:
+            opacity_value (float): A number between 0 (transparent) and 1 (opaque) representing the opacity level.
+        """
         self["opacity"] = opacity_value
 
     def set_visible(self, is_visible):
-        """Update the visibility of the trace.
-            "True" → The trace is fully visible.
-            "False" → The trace is completely hidden.
-            "legendonly" → The trace is hidden from the plot but still appears in the legend.
-        
+        """
+        Sets the visibility state of the data_series in the plot.
+
+        This method allows control over how the trace is displayed. It accepts a boolean value
+        or the string "legendonly" to indicate the desired visibility mode. This feature is 
+        particularly useful for managing clutter in complex visualizations or toggling traces dynamically.
+
+        Args:
+            is_visible (bool or str): 
+                - True → Fully visible in the plot.
+                - False → Hidden entirely.
+                - "legendonly" → Hidden from the plot but shown in the legend.
         """
         
         self["visible"] = is_visible
 
     def set_hoverinfo(self, hover_format):
-        """Update hover information format."""
+        """
+        Sets the formatting for hover labels in interactive visualizations.
+
+        This method defines what information appears when the user hovers over data points in the plot.
+        Accepted formats include combinations of "x", "y", "text", "name", etc., joined with "+" symbols.
+
+        Example formats:
+            - "x+y" → Shows x and y values
+            - "x+text" → Shows x value and text annotation
+            - "none" → Disables hover info
+
+        Args:
+            hover_format (str): A string specifying what data to display on hover.
+        """
         self["hoverinfo"] = hover_format
 
 
@@ -842,19 +1154,19 @@ class JSONGrapherRecord:
 
     Arguments & Attributes (all are optional):
         comments (str): Can be used to put in general description or metadata related to the entire record. Can include citation links. Goes into the record's top level comments field.
-        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name.
+        datatype: The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name. May have underscore, should not have spaces.
         graph_title: Title of the graph or the dataset being represented.
         data_objects_list (list): List of data series dictionaries to pre-populate the record. These may contain 'simulate' fields in them to call javascript source code for simulating on the fly.
         simulate_as_added: Boolean. True by default. If true, any data series that are added with a simulation field will have an immediate simulation call attempt.
-        x_data: Single series x data in a list or array-like structure. 
-        y_data: Single series y data in a list or array-like structure.
+        x_data: Single series x data values in a list or array-like structure. 
+        y_data: Single series y data values in a list or array-like structure.
         x_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
         y_axis_label_including_units: A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
         layout: A dictionary defining the layout of the graph, including axis titles,
                 comments, and general formatting options.
     
     Methods:
-        add_data_series: Adds a new data series to the record.
+        add_data_series: Adds a new data_series to the record.
         add_data_series_as_equation: Adds a new equation to plot, which will be evaluated on the fly.
         set_layout_fields: Updates the layout configuration for the graph.
         export_to_json_file: Saves the entire record (comments, datatype, data, layout) as a JSON file.
@@ -863,11 +1175,37 @@ class JSONGrapherRecord:
 
     def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_style ="", layout=None, existing_JSONGrapher_record=None):
         """
-        Initialize a JSONGrapherRecord instance with optional attributes or an existing record.
+        Initializes a JSONGrapherRecord object that represents a structured fig_dict for graphing.
 
-            layout (dict): Layout dictionary to pre-populate the graph configuration.
-            existing_JSONGrapher_record (dict): Existing JSONGrapher record to populate the instance.
-        """  
+        Optionally populates fields from an existing JSONGrapher record and applies immediate processing
+        such as simulation or equation evaluation on data series when applicable.
+
+        Args:
+            comments (str, optional): General description or metadata for the record.
+            graph_title (str, optional): Title for the graph; is put into the layout title field.
+            datatype (str, optional): The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name. May have underscore, should not have spaces.
+            data_objects_list (list, optional): List of data_series dictionaries to pre-populate the record.
+            simulate_as_added (bool, optional): If True, attempts simulation on data with 'simulate' fields.
+            evaluate_equations_as_added (bool, optional): True by default. If true, any data series that are added with a simulation field will have an immediate simulation call attempt.
+            x_data (list or array-like, optional): x-axis values for a single data series.
+            y_data (list or array-like, optional): y-axis values for a single data series.
+            x_axis_label_including_units (str, optional): x-axis label with units in parentheses. A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
+            y_axis_label_including_units (str, optional): y-axis label with units in parentheses. A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
+            plot_style (str, optional): Style applied to the overall plot; stored in fig_dict["plot_style"].
+            layout (dict, optional): layout_style dictionary configuring graph appearance.
+            existing_JSONGrapher_record (dict, optional): Dictionary representing an existing JSONGrapher record 
+                to populate the new or current instance.
+
+        Raises:
+            KeyError: If simulation attempts fail due to missing expected keys.
+            Exception: Catches and logs unexpected errors during simulation or equation evaluation.
+
+        Side Effects:
+            - Updates self.fig_dict with layout_style, data_series dictionaries, and metadata.
+            - Applies optional simulation or evaluation to fig_dict.
+            - Initializes a hints_dictionary to guide field-level edits within the fig_dict.
+
+        """
         if layout == None: #it's bad to have an empty dictionary or list as a python argument.
             layout = {}
 
@@ -931,34 +1269,102 @@ class JSONGrapherRecord:
     #That is, if someone uses something like Record["comments"]="frog", it will also put that into self.fig_dict
 
     def __getitem__(self, key):
+        """
+        Retrieves the value associated with the specified key from the fig_dict.
+
+        Args:
+            key: The field name to look up in the fig_dict.
+
+        Returns:
+            The value mapped to the specified key within the fig_dict.
+        """
         return self.fig_dict[key]  # Direct access
 
     def __setitem__(self, key, value):
+        """
+        Sets the specified key in the fig_dict to the given value.
+
+        Args:
+            key: The field name to assign or update in the fig_dict.
+            value: The value to associate with the specified key in the fig_dict.
+        """
         self.fig_dict[key] = value  # Direct modification
 
     def __delitem__(self, key):
+        """
+        Deletes the specified key and its associated value from the fig_dict.
+
+        Args:
+            key: The field name to remove from the fig_dict.
+        """
         del self.fig_dict[key]  # Support for deletion
 
     def __iter__(self):
+        """
+        Returns an iterator over the keys in the fig_dict.
+
+        Returns:
+            An iterator that allows traversal of all top-level keys in fig_dict.
+        """
         return iter(self.fig_dict)  # Allow iteration
 
     def __len__(self):
+        """
+        Returns the number of top-level fields (keys) currently stored in the fig_dict.
+
+        Returns:
+            The count of top-level fields (keys) present in the fig_dict.
+        """
         return len(self.fig_dict)  # Support len()
 
     def pop(self, key, default=None):
+        """
+        Removes the specified key and returns its value from the fig_dict.
+
+        Args:
+            key: The field name to remove from the fig_dict.
+            default (optional): Value to return if the key is not found.
+
+        Returns:
+            The value previously associated with the key, or the specified default if the key was absent.
+        """
         return self.fig_dict.pop(key, default)  # Implement pop()
 
     def keys(self):
+        """
+        Returns a dynamic, read-only view of all top-level keys in the fig_dict.
+
+        Returns:
+            A view object that reflects the current set of keys in the fig_dict.
+        """
         return self.fig_dict.keys()  # Dictionary-like keys()
 
     def values(self):
+        """
+        Returns a dynamic, read-only view of all values stored in the fig_dict.
+
+        Returns:
+            A view object that reflects the current set of values in the fig_dict.
+        """
         return self.fig_dict.values()  # Dictionary-like values()
 
     def items(self):
+        """
+        Returns a dynamic, read-only view of all key-value pairs in the fig_dict.
+
+        Returns:
+            A view object that reflects the current set of key-value pairs in the fig_dict.
+        """
         return self.fig_dict.items()  # Dictionary-like items()
     
     def update(self, *args, **kwargs):
-        """Updates the dictionary with multiple key-value pairs."""
+        """
+        Updates the fig_dict with new key-value pairs.
+
+        Args:
+            *args: Positional arguments containing mappings or iterable key-value pairs.
+            **kwargs: Arbitrary keyword arguments to be added as key-value pairs in the fig_dict.
+        """
         self.fig_dict.update(*args, **kwargs)
 
 
@@ -967,7 +1373,16 @@ class JSONGrapherRecord:
     #this function enables printing the current record.
     def __str__(self):
         """
-        Returns a JSON-formatted string of the record with an indent of 4.
+        Returns a JSON-formatted string representation of the fig_dict with 4-space "pretty-print" indentation.
+
+        Returns:
+            str: A readable JSON string of the record's contents.
+
+        Notes:
+            This method does not perform automatic consistency updates or validation.
+            It is recommended to use the syntax RecordObject.print_to_inspect()
+            which will make automatic consistency updates and validation checks to the record before printing.
+
         """
         print("Warning: Printing directly will return the raw record without some automatic updates. It is recommended to use the syntax RecordObject.print_to_inspect() which will make automatic consistency updates and validation checks to the record before printing.")
         return json.dumps(self.fig_dict, indent=4)
@@ -975,7 +1390,28 @@ class JSONGrapherRecord:
 
     def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
         """
-        This is the normal way of adding an x,y data series.
+        Adds a new x,y data series to the fig_dict with optional metadata, styling, and simulation support.
+
+        Args:
+            series_name (str): Label for the data series to appear in the graph.
+            x_values (list or array-like, optional): x-axis values. Defaults to an empty list.
+            y_values (list or array-like, optional): y-axis values. Defaults to an empty list.
+            simulate (dict, optional): Dictionary specifying on-the-fly simulation parameters.
+            simulate_as_added (bool): If True, and if the 'simulate' field is present, then attempts to simulate this series immediately upon addition.
+            comments (str): Description or annotations tied to the data series.
+            trace_style (str): Visual representation type (e.g., scatter, line, spline, bar).
+            uid (str): Optional unique ID (e.g., DOI) linked to the series.
+            line (dict): Dictionary of visual line properties like shape or width.
+            extra_fields (dict): A dictionary with custom keys and values to add into the data_series dictionary.
+
+        Returns:
+            dict: The newly constructed data_series dictionary.
+
+        Notes:
+            - There is also an 'implied' return in that the new data_series_dict is added to the JSONGrapher object's fig_dict.
+            - Inputs are converted to lists to ensure consistency with expected format.
+            - Simulation failures are silently ignored to maintain program flow.
+            - The returned object allows extended editing of visual and structural properties.
         """
         # series_name: Name of the data series.
         # x: List of x-axis values. Or similar structure.
@@ -1035,8 +1471,29 @@ class JSONGrapherRecord:
 
     def add_data_series_as_equation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
         """
-        This is a way to add an equation that would be used to fill an x,y data series.
-        The equation will be a equation_dict of the json_equationer type
+        Adds a new data series to the fig_dict using an equation instead of raw data points.
+
+        Args:
+            series_name (str): Label for the data series displayed on the graph.
+            graphical_dimensionality (int): Number of geometric dimensions, typically 2 or 3.
+            x_values (list or array-like, optional): Normally should not be passed in for an equation based data_series. Will become an empty list to be populated when the equation is evaluated.
+            y_values (list or array-like, optional): Normally should not be passed in for an equation based data_series. Will become an empty list to be populated when the equation is evaluated.
+            equation_dict (dict, optional): Dictionary defining the equation using json_equationer structure.
+            evaluate_equations_as_added (bool): If True (default), attempts to evaluate the equation immediately after addition.
+            comments (str): Annotation or description associated with this data series.
+            trace_style (str): Visual trace_style for plotting (e.g., scatter, bar, scatter3d, bubble2d, bubble3d).
+            uid (str): Optional unique identifier (e.g., DOI) for the series.
+            line (dict): Dictionary of line formatting options (e.g., shape, width).
+            extra_fields (dict): A dictionary with custom keys and values to add into the data_series dictionary.
+
+        Returns:
+            dict: The constructed data_series dictionary.
+
+        Notes:
+            - There is also an 'implied' return in that the new data_series_dict is added to the JSONGrapher object's fig_dict.
+            - The graphical_dimensionality is embedded in the equation_dict before use.
+            - Evaluation is deferred until after the series is appended to fig_dict to ensure layout-based unit validation.
+            - If evaluation fails, it is silently skipped to maintain runtime flow.
         """
         # series_name: Name of the data series.
         # graphical_dimensionality is the number of geometric dimensions, so should be either 2 or 3.
@@ -1100,17 +1557,60 @@ class JSONGrapherRecord:
                 pass
         
     def change_data_series_name(self, series_index, series_name):
+        """
+        Renames a data series within the fig_dict at the specified index.
+
+        Args:
+            series_index (int): Index of the target data series in the fig_dict["data"] list.
+            series_name (str): New name to assign to the data series.
+
+        Notes:
+            - This updates the 'name' field of the selected data_series dictionary.
+        """
         self.fig_dict["data"][series_index]["name"] = series_name
 
     #this function forces the re-simulation of a particular dataseries.
     #The simulator link will be extracted from the record, by default.
     def simulate_data_series_by_index(self, data_series_index, simulator_link='', verbose=False):
+        """
+        Forces re-simulation of a specific data_series within the fig_dict using its index, if the data_series dictionary has a 'simulate' field.
+
+        Args:
+            data_series_index (int): Index of the data series in the fig_dict["data"] list to re-simulate.
+            simulator_link (str, optional): Custom path or URL to override the default simulator. If not provided,
+                the link is extracted from the 'simulate' field in the data_series dictionary.
+            verbose (bool): If True, prints performs the simulation with the verbose flag turned on.
+
+        Returns:
+            dict: The updated data_series dictionary reflecting the results of the re-simulation.
+
+        Notes:
+            - There is an 'implied return': fig_dict is replaced in-place with its updated version after simulation.
+            - Useful when recalculating output for a data_series with a defined 'simulate' field.
+        """
         self.fig_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index, simulator_link=simulator_link, verbose=verbose)
         data_series_dict = self.fig_dict["data"][data_series_index] #implied return
         return data_series_dict #Extra regular return
     #this function returns the current record.
 
-    def evaluate_eqution_of_data_series_by_index(self, series_index, equation_dict = None, verbose=False):
+    def evaluate_equation_of_data_series_by_index(self, series_index, equation_dict = None, verbose=False):
+        """
+        Forces evaluates the equation associated with a data series in the fig_dict by its index.
+
+        Args:
+            series_index (int): Index of the data series within fig_dict["data"] to evaluate the equation for.
+            equation_dict (dict, optional): An equation dictionary to overwrite or assign as the data_series dictionary before evaluation.
+            verbose (bool): If True, passes the verbose flag forward for during the equation evalution.
+
+        Returns:
+            dict: The data_series dictionary updated with evaluated values.
+
+        Notes:
+            - There is also an 'implied' return in that the new data_series_dict is added to the JSONGrapher object's fig_dict.
+            - If equation_dict is provided, it is assigned to the data_series prior to evaluation.
+            - The fig_dict is updated in-place with the evaluation results.
+            - Ensure the series at the given index contains or receives a valid equation structure.
+        """
         if equation_dict != None:
             self.fig_dict["data"][series_index]["equation"] = equation_dict
         data_series_dict = self.fig_dict["data"][series_index]
@@ -1120,12 +1620,28 @@ class JSONGrapherRecord:
     #this function returns the current record.       
     def get_record(self):
         """
-        Returns a JSON-dict string of the record
+        Retrieves the full fig_dict representing the current JSONGrapher record.
+
+        Returns:
+            dict: The fig_dict for the current JSONGrapher record.
         """
         return self.fig_dict
     #The update_and_validate function will clean for plotly.
     #TODO: the internal recommending "print_to_inspect" function should, by default, exclude printing the full dictionaries of the layout_style and the trace_collection_style.
     def print_to_inspect(self, update_and_validate=True, validate=True, clean_for_plotly = True, remove_remaining_hints=False):
+        """
+        Prints the current fig_dict in a human-readable JSON format, with optional consistency checks.
+
+        Args:
+            update_and_validate (bool): If True (default), applies automatic updates and data cleaning before printing.
+            validate (bool): If True (default), runs validation even if updates are skipped.
+            clean_for_plotly (bool): If True (default), adjusts structure for compatibility with rendering tools.
+            remove_remaining_hints (bool): If True, strips hint-related metadata before output.
+
+        Notes:
+            - Recommended over __str__ for reviewing records with validated and updated content.
+            - Future updates may include options to limit verbosity (e.g., omit layout_style and trace_style sections).
+        """
         if remove_remaining_hints == True:
             self.remove_hints()
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -1136,8 +1652,11 @@ class JSONGrapherRecord:
 
     def populate_from_existing_record(self, existing_JSONGrapher_record):
         """
-        Populates attributes from an existing JSONGrapher record.
-        existing_JSONGrapher_record: A dictionary representing an existing JSONGrapher record.
+        Populates the fig_dict using an existing JSONGrapher record.
+
+        Args:
+            existing_JSONGrapher_record (dict or JSONGrapherRecord): Source record to use for populating the current instance.
+
         """
         #While we expect a dictionary, if a JSONGrapher ojbect is provided, we will simply pull the dictionary out of that.
         if isinstance(existing_JSONGrapher_record, dict): 
@@ -1152,6 +1671,18 @@ class JSONGrapherRecord:
     #the below function takes in existin JSONGrpher record, and merges the data in.
     #This requires scaling any data as needed, according to units.
     def merge_in_JSONGrapherRecord(self, fig_dict_to_merge_in):
+        """
+        Merges data from another JSONGrapher record into the current fig_dict with appropriate unit scaling.
+            - Extracts x and y axis units from both records and calculates scaling ratios.
+            - Applies uniform scaling to all data_series dictionaries in the incoming record.
+            - Supports string and object-based inputs by auto-converting them into a usable fig_dict format.
+            - New data series are deep-copied and appended to the current fig_dict["data"] list.
+
+        Args:
+            fig_dict_to_merge_in (dict, str, or JSONGrapherRecord): Source record to merge. Can be a fig_dict dictionary,
+                a JSON-formatted string of a fig_dict, or a JSONGrapherRecord object instance.
+
+        """
         import copy
         fig_dict_to_merge_in = copy.deepcopy(fig_dict_to_merge_in)
         if type(fig_dict_to_merge_in) == type({}):
@@ -1181,17 +1712,33 @@ class JSONGrapherRecord:
         self.fig_dict["data"].extend(scaled_fig_dict["data"])
    
     def import_from_dict(self, fig_dict):
+        """
+        Imports a complete fig_dict into the current JSONGrapherRecord instance, replacing its contents.
+            - Any current fig_dict is entirely overwritten without merging or validation.
+
+        Args:
+            fig_dict (dict): A JSONGrapher record fig_dict.
+
+        """
         self.fig_dict = fig_dict
     
     def import_from_file(self, record_filename_or_object):
         """
-        Determine the type of file or data and call the appropriate import function.
+        Imports a record from a supported file type or directly from a dictionary, and converts it into fig_dict format.
+            - Automatically detects file type via extension when a string path is provided.
+            - CSV/TSV content is handled using import_from_csv with delimiter selection.
+            - JSON files and dictionaries are passed directly to import_from_json.
 
         Args:
-            record_filename_or_object (str or dict): Filename of the CSV/TSV/JSON file or a dictionary object.
+            record_filename_or_object (str or dict): A file path pointing to a CSV, TSV, or JSON file,
+                or a dictionary representing a JSONGrapher record.
 
         Returns:
-            dict: Processed JSON data.
+            dict: The fig_dict created or extracted from the file or provided object.
+
+        Raises:
+            ValueError: If the file extension is unsupported (not .csv, .tsv, or .json).
+
         """
         import os  # Moved inside the function
 
@@ -1215,6 +1762,23 @@ class JSONGrapherRecord:
 
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
+        """
+        Imports a fig_dict from a JSON-formatted string, file path, or dictionary.
+            - If a string is passed, the method first attempts to parse it as a JSON-formatted string.
+            - If parsing fails, it attempts to treat the string as a file path to a JSON file.
+            - If the file isn’t found, it appends ".json" and tries again.
+            - If a dictionary is passed, it is directly assigned to fig_dict.
+            - Includes detailed error feedback if JSON parsing fails, highlighting common issues like 
+              improper quote usage or malformed booleans.
+
+        Args:
+            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dictionary 
+                representing a valid fig_dict structure.
+
+        Returns:
+            dict: The parsed and loaded fig_dict.
+
+        """
         if type(json_filename_or_object) == type(""): #assume it's a json_string or filename_and_path.
             try:
                 record = json.loads(json_filename_or_object) #first check if it's a json string.
@@ -1239,15 +1803,20 @@ class JSONGrapherRecord:
 
     def import_from_csv(self, filename, delimiter=","):
         """
-        Convert CSV file content into a JSON structure for Plotly.
+        Imports a CSV or TSV file and converts its contents into a fig_dict.
+            - The input file must follow a specific format, as of 6/25/25, but this may be made more general in the future.
+                * Lines 1–5 define config metadata (e.g., comments, datatype, axis labels).
+                * Line 6 defines series names.
+                * Data rows begin on line 9.
 
         Args:
-            filename (str): Path to the CSV file.
-            delimiter (str, optional): Delimiter used in CSV. Default is ",".
-                                    Use "\\t" for a tab-delimited file.
+            filename (str): File path to the CSV or TSV file. If no extension is provided,
+                ".csv" or ".tsv" is inferred based on the delimiter.
+            delimiter (str, optional): Field separator character. Defaults to ",". Use "\\t" for TSV files.
 
         Returns:
-            dict: JSON representation of the CSV data.
+            dict: The created fig_dict.
+
         """
         import os  
         # Modify the filename based on the delimiter and existing extension
@@ -1296,29 +1865,48 @@ class JSONGrapherRecord:
 
     def set_datatype(self, datatype):
         """
-        Sets the datatype field used as the experiment type or schema identifier.
-            datatype (str): The new data type to set.
+        Sets the 'datatype' field within the fig_dict. Used to classify the record, for example by experiment type, and may 
+        point to a schema. May be a url.       
+
+        Expected to be a string with no spaces, and may be a url. Underscore 
+        may be included "_" and double underscore "__" has a special meaning.
+        See manual for information about the use of double underscore.
+
+        args:
+            datatype (str): The new string to use for the datatype field.
+
         """
         self.fig_dict['datatype'] = datatype
 
     def set_comments(self, comments):
         """
-        Updates the comments field for the record.
-            str: The updated comments value.
+        Updates the 'comments' field in the fig_dict.
+
+        Args:
+            comments (str): Text to assign to fig_dict["comments"].
         """
         self.fig_dict['comments'] = comments
 
     def set_graph_title(self, graph_title):
         """
-        Updates the title of the graph in the layout dictionary.
-        graph_title (str): The new title to set for the graph.
+        Sets the main title of the graph. Updates the title field in the fig_dict's layout section.
+
+        Args:
+            graph_title (str): The title text to assign to fig_dict["layout"]["title"]["text"].
         """
         self.fig_dict['layout']['title']['text'] = graph_title
 
     def set_x_axis_label_including_units(self, x_axis_label_including_units, remove_plural_units=True):
         """
-        Updates the title of the x-axis in the layout dictionary.
-        xaxis_title (str): The new title to set for the x-axis.
+        Sets and validates the axis label in the fig_dict's layout, with optional removal of plural 's' in units.
+            - Utilizes validate_JSONGrapher_axis_label to enforce proper label formatting and unit conventions.
+            - Ensures the layout["xaxis"] structure is initialized safely before assignment.
+            - The layout_style structure is safely initialized if missing.
+
+        Args:
+            x_axis_label_including_units (str): The full axis label text, including units in parentheses (e.g., "Time (s)").
+            remove_plural_units (bool): If True (default), converts plural unit terms to singular during validation.
+
         """
         if "xaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("xaxis"), dict):
             self.fig_dict['layout']["xaxis"] = {}  # Initialize x-axis as a dictionary if it doesn't exist.
@@ -1328,8 +1916,15 @@ class JSONGrapherRecord:
 
     def set_y_axis_label_including_units(self, y_axis_label_including_units, remove_plural_units=True):
         """
-        Updates the title of the y-axis in the layout dictionary.
-        yaxis_title (str): The new title to set for the y-axis.
+        Sets and validates the axis label in the fig_dict's layout, with optional removal of plural 's' in units.
+            - Utilizes validate_JSONGrapher_axis_label to enforce proper label formatting and unit conventions.
+            - Ensures the layout["yaxis"] structure is initialized safely before assignment.
+            - The layout_style structure is safely initialized if missing.
+
+        Args:
+            y_axis_label_including_units (str): The full axis label text, including units in parentheses (e.g., "Time (s)").
+            remove_plural_units (bool): If True (default), converts plural unit terms to singular during validation.
+
         """
         if "yaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("yaxis"), dict):
             self.fig_dict['layout']["yaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.       
@@ -1339,8 +1934,15 @@ class JSONGrapherRecord:
 
     def set_z_axis_label_including_units(self, z_axis_label_including_units, remove_plural_units=True):
         """
-        Updates the title of the z-axis in the layout dictionary.
-        zaxis_title (str): The new title to set for the z-axis.
+        Sets and validates the axis label in the fig_dict's layout, with optional removal of plural 's' in units.
+            - Utilizes validate_JSONGrapher_axis_label to enforce proper label formatting and unit conventions.
+            - Ensures the layout["zaxis"] structure is initialized safely before assignment.
+            - The layout_style structure is safely initialized if missing.
+
+        Args:
+            z_axis_label_including_units (str): The full axis label text, including units in parentheses (e.g., "Time (s)").
+            remove_plural_units (bool): If True (default), converts plural unit terms to singular during validation.
+
         """
         if "zaxis" not in self.fig_dict['layout'] or not isinstance(self.fig_dict['layout'].get("zaxis"), dict):
             self.fig_dict['layout']["zaxis"] = {}  # Initialize y-axis as a dictionary if it doesn't exist.
@@ -1351,18 +1953,66 @@ class JSONGrapherRecord:
 
     #function to set the min and max of the x axis in plotly way.
     def set_x_axis_range(self, min_value, max_value):
+        """
+        Sets the minimum and maximum range for the axis in the fig_dict's layout.
+
+        Args:
+            min_value (float): Lower limit of the axis range.
+            max_value (float): Upper limit of the axis range.
+
+        """
         self.fig_dict["layout"]["xaxis"][0] = min_value
         self.fig_dict["layout"]["xaxis"][1] = max_value
+
     #function to set the min and max of the y axis in plotly way.
     def set_y_axis_range(self, min_value, max_value):
+        """
+        Sets the minimum and maximum range for the axis in the fig_dict's layout.
+
+        Args:
+            min_value (float): Lower limit of the axis range.
+            max_value (float): Upper limit of the axis range.
+
+        """
         self.fig_dict["layout"]["yaxis"][0] = min_value
         self.fig_dict["layout"]["yaxis"][1] = max_value
 
+        #function to set the min and max of the y axis in plotly way.
+
+    def set_z_axis_range(self, min_value, max_value):
+        """
+        Sets the minimum and maximum range for the axis in the fig_dict's layout.
+
+        Args:
+            min_value (float): Lower limit of the axis range.
+            max_value (float): Upper limit of the axis range.
+
+        """
+        self.fig_dict["layout"]["zaxis"][0] = min_value
+        self.fig_dict["layout"]["zaxis"][1] = max_value
+
     #function to scale the values in the data series by arbitrary amounts.
     def scale_record(self, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
+        """
+        Scales all x and y values across data series in the fig_dict by specified scalar factors.
+            - Modifies fig_dict in-place by replacing it with the scaled version.
+
+        Args:
+            num_to_scale_x_values_by (float): Scaling factor applied to all x-values. Default is 1 (no change).
+            num_to_scale_y_values_by (float): Scaling factor applied to all y-values. Default is 1 (no change).
+
+        """
         self.fig_dict = scale_fig_dict_values(self.fig_dict, num_to_scale_x_values_by=num_to_scale_x_values_by, num_to_scale_y_values_by=num_to_scale_y_values_by)
 
     def set_layout_fields(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
+        """
+        Scales all x and y values across data series in the fig_dict by specified scalar factors.
+            - Modifies fig_dict in-place by replacing it with the scaled version.
+
+        Args:
+            num_to_scale_x_values_by (float): Scaling factor applied to all x-values. Default is 1 (no change).
+            num_to_scale_y_values_by (float): Scaling factor applied to all y-values. Default is 1 (no change).
+        """
         # comments: General comments about the layout. Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         # graph_title: Title of the graph.
         # xaxis_title: Title of the x-axis, including units.
@@ -1391,12 +2041,22 @@ class JSONGrapherRecord:
     #TODO: need to add an "include_formatting" option
     def export_to_json_file(self, filename, update_and_validate=True, validate=True, simulate_all_series = True, remove_simulate_fields= False, remove_equation_fields= False, remove_remaining_hints=False):
         """
-        writes the json to a file
-        returns the json as a dictionary.
-        update_and_validate function will clean for plotly. One can alternatively only validate.
-        optionally simulates all series that have a simulate field (does so by default)
-        optionally removes simulate filed from all series that have a simulate field (does not do so by default)
-        optionally removes hints before export and return.
+        Exports the current fig_dict to a JSON file with optional simulation, cleaning, and validation.
+            - Ensures compatibility with Plotly and external tools by validating and cleaning metadata.
+            - JSON file is saved using UTF-8 encoding with 4-space indentation.
+
+        Args:
+            filename (str): Destination filename. A '.json' extension will be appended if missing.
+            update_and_validate (bool): If True (default), applies automatic corrections and cleans the fig_dict before export.
+            validate (bool): If True (default), performs validation even without updates.
+            simulate_all_series (bool): If True (default), evaluates all data series containing a 'simulate' field prior to export.
+            remove_simulate_fields (bool): If True, strips out 'simulate' fields from each data series before export.
+            remove_equation_fields (bool): If True, removes 'equation' fields from each series.
+            remove_remaining_hints (bool): If True, deletes developer hints from the record for cleaner output.
+
+        Returns:
+            dict: The fig_dict after all specified operations.
+
         """
         #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out if requested.
         if simulate_all_series == True:
@@ -1423,6 +2083,23 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     def export_plotly_json(self, filename, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True,adjust_implicit_data_ranges=True):
+        """
+        Generates a Plotly-compatible JSON file from the current fig_dict and exports it to disk.
+            - Relies on get_plotly_fig() for figure construction and formatting.
+            - Exports the result to a UTF-8 encoded file using standard JSON formatting.
+
+        Args:
+            filename (str): Path for the output file. If no ".json" extension is present, it will be added.
+            plot_style (dict, optional): plot_style to apply before exporting.
+            update_and_validate (bool): If True (default), cleans and validates the figure before export.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
+
+        Returns:
+            dict: The Plotly-compatible JSON object, a dictionary, which can be directly plotted with plotly.
+
+        """
         fig = self.get_plotly_fig(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         plotly_json_string = fig.to_plotly_json()
         if len(filename) > 0: #this means we will be writing to file.
@@ -1437,18 +2114,26 @@ class JSONGrapherRecord:
     #simulate all series will simulate any series as needed.
     def get_plotly_fig(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         """
-        Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
-        By default, it will apply the default still hard coded into jsongrapher.
+        Constructs and returns a Plotly figure object based on the current fig_dict with optional preprocessing steps.
+            - A deep copy of fig_dict is created to avoid unintended mutation of the source object.
+            - Applies plot styles before cleaning and validation.
+            - Removes JSONGrapher specific fields (e.g., 'simulate', 'equation') before handing off to Plotly.
 
         Args:
-            plot_style: String or dictionary of style to apply. Use '' to skip applying a style, or provide a list of length two containing both a layout style and a data series style."none" removes all style.
-            simulate_all_series (bool): If True, performs simulations for applicable series.
-            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
-            evaluate_all_equations (bool): If True, evaluates all equation-based series.
-            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+            plot_style (str, dict, or list): plot_style dictionary. Use '' to skip styling and 'none' to clear all styles.
+              Also accepts other options:
+                - A dictionary with layout_style and trace_styles_collection (normal case).
+                - A string such as 'default' to use for both layout_style and trace_styles_collection name
+                - A list of length two with layout_style and trace_styles_collection name
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
 
         Returns:
-            plotly Figure: A validated Plotly figure object based on fig_dict.
+            plotly fig: A fully constructed and styled Plotly figure object.
+
+
         """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
@@ -1478,12 +2163,52 @@ class JSONGrapherRecord:
 
     #Just a wrapper aroudn plot_with_plotly.
     def plot(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        """
+        Plots the current fig_dict using Plotly with optional preprocessing, simulation, and visual styling.
+            - Acts as a convenience wrapper around plot_with_plotly().
+            
+        Args:
+            plot_style (str, dict, or list): plot_style dictionary. Use '' to skip styling and 'none' to clear all styles.
+              Also accepts other options:
+                - A dictionary with layout_style and trace_styles_collection (normal case).
+                - A string such as 'default' to use for both layout_style and trace_styles_collection name
+                - A list of length two with layout_style and trace_styles_collection name
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
+
+        Returns:
+            plotly fig: A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
+
+        """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         return self.plot_with_plotly(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
 
     #simulate all series will simulate any series as needed. If changing this function's arguments, also change those for self.plot()
     def plot_with_plotly(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        """
+        Displays the current fig_dict as an interactive Plotly figure with optional preprocessing and styling.
+        A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
+            - Wraps get_plotly_fig() and renders the resulting figure using fig.show().
+            - Safely leaves the internal fig_dict unchanged after rendering.
+        
+        Args:
+            plot_style (str, dict, or list): plot_style dictionary. Use '' to skip styling and 'none' to clear all styles.
+              Also accepts other options:
+                - A dictionary with layout_style and trace_styles_collection (normal case).
+                - A string such as 'default' to use for both layout_style and trace_styles_collection name
+                - A list of length two with layout_style and trace_styles_collection name
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
+
+        Returns:
+            plotly fig: A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
+
+        """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         fig = self.get_plotly_fig(plot_style=plot_style,
@@ -1492,16 +2217,43 @@ class JSONGrapherRecord:
                                   evaluate_all_equations=evaluate_all_equations, 
                                   adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         fig.show()
+        return fig
         #No need for fig.close() for plotly figures.
 
 
     #simulate all series will simulate any series as needed.
     def export_to_plotly_png(self, filename, simulate_all_series = True, update_and_validate=True, timeout=10):
+        """
+        Exports the current fig_dict as a PNG image file using a Plotly-rendered figure.
+        Notes:
+            - Relies on get_plotly_fig() to construct the Plotly figure.
+            - Uses export_plotly_image_with_timeout() to safely render and export the image without stalling.
+
+        Args:
+            filename (str): The name of the output PNG file. If missing an extension, ".png" will be inferred downstream.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            update_and_validate (bool): If True (default), performs automated cleanup and validation before rendering.
+            timeout (int): Max number of seconds allotted to render and export the figure.
+
+        """
         fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
         # Save the figure to a file, but use the timeout version.
         self.export_plotly_image_with_timeout(plotly_fig = fig, filename=filename, timeout=timeout)
 
     def export_plotly_image_with_timeout(self, plotly_fig, filename, timeout=10):
+        """
+        Attempts to export a Plotly figure to a PNG file using Kaleido, with timeout protection.
+            - Runs the export in a background daemon thread to ensure timeout safety.
+            - MathJax is disabled to improve speed and compatibility.
+            - If export exceeds the timeout, a warning is printed and no file is saved.
+            - Kaleido must be installed and working; if issues persist, consider using `export_to_matplotlib_png()` as a fallback.
+
+        Args:
+            plotly_fig (plotly.graph_objs._figure.Figure): The Plotly figure to export as an image.
+            filename (str): Target PNG file name. Adds ".png" if not already present.
+            timeout (int): Maximum duration (in seconds) to allow the export before timing out. Default is 10.
+
+        """
         # Ensure filename ends with .png
         if not filename.lower().endswith(".png"):
             filename += ".png"
@@ -1527,16 +2279,22 @@ class JSONGrapherRecord:
     #simulate all series will simulate any series as needed.
     def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
-        Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
+        Constructs and returns a matplotlib figure generated from fig_dict, with optional simulation, preprocessing, and styling.
 
         Args:
-            simulate_all_series (bool): If True, performs simulations for applicable series.
-            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
-            evaluate_all_equations (bool): If True, evaluates all equation-based series.
-            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+            plot_style (str, dict, or list): plot_style dictionary. Use '' to skip styling and 'none' to clear all styles.
+              Also accepts other options:
+                - A dictionary with layout_style and trace_styles_collection (normal case).
+                - A string such as 'default' to use for both layout_style and trace_styles_collection name
+                - A list of length two with layout_style and trace_styles_collection name
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.            
 
         Returns:
-            plotly Figure: A validated matplotlib figure object based on fig_dict.
+            matplotlib fig: A matplotlib figure object based on fig_dict.
+            
         """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
@@ -1562,6 +2320,16 @@ class JSONGrapherRecord:
 
     #simulate all series will simulate any series as needed.
     def plot_with_matplotlib(self, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        """
+        Displays the current fig_dict as a matplotlib figure with optional preprocessing and simulation.
+
+        Args:
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.            
+
+        """
         import matplotlib.pyplot as plt
         fig = self.get_matplotlib_fig(simulate_all_series=simulate_all_series, 
                                       update_and_validate=update_and_validate, 
@@ -1572,6 +2340,18 @@ class JSONGrapherRecord:
 
     #simulate all series will simulate any series as needed.
     def export_to_matplotlib_png(self, filename, simulate_all_series = True, update_and_validate=True):
+        """
+        Export the current fig_dict as a PNG image by rendering it with matplotlib.
+            - Calls get_matplotlib_fig() to generate the figure.
+            - Saves the image using matplotlib's savefig().
+            - Automatically closes the figure after saving to free memory.
+
+        Args:
+            filename (str): Output filepath for the image. Adds a ".png" extension if not provided.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            update_and_validate (bool): If True (default), performs cleanup and validation before rendering.
+
+        """
         import matplotlib.pyplot as plt
         # Ensure filename ends with .png
         if not filename.lower().endswith(".png"):
@@ -1583,9 +2363,11 @@ class JSONGrapherRecord:
 
     def add_hints(self):
         """
-        Adds hints to fields that are currently empty strings using self.hints_dictionary.
-        Dynamically parses hint keys (e.g., "['layout']['xaxis']['title']") to access and update fields in self.fig_dict.
-        The hints_dictionary is first populated during creation of the class object in __init__.
+        Populate empty fields in fig_dict with placeholder text from hints_dictionary.
+            - Each key in hints_dictionary represents a dotted path (e.g., "['layout']['xaxis']['title']") pointing to a location within fig_dict.
+            - If the specified field is missing or contains an empty string, the corresponding hint is
+        Though there is no actual return, there is an implied return of self.fig_dict being modfied.
+            
         """
         for hint_key, hint_text in self.hints_dictionary.items():
             # Parse the hint_key into a list of keys representing the path in the record.
@@ -1613,9 +2395,14 @@ class JSONGrapherRecord:
                         
     def remove_hints(self):
         """
-        Removes hints by converting fields back to empty strings if their value matches the hint text in self.hints_dictionary.
-        Dynamically parses hint keys (e.g., "['layout']['xaxis']['title']") to access and update fields in self.fig_dict.
-        The hints_dictionary is first populated during creation of the class object in __init__.
+        Remove placeholder hint text from fig_dict 
+        
+        Does so by checking where fields match entries in hints_dictionary.
+            - Each key in hints_dictionary represents a dotted path (e.g., "['layout']['xaxis']['title']") pointing to a location within fig_dict.
+            - If a matching field is found and its value equals the hint text, it is cleared to an empty string.
+            - Traverses nested dictionaries safely using get() to avoid key errors.
+            - Complements add_hints() by cleaning up unused or placeholder entries.
+            
         """
         for hint_key, hint_text in self.hints_dictionary.items():
             # Parse the hint_key into a list of keys representing the path in the record.
@@ -1644,6 +2431,16 @@ class JSONGrapherRecord:
     ## Start of section of JSONGRapher class functions related to styles ##
 
     def apply_plot_style(self, plot_style= None): 
+        """
+        Apply layout and trace styling configuration to fig_dict and store it in the 'plot_style' field.
+            - Modifies fig_dict in place using apply_plot_style_to_plotly_dict().
+
+        Args:
+            plot_style (str, dict, or list): A style identifier. Can be a string keyword, a dictionary with 'layout_style' and
+                                             'trace_styles_collection', or a list containing both. If None, defaults to an empty style dictionary.
+
+        """
+        
         #the plot_style can be a string, or a plot_style dictionary {"layout_style":"default", "trace_styles_collection":"default"} or a list of length two with those two items.
         #The plot_style dictionary can include a pair of dictionaries.
         #if apply style is called directly, we will first put the plot_style into the plot_style field
@@ -1652,20 +2449,49 @@ class JSONGrapherRecord:
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         self.fig_dict['plot_style'] = plot_style
         self.fig_dict = apply_plot_style_to_plotly_dict(self.fig_dict, plot_style=plot_style)
+        
     def remove_plot_style(self):
+        """
+        Remove styling information from fig_dict, including the 'plot_style' field and associated formatting.
+            - Calls remove_plot_style_from_plotly_dict to strip trace_style and layout_style formatting.
+        """
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
         self.fig_dict = remove_plot_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
+
     def set_layout_style(self, layout_style):
+        """
+        Set the 'layout_style' field inside fig_dict['plot_style'].
+            - Initializes fig_dict["plot_style"] if it does not already exist.
+
+        Args:
+            layout_style (str or dict): A string or dictionary representing the desired layout_style.
+        """
         if "plot_style" not in self.fig_dict: #create it not present.
             self.fig_dict["plot_style"] = {}  # Initialize if missing
         self.fig_dict["plot_style"]["layout_style"] = layout_style
+
     def remove_layout_style_setting(self):
+        """
+        Remove the 'layout_style' entry from fig_dict['plot_style'], if present.
+        """
         if "layout_style" in self.fig_dict["plot_style"]:
             self.fig_dict["plot_style"].pop("layout_style")
+            
     def extract_layout_style(self):
+        """
+        Extract the layout_style from fig_dict using a helper function.
+            - Calls extract_layout_style_from_plotly_dict to retrieve layout style information.
+
+        Returns:
+            str or dict: The extracted layout style, depending on how styles are stored.
+        """
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
+<<<<<<< Batch-18
 
+=======
+        
+>>>>>>> docstrings
     def apply_trace_style_by_index(self, data_series_index, trace_styles_collection='', trace_style=''):
         """
         Apply a trace_style to that data_series at a specified index in the fig_dict.

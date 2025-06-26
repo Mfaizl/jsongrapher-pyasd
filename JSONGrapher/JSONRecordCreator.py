@@ -1182,19 +1182,19 @@ class JSONGrapherRecord:
 
         Args:
             comments (str, optional): General description or metadata for the record.
-            graph_title (str, optional): Title for the graph; placed into layout title.
-            datatype (str, optional): Experiment or data type identifier used to classify records.
+            graph_title (str, optional): Title for the graph; is put into the layout title field.
+            datatype (str, optional): The datatype is the experiment type or similar, it is used to assess which records can be compared and which (if any) schema to compare to. Use of single underscores between words is recommended. This ends up being the datatype field of the full JSONGrapher file. Avoid using double underscores '__' in this field  unless you have read the manual about hierarchical datatypes. The user can choose to provide a URL to a schema in this field, rather than a dataype name. May have underscore, should not have spaces.
             data_objects_list (list, optional): List of data_series dictionaries to pre-populate the record.
             simulate_as_added (bool, optional): If True, attempts simulation on data with 'simulate' fields.
-            evaluate_equations_as_added (bool, optional): If True, immediately evaluates equations in data series.
+            evaluate_equations_as_added (bool, optional): True by default. If true, any data series that are added with a simulation field will have an immediate simulation call attempt.
             x_data (list or array-like, optional): x-axis values for a single data series.
             y_data (list or array-like, optional): y-axis values for a single data series.
-            x_axis_label_including_units (str, optional): x-axis label with units in parentheses, using SI or custom syntax.
-            y_axis_label_including_units (str, optional): y-axis label with units in parentheses, using SI or custom syntax.
+            x_axis_label_including_units (str, optional): x-axis label with units in parentheses. A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
+            y_axis_label_including_units (str, optional): y-axis label with units in parentheses. A string with units provided in parentheses. Use of multiplication "*" and division "/" and parentheses "( )" are allowed within in the units . The dimensions of units can be multiple, such as mol/s. SI units are expected. Custom units must be inside  < > and at the beginning.  For example, (<frogs>*kg/s)  would be permissible. Units should be non-plural (kg instead of kgs) and should be abbreviated (m not meter). Use “^” for exponents. It is recommended to have no numbers in the units other than exponents, and to thus use (bar)^(-1) rather than 1/bar.
             plot_style (str, optional): Style applied to the overall plot; stored in fig_dict["plot_style"].
             layout (dict, optional): layout_style dictionary configuring graph appearance.
             existing_JSONGrapher_record (dict, optional): Dictionary representing an existing JSONGrapher record 
-                to populate the current instance.
+                to populate the new or current instance.
 
         Raises:
             KeyError: If simulation attempts fail due to missing expected keys.
@@ -1282,7 +1282,7 @@ class JSONGrapherRecord:
 
     def __setitem__(self, key, value):
         """
-        Updates the fig_dict by setting the specified key to the given value.
+        Sets the specified key in the fig_dict to the given value.
 
         Args:
             key: The field name to assign or update in the fig_dict.
@@ -1310,10 +1310,10 @@ class JSONGrapherRecord:
 
     def __len__(self):
         """
-        Returns the number of top-level fields currently stored in the fig_dict.
+        Returns the number of top-level fields (keys) currently stored in the fig_dict.
 
         Returns:
-            The count of top-level keys present in the fig_dict.
+            The count of top-level fields (keys) present in the fig_dict.
         """
         return len(self.fig_dict)  # Support len()
 
@@ -1326,7 +1326,7 @@ class JSONGrapherRecord:
             default (optional): Value to return if the key is not found.
 
         Returns:
-            The value previously associated with the key, or the default if the key was absent.
+            The value previously associated with the key, or the specified default if the key was absent.
         """
         return self.fig_dict.pop(key, default)  # Implement pop()
 
@@ -1397,18 +1397,18 @@ class JSONGrapherRecord:
             x_values (list or array-like, optional): x-axis values. Defaults to an empty list.
             y_values (list or array-like, optional): y-axis values. Defaults to an empty list.
             simulate (dict, optional): Dictionary specifying on-the-fly simulation parameters.
-            simulate_as_added (bool): If True, attempts to simulate this series immediately upon addition.
+            simulate_as_added (bool): If True, and if the 'simulate' field is present, then attempts to simulate this series immediately upon addition.
             comments (str): Description or annotations tied to the data series.
             trace_style (str): Visual representation type (e.g., scatter, line, spline, bar).
             uid (str): Optional unique ID (e.g., DOI) linked to the series.
             line (dict): Dictionary of visual line properties like shape or width.
-            extra_fields (dict): Custom key-value pairs to include in the data_series dictionary.
+            extra_fields (dict): A dictionary with custom keys and values to add into the data_series dictionary.
 
         Returns:
-            JSONGrapherDataSeries: The newly constructed and optionally simulated data_series dictionary 
-            wrapped in a JSONGrapherDataSeries object.
+            dict: The newly constructed data_series dictionary.
 
         Notes:
+            - There is also an 'implied' return in that the new data_series_dict is added to the JSONGrapher object's fig_dict.
             - Inputs are converted to lists to ensure consistency with expected format.
             - Simulation failures are silently ignored to maintain program flow.
             - The returned object allows extended editing of visual and structural properties.
@@ -1476,20 +1476,21 @@ class JSONGrapherRecord:
         Args:
             series_name (str): Label for the data series displayed on the graph.
             graphical_dimensionality (int): Number of geometric dimensions, typically 2 or 3.
-            x_values (list or array-like, optional): x-axis values for plotting or evaluation. Defaults to an empty list.
-            y_values (list or array-like, optional): y-axis values for display purposes. Defaults to an empty list.
+            x_values (list or array-like, optional): Normally should not be passed in for an equation based data_series. Will become an empty list to be populated when the equation is evaluated.
+            y_values (list or array-like, optional): Normally should not be passed in for an equation based data_series. Will become an empty list to be populated when the equation is evaluated.
             equation_dict (dict, optional): Dictionary defining the equation using json_equationer structure.
             evaluate_equations_as_added (bool): If True (default), attempts to evaluate the equation immediately after addition.
             comments (str): Annotation or description associated with this data series.
-            trace_style (str): Visual trace_style for plotting (e.g., scatter, bar).
+            trace_style (str): Visual trace_style for plotting (e.g., scatter, bar, scatter3d, bubble2d, bubble3d).
             uid (str): Optional unique identifier (e.g., DOI) for the series.
             line (dict): Dictionary of line formatting options (e.g., shape, width).
-            extra_fields (dict): Additional fields to include in the data_series dictionary.
+            extra_fields (dict): A dictionary with custom keys and values to add into the data_series dictionary.
 
         Returns:
-            JSONGrapherDataSeries: The constructed data_series dictionary, wrapped in a JSONGrapherDataSeries object.
+            dict: The constructed data_series dictionary.
 
         Notes:
+            - There is also an 'implied' return in that the new data_series_dict is added to the JSONGrapher object's fig_dict.
             - The graphical_dimensionality is embedded in the equation_dict before use.
             - Evaluation is deferred until after the series is appended to fig_dict to ensure layout-based unit validation.
             - If evaluation fails, it is silently skipped to maintain runtime flow.
@@ -1565,7 +1566,6 @@ class JSONGrapherRecord:
 
         Notes:
             - This updates the 'name' field of the selected data_series dictionary.
-            - No bounds checking is performed; an invalid index may raise an IndexError.
         """
         self.fig_dict["data"][series_index]["name"] = series_name
 
@@ -1573,19 +1573,19 @@ class JSONGrapherRecord:
     #The simulator link will be extracted from the record, by default.
     def simulate_data_series_by_index(self, data_series_index, simulator_link='', verbose=False):
         """
-        Forces re-simulation of a specific data series within the fig_dict using its index.
+        Forces re-simulation of a specific data_series within the fig_dict using its index, if the data_series dictionary has a 'simulate' field.
 
         Args:
-            data_series_index (int): Position of the data series in the fig_dict["data"] list to re-simulate.
+            data_series_index (int): Index of the data series in the fig_dict["data"] list to re-simulate.
             simulator_link (str, optional): Custom path or URL to override the default simulator. If not provided,
                 the link is extracted from the 'simulate' field in the data_series dictionary.
-            verbose (bool): If True, prints detailed simulation output during execution.
+            verbose (bool): If True, prints performs the simulation with the verbose flag turned on.
 
         Returns:
             dict: The updated data_series dictionary reflecting the results of the re-simulation.
 
         Notes:
-            - The fig_dict is replaced in-place with its updated version after simulation.
+            - There is an 'implied return': fig_dict is replaced in-place with its updated version after simulation.
             - Useful when recalculating output for a data_series with a defined 'simulate' field.
         """
         self.fig_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index, simulator_link=simulator_link, verbose=verbose)
@@ -1593,19 +1593,20 @@ class JSONGrapherRecord:
         return data_series_dict #Extra regular return
     #this function returns the current record.
 
-    def evaluate_eqution_of_data_series_by_index(self, series_index, equation_dict = None, verbose=False):
+    def evaluate_equation_of_data_series_by_index(self, series_index, equation_dict = None, verbose=False):
         """
-        Evaluates the equation associated with a data series in the fig_dict by its index.
+        Forces evaluates the equation associated with a data series in the fig_dict by its index.
 
         Args:
-            series_index (int): Index of the data series within fig_dict["data"] to evaluate.
-            equation_dict (dict, optional): An equation dictionary to assign before evaluation, if provided.
-            verbose (bool): If True, enables detailed output during the evaluation.
+            series_index (int): Index of the data series within fig_dict["data"] to evaluate the equation for.
+            equation_dict (dict, optional): An equation dictionary to overwrite or assign as the data_series dictionary before evaluation.
+            verbose (bool): If True, passes the verbose flag forward for during the equation evalution.
 
         Returns:
             dict: The data_series dictionary updated with evaluated values.
 
         Notes:
+            - There is also an 'implied' return in that the new data_series_dict is added to the JSONGrapher object's fig_dict.
             - If equation_dict is provided, it is assigned to the data_series prior to evaluation.
             - The fig_dict is updated in-place with the evaluation results.
             - Ensure the series at the given index contains or receives a valid equation structure.

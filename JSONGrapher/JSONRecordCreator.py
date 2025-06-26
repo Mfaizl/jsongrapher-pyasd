@@ -1872,7 +1872,7 @@ class JSONGrapherRecord:
         may be included "_" and double underscore "__" has a special meaning.
         See manual for information about the use of double underscore.
 
-        args:
+        Args:
             datatype (str): The new string to use for the datatype field.
 
         """

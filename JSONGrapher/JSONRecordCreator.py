@@ -1993,9 +1993,26 @@ class JSONGrapherRecord:
 
     #function to scale the values in the data series by arbitrary amounts.
     def scale_record(self, num_to_scale_x_values_by = 1, num_to_scale_y_values_by = 1):
+        """
+        Scales all x and y values across data series in the fig_dict by specified scalar factors.
+            - Modifies fig_dict in-place by replacing it with the scaled version.
+
+        Args:
+            num_to_scale_x_values_by (float): Scaling factor applied to all x-values. Default is 1 (no change).
+            num_to_scale_y_values_by (float): Scaling factor applied to all y-values. Default is 1 (no change).
+
+        """
         self.fig_dict = scale_fig_dict_values(self.fig_dict, num_to_scale_x_values_by=num_to_scale_x_values_by, num_to_scale_y_values_by=num_to_scale_y_values_by)
 
     def set_layout_fields(self, comments="", graph_title="", x_axis_label_including_units="", y_axis_label_including_units="", x_axis_comments="",y_axis_comments="", remove_plural_units=True):
+        """
+        Scales all x and y values across data series in the fig_dict by specified scalar factors.
+            - Modifies fig_dict in-place by replacing it with the scaled version.
+
+        Args:
+            num_to_scale_x_values_by (float): Scaling factor applied to all x-values. Default is 1 (no change).
+            num_to_scale_y_values_by (float): Scaling factor applied to all y-values. Default is 1 (no change).
+        """
         # comments: General comments about the layout. Allowed by JSONGrapher, but will be removed if converted to a plotly object.
         # graph_title: Title of the graph.
         # xaxis_title: Title of the x-axis, including units.
@@ -2024,12 +2041,22 @@ class JSONGrapherRecord:
     #TODO: need to add an "include_formatting" option
     def export_to_json_file(self, filename, update_and_validate=True, validate=True, simulate_all_series = True, remove_simulate_fields= False, remove_equation_fields= False, remove_remaining_hints=False):
         """
-        writes the json to a file
-        returns the json as a dictionary.
-        update_and_validate function will clean for plotly. One can alternatively only validate.
-        optionally simulates all series that have a simulate field (does so by default)
-        optionally removes simulate filed from all series that have a simulate field (does not do so by default)
-        optionally removes hints before export and return.
+        Exports the current fig_dict to a JSON file with optional simulation, cleaning, and validation.
+            - Ensures compatibility with Plotly and external tools by validating and cleaning metadata.
+            - JSON file is saved using UTF-8 encoding with 4-space indentation.
+
+        Args:
+            filename (str): Destination filename. A '.json' extension will be appended if missing.
+            update_and_validate (bool): If True (default), applies automatic corrections and cleans the fig_dict before export.
+            validate (bool): If True (default), performs validation even without updates.
+            simulate_all_series (bool): If True (default), evaluates all data series containing a 'simulate' field prior to export.
+            remove_simulate_fields (bool): If True, strips out 'simulate' fields from each data series before export.
+            remove_equation_fields (bool): If True, removes 'equation' fields from each series.
+            remove_remaining_hints (bool): If True, deletes developer hints from the record for cleaner output.
+
+        Returns:
+            dict: The fig_dict after all specified operations.
+
         """
         #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out if requested.
         if simulate_all_series == True:
@@ -2056,6 +2083,23 @@ class JSONGrapherRecord:
         return self.fig_dict
 
     def export_plotly_json(self, filename, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True,adjust_implicit_data_ranges=True):
+        """
+        Generates a Plotly-compatible JSON file from the current fig_dict and exports it to disk.
+            - Relies on get_plotly_fig() for figure construction and formatting.
+            - Exports the result to a UTF-8 encoded file using standard JSON formatting.
+
+        Args:
+            filename (str): Path for the output file. If no ".json" extension is present, it will be added.
+            plot_style (dict, optional): plot_style to apply before exporting.
+            update_and_validate (bool): If True (default), cleans and validates the figure before export.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
+
+        Returns:
+            dict: The Plotly-compatible JSON object, a dictionary, which can be directly plotted with plotly.
+
+        """
         fig = self.get_plotly_fig(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         plotly_json_string = fig.to_plotly_json()
         if len(filename) > 0: #this means we will be writing to file.
@@ -2070,18 +2114,26 @@ class JSONGrapherRecord:
     #simulate all series will simulate any series as needed.
     def get_plotly_fig(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         """
-        Generates a Plotly figure from the stored fig_dict, performing simulations and equations as needed.
-        By default, it will apply the default still hard coded into jsongrapher.
+        Constructs and returns a Plotly figure object based on the current fig_dict with optional preprocessing steps.
+            - A deep copy of fig_dict is created to avoid unintended mutation of the source object.
+            - Applies plot styles before cleaning and validation.
+            - Removes JSONGrapher specific fields (e.g., 'simulate', 'equation') before handing off to Plotly.
 
         Args:
-            plot_style: String or dictionary of style to apply. Use '' to skip applying a style, or provide a list of length two containing both a layout style and a data series style."none" removes all style.
-            simulate_all_series (bool): If True, performs simulations for applicable series.
-            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
-            evaluate_all_equations (bool): If True, evaluates all equation-based series.
-            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+            plot_style (str, dict, or list): plot_style dictionary. Use '' to skip styling and 'none' to clear all styles.
+              Also accepts other options:
+                - A dictionary with layout_style and trace_styles_collection (normal case).
+                - A string such as 'default' to use for both layout_style and trace_styles_collection name
+                - A list of length two with layout_style and trace_styles_collection name
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
 
         Returns:
-            plotly Figure: A validated Plotly figure object based on fig_dict.
+            plotly fig: A fully constructed and styled Plotly figure object.
+
+
         """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
@@ -2111,12 +2163,52 @@ class JSONGrapherRecord:
 
     #Just a wrapper aroudn plot_with_plotly.
     def plot(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        """
+        Plots the current fig_dict using Plotly with optional preprocessing, simulation, and visual styling.
+            - Acts as a convenience wrapper around plot_with_plotly().
+            
+        Args:
+            plot_style (str, dict, or list): plot_style dictionary. Use '' to skip styling and 'none' to clear all styles.
+              Also accepts other options:
+                - A dictionary with layout_style and trace_styles_collection (normal case).
+                - A string such as 'default' to use for both layout_style and trace_styles_collection name
+                - A list of length two with layout_style and trace_styles_collection name
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
+
+        Returns:
+            plotly fig: A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
+
+        """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         return self.plot_with_plotly(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
 
     #simulate all series will simulate any series as needed. If changing this function's arguments, also change those for self.plot()
     def plot_with_plotly(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+        """
+        Displays the current fig_dict as an interactive Plotly figure with optional preprocessing and styling.
+        A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
+            - Wraps get_plotly_fig() and renders the resulting figure using fig.show().
+            - Safely leaves the internal fig_dict unchanged after rendering.
+        
+        Args:
+            plot_style (str, dict, or list): plot_style dictionary. Use '' to skip styling and 'none' to clear all styles.
+              Also accepts other options:
+                - A dictionary with layout_style and trace_styles_collection (normal case).
+                - A string such as 'default' to use for both layout_style and trace_styles_collection name
+                - A list of length two with layout_style and trace_styles_collection name
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
+
+        Returns:
+            plotly fig: A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
+
+        """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         fig = self.get_plotly_fig(plot_style=plot_style,
@@ -2125,16 +2217,43 @@ class JSONGrapherRecord:
                                   evaluate_all_equations=evaluate_all_equations, 
                                   adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         fig.show()
+        return fig
         #No need for fig.close() for plotly figures.
 
 
     #simulate all series will simulate any series as needed.
     def export_to_plotly_png(self, filename, simulate_all_series = True, update_and_validate=True, timeout=10):
+        """
+        Exports the current fig_dict as a PNG image file using a Plotly-rendered figure.
+        Notes:
+            - Relies on get_plotly_fig() to construct the Plotly figure.
+            - Uses export_plotly_image_with_timeout() to safely render and export the image without stalling.
+
+        Args:
+            filename (str): The name of the output PNG file. If missing an extension, ".png" will be inferred downstream.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            update_and_validate (bool): If True (default), performs automated cleanup and validation before rendering.
+            timeout (int): Max number of seconds allotted to render and export the figure.
+
+        """
         fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
         # Save the figure to a file, but use the timeout version.
         self.export_plotly_image_with_timeout(plotly_fig = fig, filename=filename, timeout=timeout)
 
     def export_plotly_image_with_timeout(self, plotly_fig, filename, timeout=10):
+        """
+        Attempts to export a Plotly figure to a PNG file using Kaleido, with timeout protection.
+            - Runs the export in a background daemon thread to ensure timeout safety.
+            - MathJax is disabled to improve speed and compatibility.
+            - If export exceeds the timeout, a warning is printed and no file is saved.
+            - Kaleido must be installed and working; if issues persist, consider using `export_to_matplotlib_png()` as a fallback.
+
+        Args:
+            plotly_fig (plotly.graph_objs._figure.Figure): The Plotly figure to export as an image.
+            filename (str): Target PNG file name. Adds ".png" if not already present.
+            timeout (int): Maximum duration (in seconds) to allow the export before timing out. Default is 10.
+
+        """
         # Ensure filename ends with .png
         if not filename.lower().endswith(".png"):
             filename += ".png"
@@ -2163,13 +2282,13 @@ class JSONGrapherRecord:
         Generates a matplotlib figure from the stored fig_dict, performing simulations and equations as needed.
 
         Args:
-            simulate_all_series (bool): If True, performs simulations for applicable series.
-            update_and_validate (bool): If True, applies automatic corrections to fig_dict.
-            evaluate_all_equations (bool): If True, evaluates all equation-based series.
-            adjust_implicit_data_ranges (bool): If True, modifies ranges for implicit data series.
+            update_and_validate (bool): If True (default), applies automated corrections and validation.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.            
 
         Returns:
-            plotly Figure: A validated matplotlib figure object based on fig_dict.
+            matplotlib fig: A matplotlib figure object based on fig_dict.
         """
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call

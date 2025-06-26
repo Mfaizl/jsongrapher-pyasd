@@ -1620,12 +1620,28 @@ class JSONGrapherRecord:
     #this function returns the current record.       
     def get_record(self):
         """
-        Returns a JSON-dict string of the record
+        Retrieves the full fig_dict representing the current JSONGrapher record.
+
+        Returns:
+            dict: The fig_dict for the current JSONGrapher record.
         """
         return self.fig_dict
     #The update_and_validate function will clean for plotly.
     #TODO: the internal recommending "print_to_inspect" function should, by default, exclude printing the full dictionaries of the layout_style and the trace_collection_style.
     def print_to_inspect(self, update_and_validate=True, validate=True, clean_for_plotly = True, remove_remaining_hints=False):
+        """
+        Prints the current fig_dict in a human-readable JSON format, with optional consistency checks.
+
+        Args:
+            update_and_validate (bool): If True (default), applies automatic updates and data cleaning before printing.
+            validate (bool): If True (default), runs validation even if updates are skipped.
+            clean_for_plotly (bool): If True (default), adjusts structure for compatibility with rendering tools.
+            remove_remaining_hints (bool): If True, strips hint-related metadata before output.
+
+        Notes:
+            - Recommended over __str__ for reviewing records with validated and updated content.
+            - Future updates may include options to limit verbosity (e.g., omit layout_style and trace_style sections).
+        """
         if remove_remaining_hints == True:
             self.remove_hints()
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
@@ -1636,8 +1652,11 @@ class JSONGrapherRecord:
 
     def populate_from_existing_record(self, existing_JSONGrapher_record):
         """
-        Populates attributes from an existing JSONGrapher record.
-        existing_JSONGrapher_record: A dictionary representing an existing JSONGrapher record.
+        Populates the fig_dict using an existing JSONGrapher record.
+
+        Args:
+            existing_JSONGrapher_record (dict or JSONGrapherRecord): Source record to use for populating the current instance.
+
         """
         #While we expect a dictionary, if a JSONGrapher ojbect is provided, we will simply pull the dictionary out of that.
         if isinstance(existing_JSONGrapher_record, dict): 
@@ -1652,6 +1671,18 @@ class JSONGrapherRecord:
     #the below function takes in existin JSONGrpher record, and merges the data in.
     #This requires scaling any data as needed, according to units.
     def merge_in_JSONGrapherRecord(self, fig_dict_to_merge_in):
+        """
+        Merges data from another JSONGrapher record into the current fig_dict with appropriate unit scaling.
+            - Extracts x and y axis units from both records and calculates scaling ratios.
+            - Applies uniform scaling to all data_series dictionaries in the incoming record.
+            - Supports string and object-based inputs by auto-converting them into a usable fig_dict format.
+            - New data series are deep-copied and appended to the current fig_dict["data"] list.
+
+        Args:
+            fig_dict_to_merge_in (dict, str, or JSONGrapherRecord): Source record to merge. Can be a fig_dict dictionary,
+                a JSON-formatted string of a fig_dict, or a JSONGrapherRecord object instance.
+
+        """
         import copy
         fig_dict_to_merge_in = copy.deepcopy(fig_dict_to_merge_in)
         if type(fig_dict_to_merge_in) == type({}):
@@ -1681,17 +1712,33 @@ class JSONGrapherRecord:
         self.fig_dict["data"].extend(scaled_fig_dict["data"])
    
     def import_from_dict(self, fig_dict):
+        """
+        Imports a complete fig_dict into the current JSONGrapherRecord instance, replacing its contents.
+            - Any current fig_dict is entirely overwritten without merging or validation.
+
+        Args:
+            fig_dict (dict): A JSONGrapher record fig_dict.
+
+        """
         self.fig_dict = fig_dict
     
     def import_from_file(self, record_filename_or_object):
         """
-        Determine the type of file or data and call the appropriate import function.
+        Imports a record from a supported file type or directly from a dictionary, and converts it into fig_dict format.
+            - Automatically detects file type via extension when a string path is provided.
+            - CSV/TSV content is handled using import_from_csv with delimiter selection.
+            - JSON files and dictionaries are passed directly to import_from_json.
 
         Args:
-            record_filename_or_object (str or dict): Filename of the CSV/TSV/JSON file or a dictionary object.
+            record_filename_or_object (str or dict): A file path pointing to a CSV, TSV, or JSON file,
+                or a dictionary representing a JSONGrapher record.
 
         Returns:
-            dict: Processed JSON data.
+            dict: The fig_dict created or extracted from the file or provided object.
+
+        Raises:
+            ValueError: If the file extension is unsupported (not .csv, .tsv, or .json).
+
         """
         import os  # Moved inside the function
 
@@ -1715,6 +1762,23 @@ class JSONGrapherRecord:
 
     #the json object can be a filename string or can be json object which is actually a dictionary.
     def import_from_json(self, json_filename_or_object):
+        """
+        Imports a fig_dict from a JSON-formatted string, file path, or dictionary.
+            - If a string is passed, the method first attempts to parse it as a JSON-formatted string.
+            - If parsing fails, it attempts to treat the string as a file path to a JSON file.
+            - If the file isn’t found, it appends ".json" and tries again.
+            - If a dictionary is passed, it is directly assigned to fig_dict.
+            - Includes detailed error feedback if JSON parsing fails, highlighting common issues like 
+              improper quote usage or malformed booleans.
+
+        Args:
+            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dictionary 
+                representing a valid fig_dict structure.
+
+        Returns:
+            dict: The parsed and loaded fig_dict.
+
+        """
         if type(json_filename_or_object) == type(""): #assume it's a json_string or filename_and_path.
             try:
                 record = json.loads(json_filename_or_object) #first check if it's a json string.
@@ -1739,15 +1803,20 @@ class JSONGrapherRecord:
 
     def import_from_csv(self, filename, delimiter=","):
         """
-        Convert CSV file content into a JSON structure for Plotly.
+        Imports a CSV or TSV file and converts its contents into a fig_dict.
+            - The input file must follow a specific format, as of 6/25/25, but this may be made more general in the future.
+                * Lines 1–5 define config metadata (e.g., comments, datatype, axis labels).
+                * Line 6 defines series names.
+                * Data rows begin on line 9.
 
         Args:
-            filename (str): Path to the CSV file.
-            delimiter (str, optional): Delimiter used in CSV. Default is ",".
-                                    Use "\\t" for a tab-delimited file.
+            filename (str): File path to the CSV or TSV file. If no extension is provided,
+                ".csv" or ".tsv" is inferred based on the delimiter.
+            delimiter (str, optional): Field separator character. Defaults to ",". Use "\\t" for TSV files.
 
         Returns:
-            dict: JSON representation of the CSV data.
+            dict: The created fig_dict.
+
         """
         import os  
         # Modify the filename based on the delimiter and existing extension
@@ -1796,8 +1865,13 @@ class JSONGrapherRecord:
 
     def set_datatype(self, datatype):
         """
-        Sets the datatype field used as the experiment type or schema identifier.
-            datatype (str): The new data type to set.
+        Sets the datatype field used as the experiment type or schema identifier. 
+        Expected to be a string with no spaces, and may be a url. Underscore 
+        may be included "_" and double underscore "__" has a special meaning.
+        See manual for information about the use of double underscore.
+
+        args:
+            datatype (str): The new string to use for the datatype field.
         """
         self.fig_dict['datatype'] = datatype
 

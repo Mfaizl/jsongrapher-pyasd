@@ -1120,10 +1120,10 @@ class JSONGrapherRecord:
     #this function returns the current record.       
     def get_record(self):
         """
-        Retrieves the full fig_dict representing the current graph record.
+        Retrieves the full fig_dict representing the current JSONGrapher record.
 
         Returns:
-            dict: The complete structured record stored in fig_dict, ready for export or inspection.
+            dict: The fig_dict for the current JSONGrapher record.
         """
         return self.fig_dict
     #The update_and_validate function will clean for plotly.
@@ -1157,9 +1157,6 @@ class JSONGrapherRecord:
         Args:
             existing_JSONGrapher_record (dict or JSONGrapherRecord): Source record to use for populating the current instance.
 
-        Notes:
-            - If a dictionary is provided, only the top-level fields ('comments', 'datatype', 'data', 'layout') are selectively extracted and applied.
-            - If a JSONGrapherRecord object is passed, its entire fig_dict is directly assigned to the current instance.
         """
         #While we expect a dictionary, if a JSONGrapher ojbect is provided, we will simply pull the dictionary out of that.
         if isinstance(existing_JSONGrapher_record, dict): 
@@ -1176,16 +1173,15 @@ class JSONGrapherRecord:
     def merge_in_JSONGrapherRecord(self, fig_dict_to_merge_in):
         """
         Merges data from another JSONGrapher record into the current fig_dict with appropriate unit scaling.
-
-        Args:
-            fig_dict_to_merge_in (dict, str, or JSONGrapherRecord): Source record to merge. Can be a dictionary,
-                a JSON-formatted string, or a JSONGrapherRecord instance.
-
-        Notes:
             - Extracts x and y axis units from both records and calculates scaling ratios.
             - Applies uniform scaling to all data_series dictionaries in the incoming record.
             - Supports string and object-based inputs by auto-converting them into a usable fig_dict format.
             - New data series are deep-copied and appended to the current fig_dict["data"] list.
+
+        Args:
+            fig_dict_to_merge_in (dict, str, or JSONGrapherRecord): Source record to merge. Can be a fig_dict dictionary,
+                a JSON-formatted string of a fig_dict, or a JSONGrapherRecord object instance.
+
         """
         import copy
         fig_dict_to_merge_in = copy.deepcopy(fig_dict_to_merge_in)
@@ -1218,34 +1214,31 @@ class JSONGrapherRecord:
     def import_from_dict(self, fig_dict):
         """
         Imports a complete fig_dict into the current JSONGrapherRecord instance, replacing its contents.
+            - Any current fig_dict is entirely overwritten without merging or validation.
 
         Args:
-            fig_dict (dict): A full structured JSONGrapher record to assign to the instance.
+            fig_dict (dict): A JSONGrapher record fig_dict.
 
-        Notes:
-            - The current fig_dict is entirely overwritten without merging or validation.
-            - Caller is responsible for ensuring the input adheres to JSONGrapher format conventions.
         """
         self.fig_dict = fig_dict
     
     def import_from_file(self, record_filename_or_object):
         """
         Imports a record from a supported file type or directly from a dictionary, and converts it into fig_dict format.
+            - Automatically detects file type via extension when a string path is provided.
+            - CSV/TSV content is handled using import_from_csv with delimiter selection.
+            - JSON files and dictionaries are passed directly to import_from_json.
 
         Args:
             record_filename_or_object (str or dict): A file path pointing to a CSV, TSV, or JSON file,
                 or a dictionary representing a JSONGrapher record.
 
         Returns:
-            dict: The structured fig_dict extracted from the file or provided object.
+            dict: The fig_dict created or extracted from the file or provided object.
 
         Raises:
             ValueError: If the file extension is unsupported (not .csv, .tsv, or .json).
 
-        Notes:
-            - Automatically detects file type via extension when a string path is provided.
-            - CSV/TSV content is handled using import_from_csv with delimiter selection.
-            - JSON files and dictionaries are passed directly to import_from_json.
         """
         import os  # Moved inside the function
 
@@ -1271,21 +1264,20 @@ class JSONGrapherRecord:
     def import_from_json(self, json_filename_or_object):
         """
         Imports a fig_dict from a JSON-formatted string, file path, or dictionary.
-
-        Args:
-            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dictionary 
-                representing a valid fig_dict structure.
-
-        Returns:
-            dict: The parsed and loaded fig_dict from the provided input.
-
-        Notes:
             - If a string is passed, the method first attempts to parse it as a JSON-formatted string.
             - If parsing fails, it attempts to treat the string as a file path to a JSON file.
             - If the file isn’t found, it appends ".json" and tries again.
             - If a dictionary is passed, it is directly assigned to fig_dict.
             - Includes detailed error feedback if JSON parsing fails, highlighting common issues like 
               improper quote usage or malformed booleans.
+
+        Args:
+            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dictionary 
+                representing a valid fig_dict structure.
+
+        Returns:
+            dict: The parsed and loaded fig_dict.
+
         """
         if type(json_filename_or_object) == type(""): #assume it's a json_string or filename_and_path.
             try:
@@ -1311,7 +1303,11 @@ class JSONGrapherRecord:
 
     def import_from_csv(self, filename, delimiter=","):
         """
-        Imports a CSV or TSV file and converts its contents into a structured fig_dict with metadata and data_series.
+        Imports a CSV or TSV file and converts its contents into a fig_dict.
+            - The input file must follow a specific format, as of 6/25/25, but this may be made more general in the future.
+                * Lines 1–5 define config metadata (e.g., comments, datatype, axis labels).
+                * Line 6 defines series names.
+                * Data rows begin on line 9.
 
         Args:
             filename (str): File path to the CSV or TSV file. If no extension is provided,
@@ -1319,15 +1315,8 @@ class JSONGrapherRecord:
             delimiter (str, optional): Field separator character. Defaults to ",". Use "\\t" for TSV files.
 
         Returns:
-            dict: A populated fig_dict containing top-level metadata and a list of data_series dictionaries.
+            dict: The created fig_dict.
 
-        Notes:
-            - The input file must follow a specific format:
-                * Lines 1–5 define config metadata (e.g., comments, datatype, axis labels).
-                * Line 6 defines series names.
-                * Data rows begin on line 9.
-            - Values are parsed as float and validated during import.
-            - Each series is assigned a UID based on its index.
         """
         import os  
         # Modify the filename based on the delimiter and existing extension
@@ -1376,8 +1365,13 @@ class JSONGrapherRecord:
 
     def set_datatype(self, datatype):
         """
-        Sets the datatype field used as the experiment type or schema identifier.
-            datatype (str): The new data type to set.
+        Sets the datatype field used as the experiment type or schema identifier. 
+        Expected to be a string with no spaces, and may be a url. Underscore 
+        may be included "_" and double underscore "__" has a special meaning.
+        See manual for information about the use of double underscore.
+
+        args:
+            datatype (str): The new string to use for the datatype field.
         """
         self.fig_dict['datatype'] = datatype
 

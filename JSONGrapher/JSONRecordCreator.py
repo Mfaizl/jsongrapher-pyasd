@@ -1388,7 +1388,7 @@ class JSONGrapherRecord:
         return json.dumps(self.fig_dict, indent=4)
 
 
-    def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
+    def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
         """
         Adds a new x,y data series to the fig_dict with optional metadata, styling, and simulation support.
 
@@ -1399,7 +1399,7 @@ class JSONGrapherRecord:
             simulate (dict, optional): Dictionary specifying on-the-fly simulation parameters.
             simulate_as_added (bool): If True, and if the 'simulate' field is present, then attempts to simulate this series immediately upon addition.
             comments (str): Description or annotations tied to the data series.
-            trace_style (str): Visual representation type (e.g., scatter, line, spline, bar).
+            trace_style (str or dict): trace_style for the data_series (e.g., scatter, line, spline, bar).
             uid (str): Optional unique ID (e.g., DOI) linked to the series.
             line (dict): Dictionary of visual line properties like shape or width.
             extra_fields (dict): A dictionary with custom keys and values to add into the data_series dictionary.
@@ -1445,9 +1445,9 @@ class JSONGrapherRecord:
             data_series_dict["comments"] = comments
         if len(uid) > 0:
             data_series_dict["uid"] = uid
-        if len(line) > 0:
+        if line: #This checks variable is not None, and not empty.
             data_series_dict["line"] = line
-        if len(trace_style) > 0:
+        if trace_style: #This checks variable is not None, and not empty.
             data_series_dict['trace_style'] = trace_style
         #add simulate field if included.
         if simulate:

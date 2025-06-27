@@ -2090,6 +2090,30 @@ class JSONGrapherRecord:
         self.fig_dict = original_fig_dict #restore the original fig_dict.
         return modified_fig_dict
 
+    def get_plotly_json(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True,adjust_implicit_data_ranges=True):
+        """
+        Generates a Plotly-compatible JSON from the current fig_dict
+            - Relies on get_plotly_fig() for figure construction and formatting.
+
+        Args:
+            plot_style (dict, optional): plot_style to apply before exporting.
+            update_and_validate (bool): If True (default), cleans and validates the figure before export.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
+
+        Returns:
+            dict: The Plotly-compatible JSON object, a dictionary, which can be directly plotted with plotly.
+
+        """
+        fig = self.get_plotly_fig(plot_style=plot_style,
+                                  update_and_validate=update_and_validate, 
+                                  simulate_all_series=simulate_all_series, 
+                                  evaluate_all_equations=evaluate_all_equations, 
+                                  adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+        plotly_json_string = fig.to_plotly_json()
+        return plotly_json_string
+
     def export_plotly_json(self, filename, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True,adjust_implicit_data_ranges=True):
         """
         Generates a Plotly-compatible JSON file from the current fig_dict and exports it to disk.
@@ -2108,8 +2132,7 @@ class JSONGrapherRecord:
             dict: The Plotly-compatible JSON object, a dictionary, which can be directly plotted with plotly.
 
         """
-        fig = self.get_plotly_fig(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
-        plotly_json_string = fig.to_plotly_json()
+        plotly_json_string = self.get_plotly_json(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         if len(filename) > 0: #this means we will be writing to file.
             # Check if the filename has an extension and append `.json` if not
             if '.json' not in filename.lower():
@@ -2220,8 +2243,8 @@ class JSONGrapherRecord:
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         fig = self.get_plotly_fig(plot_style=plot_style,
-                                  simulate_all_series=simulate_all_series, 
                                   update_and_validate=update_and_validate, 
+                                  simulate_all_series=simulate_all_series, 
                                   evaluate_all_equations=evaluate_all_equations, 
                                   adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         fig.show()
@@ -2245,8 +2268,8 @@ class JSONGrapherRecord:
 
         """
         fig = self.get_plotly_fig(plot_style=plot_style,
-                                  simulate_all_series=simulate_all_series, 
                                   update_and_validate=update_and_validate, 
+                                  simulate_all_series=simulate_all_series, 
                                   evaluate_all_equations=evaluate_all_equations, 
                                   adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         # Save the figure to a file, but use the timeout version.
@@ -2344,8 +2367,8 @@ class JSONGrapherRecord:
         """
         import matplotlib.pyplot as plt
         fig = self.get_matplotlib_fig(plot_style=plot_style,
-                                      simulate_all_series=simulate_all_series, 
                                       update_and_validate=update_and_validate, 
+                                      simulate_all_series=simulate_all_series, 
                                       evaluate_all_equations=evaluate_all_equations, 
                                       adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         plt.show()
@@ -2370,8 +2393,8 @@ class JSONGrapherRecord:
         if not filename.lower().endswith(".png"):
             filename += ".png"
         fig = self.get_matplotlib_fig(plot_style=plot_style,
-                                      simulate_all_series=simulate_all_series, 
                                       update_and_validate=update_and_validate, 
+                                      simulate_all_series=simulate_all_series, 
                                       evaluate_all_equations=evaluate_all_equations, 
                                       adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         # Save the figure to a file

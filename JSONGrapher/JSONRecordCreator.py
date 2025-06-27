@@ -2544,7 +2544,7 @@ class JSONGrapherRecord:
         if "trace_styles_collection" in self.fig_dict["plot_style"]:
             self.fig_dict["plot_style"].pop("trace_styles_collection")
     def set_trace_style_all_series(self, trace_style):
-            """
+        """
         Set all data_series in the fig_dict to have a speicfic trace_style.
 
         Args:

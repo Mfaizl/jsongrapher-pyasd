@@ -2222,7 +2222,7 @@ class JSONGrapherRecord:
 
 
     #simulate all series will simulate any series as needed.
-    def export_to_plotly_png(self, filename, simulate_all_series = True, update_and_validate=True, timeout=10):
+    def export_to_plotly_png(self, filename, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, timeout=10):
         """
         Exports the current fig_dict as a PNG image file using a Plotly-rendered figure.
         Notes:
@@ -2236,7 +2236,11 @@ class JSONGrapherRecord:
             timeout (int): Max number of seconds allotted to render and export the figure.
 
         """
-        fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
+        fig = self.get_plotly_fig(plot_style=plot_style,
+                                  simulate_all_series=simulate_all_series, 
+                                  update_and_validate=update_and_validate, 
+                                  evaluate_all_equations=evaluate_all_equations, 
+                                  adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         # Save the figure to a file, but use the timeout version.
         self.export_plotly_image_with_timeout(plotly_fig = fig, filename=filename, timeout=timeout)
 
@@ -2319,7 +2323,7 @@ class JSONGrapherRecord:
         return fig
 
     #simulate all series will simulate any series as needed.
-    def plot_with_matplotlib(self, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def plot_with_matplotlib(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         """
         Displays the current fig_dict as a matplotlib figure with optional preprocessing and simulation.
 
@@ -2331,7 +2335,8 @@ class JSONGrapherRecord:
 
         """
         import matplotlib.pyplot as plt
-        fig = self.get_matplotlib_fig(simulate_all_series=simulate_all_series, 
+        fig = self.get_matplotlib_fig(plot_style=plot_style,
+                                      simulate_all_series=simulate_all_series, 
                                       update_and_validate=update_and_validate, 
                                       evaluate_all_equations=evaluate_all_equations, 
                                       adjust_implicit_data_ranges=adjust_implicit_data_ranges)
@@ -2339,7 +2344,7 @@ class JSONGrapherRecord:
         plt.close(fig) #remove fig from memory.
 
     #simulate all series will simulate any series as needed.
-    def export_to_matplotlib_png(self, filename, simulate_all_series = True, update_and_validate=True):
+    def export_to_matplotlib_png(self, filename, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Export the current fig_dict as a PNG image by rendering it with matplotlib.
             - Calls get_matplotlib_fig() to generate the figure.
@@ -2356,7 +2361,11 @@ class JSONGrapherRecord:
         # Ensure filename ends with .png
         if not filename.lower().endswith(".png"):
             filename += ".png"
-        fig = self.get_matplotlib_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
+        fig = self.get_matplotlib_fig(plot_style=plot_style,
+                                      simulate_all_series=simulate_all_series, 
+                                      update_and_validate=update_and_validate, 
+                                      evaluate_all_equations=evaluate_all_equations, 
+                                      adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         # Save the figure to a file
         fig.savefig(filename)
         plt.close(fig) #remove fig from memory.

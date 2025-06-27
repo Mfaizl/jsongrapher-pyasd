@@ -1469,7 +1469,11 @@ class JSONGrapherRecord:
         self.fig_dict["data"].append(data_series_dict) #implied return.
         return data_series_dict
 
-    def add_data_series_as_equation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
+    def add_data_series_as_simulation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, simulate_dict=None, simulate_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
+        print("This feature, add_data_series_as_simulation, is not yet implemented. JSONGrapher did not add the series. For now, use add_data_series to add series with simulate fields.")
+        pass #TODO: fill out the logic needed to create a data_series_as_simulation. Look at the regular add_data_series and the add_data_series_as_equation functions, for comparison. Also, should probably change both this and add_data_seris_as_equation into wrappers around add_data_series.
+
+    def add_data_series_as_equation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
         """
         Adds a new data series to the fig_dict using an equation instead of raw data points.
 
@@ -1529,9 +1533,9 @@ class JSONGrapherRecord:
             data_series_dict["comments"] = comments
         if len(uid) > 0:
             data_series_dict["uid"] = uid
-        if len(line) > 0:
+        if line: 
             data_series_dict["line"] = line
-        if len(trace_style) > 0:
+        if trace_style:
             data_series_dict['trace_style'] = trace_style
         #add equation field if included.
         if equation_dict:
@@ -1724,13 +1728,13 @@ class JSONGrapherRecord:
     
     def import_from_file(self, record_filename_or_object):
         """
-        Imports a record from a supported file type or directly from a dictionary, and converts it into fig_dict format.
+        Imports a record from a supported file type or dictionary to create a fig_dict.
             - Automatically detects file type via extension when a string path is provided.
             - CSV/TSV content is handled using import_from_csv with delimiter selection.
             - JSON files and dictionaries are passed directly to import_from_json.
 
         Args:
-            record_filename_or_object (str or dict): A file path pointing to a CSV, TSV, or JSON file,
+            record_filename_or_object (str or dict): A file path for a CSV, TSV, or JSON file,
                 or a dictionary representing a JSONGrapher record.
 
         Returns:
@@ -1764,7 +1768,7 @@ class JSONGrapherRecord:
     def import_from_json(self, json_filename_or_object):
         """
         Imports a fig_dict from a JSON-formatted string, file path, or dictionary.
-            - If a string is passed, the method first attempts to parse it as a JSON-formatted string.
+            - If a string is passed, the method attempts to parse it as a JSON-formatted string.
             - If parsing fails, it attempts to treat the string as a file path to a JSON file.
             - If the file isn’t found, it appends ".json" and tries again.
             - If a dictionary is passed, it is directly assigned to fig_dict.
@@ -1772,7 +1776,7 @@ class JSONGrapherRecord:
               improper quote usage or malformed booleans.
 
         Args:
-            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dictionary 
+            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dict
                 representing a valid fig_dict structure.
 
         Returns:
@@ -1785,7 +1789,7 @@ class JSONGrapherRecord:
             except json.JSONDecodeError as e1:  # Catch specific exception
                 try:
                     import os
-                    #if the filename does not exist, then we'll check if adding ".json" fixes the problem.
+                    #if the filename does not exist, check if adding ".json" fixes the problem.
                     if not os.path.exists(json_filename_or_object):
                         json_added_filename = json_filename_or_object + ".json"
                         if os.path.exists(json_added_filename): json_filename_or_object = json_added_filename #only change the filename if the json_filename exists.

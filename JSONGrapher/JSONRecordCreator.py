@@ -2453,10 +2453,10 @@ class JSONGrapherRecord:
     def remove_plot_style(self):
         """
         Remove styling information from fig_dict, including the 'plot_style' field and associated formatting.
-            - Calls remove_plot_style_from_plotly_dict to strip trace_style and layout_style formatting.
+            - Calls remove_plot_style_from_fig_dict to strip trace_style and layout_style formatting.
         """
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
-        self.fig_dict = remove_plot_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
+        self.fig_dict = remove_plot_style_from_fig_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
 
     def set_layout_style(self, layout_style):
         """
@@ -2480,12 +2480,12 @@ class JSONGrapherRecord:
     def extract_layout_style(self):
         """
         Extract the layout_style from fig_dict using a helper function.
-            - Calls extract_layout_style_from_plotly_dict to retrieve layout style information.
+            - Calls extract_layout_style_from_fig_dict to retrieve layout style information.
 
         Returns:
             str or dict: The extracted layout style, depending on how styles are stored.
         """
-        layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
+        layout_style = extract_layout_style_from_fig_dict(self.fig_dict)
         return layout_style
         
     def apply_trace_style_by_index(self, data_series_index, trace_styles_collection='', trace_style=''):
@@ -3220,7 +3220,7 @@ def apply_plot_style_to_plotly_dict(fig_dict, plot_style=None):
         fig_dict = apply_trace_styles_collection_to_plotly_dict(fig_dict=fig_dict,trace_styles_collection=plot_style["trace_styles_collection"])
     return fig_dict
 
-def remove_plot_style_from_plotly_dict(fig_dict):
+def remove_plot_style_from_fig_dict(fig_dict):
     """
     Removes both layout and trace styles from a Plotly figure dictionary.
 
@@ -4174,7 +4174,7 @@ def remove_layout_style_from_plotly_dict(fig_dict):
             fig_dict["plot_style"].pop("layout_style")
     return fig_dict
 
-def extract_layout_style_from_plotly_dict(fig_dict):
+def extract_layout_style_from_fig_dict(fig_dict):
     """
     Extracts a layout_style dictionary from a fig_dict by pulling out the cosmetic formatting layout properties.
 

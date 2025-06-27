@@ -29,10 +29,11 @@ equation_dict = {
     "reverse_scaling" : False
 }
 
-#Add the equation as a dataseries and plot.
+
+#Add the equation as a dataseries and plot. The lines below are commented out, but the user may uncomment to see the 2D plot example.
 # By default, the equation will be evaluated when added, and also when plotted.
-Record.add_data_series_as_equation(series_name="Arrhenius Example 2D plot", graphical_dimensionality=2, equation_dict=equation_dict, trace_style = "spline")
-Record.plot()
+# Record.add_data_series_as_equation(series_name="Arrhenius Example 2D plot", graphical_dimensionality=2, equation_dict=equation_dict, trace_style = "spline")
+# Record.plot()
 
 ### Now, let's add a 3D equation using json_equationer ###
 

@@ -3510,16 +3510,19 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
     if isinstance(trace_style, str): #check if it is a string type.
         if "__" in trace_style:
             trace_style, colorscale = trace_style.split("__")
+        if ("bubble" in trace_style) and ("bubble3d" not in trace_style) and ("bubble2d" not in trace_style):
+            trace_style = trace_style.replace("bubble", "bubble2d")
 
     colorscale_structure = "" #initialize this variable for use later. It tells us which fields to put the colorscale related values in. This should be done before regular trace_style fields are applied.
     #3D and bubble plots will have a colorscale by default.
-    if trace_style == "bubble": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
-        data_series = prepare_bubble_sizes(data_series)
-        colorscale_structure = "bubble"
-    elif trace_style == "mesh3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
-        colorscale_structure = "mesh3d"
-    elif trace_style == "scatter3d": #for bubble trace styles, we need to move the z values into the marker size. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
-        colorscale_structure = "scatter3d"
+    if isinstance(trace_style,str):
+        if "bubble" in trace_style.lower(): #for bubble trace styles (both 2D and 3D), we need to prepare the bubble sizes. We also need to do this before the styles_dict collection is accessed, since then the trace_style becomes a dictionary.
+            data_series = prepare_bubble_sizes(data_series)
+            colorscale_structure = "bubble"
+        elif "mesh3d" in trace_style.lower(): 
+            colorscale_structure = "mesh3d"
+        elif "scatter3d" in trace_style.lower(): 
+            colorscale_structure = "scatter3d"
 
     if trace_style in styles_collection_dict:
         trace_style = styles_collection_dict.get(trace_style)
@@ -3539,7 +3542,7 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
                 data_series[key] = value  # Direct assignment for non-dictionary values
 
     #Before applying colorscales, we check if we have recieved a colorscale from the user. If so, we'll need to parse the trace_type to assign the colorscale structure.
-    if colorscale != "":
+    if ((colorscale_structure == "") and (colorscale != "")):
         #If it is a scatter plot with markers, then the colorscale_structure will be marker. Need to check for this before the lines alone case.
         if ("markers" in data_series["mode"]) or ("markers+lines" in data_series["mode"]) or ("lines+markers" in data_series["mode"]):
             colorscale_structure = "marker"
@@ -3559,6 +3562,8 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
 
     if colorscale_structure == "bubble":
         #data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        if colorscale != "": #this means there is a user specified colorscale.
+            data_series["marker"]["colorscale"] = colorscale
         data_series["marker"]["showscale"] = True
         if "z" in data_series:
             color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")
@@ -3568,6 +3573,8 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             data_series["marker"]["color"] = color_values
     elif colorscale_structure == "scatter3d":
         #data_series["marker"]["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        if colorscale != "": #this means there is a user specified colorscale.
+            data_series["marker"]["colorscale"] = colorscale
         data_series["marker"]["showscale"] = True
         if "z" in data_series:
             color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")
@@ -3577,6 +3584,8 @@ def apply_trace_style_to_single_data_series(data_series, trace_styles_collection
             data_series["marker"]["color"] = color_values
     elif colorscale_structure == "mesh3d":
         #data_series["colorscale"] = "viridis_r" #https://plotly.com/python/builtin-colorscales/
+        if colorscale != "": #this means there is a user specified colorscale.
+            data_series["colorscale"] = colorscale
         data_series["showscale"] = True
         if "z" in data_series:
             color_values = clean_color_values(list_of_values= data_series["z"], variable_string_for_warning="z")
@@ -3622,10 +3631,18 @@ def prepare_bubble_sizes(data_series):
     #We also will scale them to some maximum bubble size that is specifed.
     if "marker" not in data_series:
         data_series["marker"] = {}   
-    if "z_points" in data_series:
+    if "bubble_sizes" in data_series:
+        if isinstance(data_series["bubble_sizes"], str): #if bubble sizes is a string, it must be a variable name to use for the bubble sizes.
+            bubble_sizes_variable_name = data_series["bubble_sizes"]
+            data_series["marker"]["size"] = data_series[bubble_sizes_variable_name]
+        else:
+            data_series["marker"]["size"] = data_series["bubble_sizes"]
+    elif "z_points" in data_series:
         data_series["marker"]["size"] = data_series["z_points"]
     elif "z" in data_series:
         data_series["marker"]["size"] = data_series["z"]
+    elif "y" in data_series:
+        data_series["marker"]["size"] = data_series["y"]
 
     #now need to normalize to the max value in the list.
     def normalize_to_max(starting_list):
@@ -3789,7 +3806,11 @@ def extract_trace_style_from_data_series_dict(data_series_dict, new_trace_style_
         additional_attributes_to_extract = []
 
     if new_trace_style_name=='':
-        new_trace_style_name = data_series_dict.get("trace_style", "") #keep blank if not present.
+        #Check if there is a current trace style that is a string, and use that for the name if present.
+        current_trace_style = data_series_dict.get("trace_style", "")
+        if isinstance(current_trace_style, str):
+           new_trace_style_name = current_trace_style
+    #if there is still no new_trace_style_name, we will name it 'custom'
     if new_trace_style_name=='':
         new_trace_style_name = "custom"
 
@@ -4662,19 +4683,40 @@ def remove_bubble_fields(fig_dict):
     #This code will modify the data_series inside the fig_dict, directly.
     bubble_found = False #initialize with false case.
     for data_series in fig_dict["data"]:
-        if "trace_style" in data_series:
-            if (data_series["trace_style"] == "bubble") or ("max_bubble_size" in data_series):
+        trace_style = data_series.get("trace_style") #trace_style will be None of the key is not present.
+
+        if isinstance(trace_style, str):
+            #If the style is just "bubble" (not explicitly 2D or 3D), default to bubble2d for backward compatibility
+            if ("bubble" in trace_style) and ("bubble3d" not in trace_style) and ("bubble2d" not in trace_style):
+                trace_style = trace_style.replace("bubble", "bubble2d") 
+            if ("bubble" in trace_style.lower()) or ("max_bubble_size" in data_series):
                 bubble_found = True
-            if bubble_found == True:
-                if "z" in data_series:
-                    data_series.pop("z")
-                if "z_points" in data_series:
-                    data_series.pop("z_points")
+            if bubble_found is True:
+                if "bubble2d" in trace_style.lower(): #pop the z variable if it's a bubble2d.
+                    if "z" in data_series:
+                        data_series.pop("z")
+                    if "z_points" in data_series:
+                        data_series.pop("z_points")
                 if "max_bubble_size" in data_series:
                     data_series.pop("max_bubble_size")
-    if bubble_found == True:
-        if "zaxis" in fig_dict["layout"]:
-            fig_dict["layout"].pop("zaxis")
+                if "bubble_sizes" in data_series:
+                    # Now, need to check if the bubble_size is a variable that should be deleted.
+                    # That will be if it is a string, and also not a standard variable. 
+                    if isinstance(data_series["bubble_sizes"], str):
+                        bubble_sizes_variable_name = data_series["bubble_sizes"]
+                        # For bubble2d case, will remove anything that is not x or y.
+                        if "bubble2d" in trace_style.lower():
+                            if bubble_sizes_variable_name not in ("x", "y"):
+                                data_series.pop(bubble_sizes_variable_name, None)
+                        if "bubble3d" in trace_style.lower():
+                            if bubble_sizes_variable_name not in ("x", "y", "z"):
+                                data_series.pop(bubble_sizes_variable_name, None)
+                    # next, remove bubble_sizes since it's not needed anymore and should be removed.
+                    data_series.pop("bubble_sizes")
+                # need to remove "zaxis" if making a bubble2d.
+                if "bubble2d" in trace_style.lower():
+                    if "zaxis" in fig_dict["layout"]:
+                        fig_dict["layout"].pop("zaxis")
     return fig_dict
 
 def update_3d_axes(fig_dict):

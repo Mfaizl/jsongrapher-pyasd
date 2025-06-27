@@ -2487,11 +2487,7 @@ class JSONGrapherRecord:
         """
         layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
         return layout_style
-<<<<<<< Batch-18
-
-=======
         
->>>>>>> docstrings
     def apply_trace_style_by_index(self, data_series_index, trace_styles_collection='', trace_style=''):
         """
         Apply a trace_style to that data_series at a specified index in the fig_dict.

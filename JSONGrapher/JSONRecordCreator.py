@@ -2062,6 +2062,8 @@ class JSONGrapherRecord:
             dict: The fig_dict after all specified operations.
 
         """
+        import copy
+        original_fig_dict = copy.deepcopy(self.fig_dict)
         #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out if requested.
         if simulate_all_series == True:
             self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
@@ -2084,7 +2086,9 @@ class JSONGrapherRecord:
             #Write to file using UTF-8 encoding.
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(self.fig_dict, f, indent=4)
-        return self.fig_dict
+        modified_fig_dict = self.fig_dict #store the modified fig_dict for return .
+        self.fig_dict = original_fig_dict #restore the original fig_dict.
+        return modified_fig_dict
 
     def export_plotly_json(self, filename, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True,adjust_implicit_data_ranges=True):
         """

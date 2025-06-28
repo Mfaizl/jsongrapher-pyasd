@@ -53,7 +53,7 @@ Record.print_to_inspect()
 print("\n\n STEP 5: EXAMINING WITH MATPLOTLIB AND PLOTLY-PYTHON-MODULE")
 Record.plot() #Try hovering the mouse over points in plotly figures!
 #Record.plot_with_plotly()  is the same as Record.plot()
-#Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
+Record.export_to_plotly_png("ExampleFromTutorial_plotly_fig", timeout=3)
 
 Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")

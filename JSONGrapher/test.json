@@ -1,7 +1,22 @@
 {
     "comments": "Tree Growth Data collected from the US National Arboretum",
+    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 4.3",
     "datatype": "Tree_Growth_Curve",
-    "jsongrapher": "To plot this file, go to www.jsongrapher.com and drag this file into your browser, or use the python version of JSONGrapher. File created with python Version 4.1",
+    "layout": {
+        "title": {
+            "text": "Here Is The Graph Title Spot"
+        },
+        "xaxis": {
+            "title": {
+                "text": "Time (year)"
+            }
+        },
+        "yaxis": {
+            "title": {
+                "text": "Height (m)"
+            }
+        }
+    },
     "data": [
         {
             "uid": "123",
@@ -18,20 +33,5 @@
                 8
             ]
         }
-    ],
-    "layout": {
-        "title": {
-            "text": "Here Is The Graph Title Spot"
-        },
-        "xaxis": {
-            "title": {
-                "text": "Time (year)"
-            }
-        },
-        "yaxis": {
-            "title": {
-                "text": "Height (m)"
-            }
-        }
-    }
+    ]
 }

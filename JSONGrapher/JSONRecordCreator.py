@@ -2225,7 +2225,7 @@ class JSONGrapherRecord:
         return self.plot_with_plotly(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
 
     #simulate all series will simulate any series as needed. If changing this function's arguments, also change those for self.plot()
-    def plot_with_plotly(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def plot_with_plotly(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, browser=True):
         """
         Displays the current fig_dict as an interactive Plotly figure with optional preprocessing and styling.
         A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
@@ -2247,6 +2247,8 @@ class JSONGrapherRecord:
             plotly fig: A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
 
         """
+        if browser == True:
+            import plotly.io as pio; pio.renderers.default = "browser"#
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         fig = self.get_plotly_fig(plot_style=plot_style,

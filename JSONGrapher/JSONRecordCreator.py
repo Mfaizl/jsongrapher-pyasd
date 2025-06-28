@@ -5513,7 +5513,6 @@ def extract_and_implement_offsets(fig_dict, modify_target_directly=False, graphi
         else:   
             #Else assume the offset is an array like object, of length equal to number of datapoints.
             offset = np.array(offset, dtype=float)
-            print("line 5504", offset)
         #Now, implement offsets.
         if graphical_dimensionality == 2:
             current_series_offset = 0  # Initialize total offset

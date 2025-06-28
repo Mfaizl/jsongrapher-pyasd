@@ -2352,7 +2352,6 @@ class JSONGrapherRecord:
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
         #We adjust the offsets only after copying, and adjust that one alone.
-        print("line 2348")
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=False, 
                                                                 evaluate_all_equations=False, 
@@ -5529,9 +5528,7 @@ def extract_and_implement_offsets(fig_dict, modify_target_directly=False, graphi
                     else:
                         incremental_offset = np.array(offset, dtype=float)
                     current_series_offset += incremental_offset  # Accumulate the offset
-                    #pritn("line 5519", fig_dict_with_offsets["data"][data_series_index]["y"])
                     fig_dict_with_offsets["data"][data_series_index]["y"] = list(data_series_y_values + current_series_offset)
-                    #pritn("line 5521", fig_dict_with_offsets["data"][data_series_index]["y"])
     else:
         #This is the hard case, we need to determine a reasonable offset for the dataseries.
         if graphical_dimensionality == 2:

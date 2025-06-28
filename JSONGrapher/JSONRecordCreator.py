@@ -2143,7 +2143,7 @@ class JSONGrapherRecord:
         return plotly_json_string
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def get_plotly_fig(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, adjust_offset2d=True):
         """
         Constructs and returns a Plotly figure object based on the current fig_dict with optional preprocessing steps.
             - A deep copy of fig_dict is created to avoid unintended mutation of the source object.
@@ -2177,16 +2177,23 @@ class JSONGrapherRecord:
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
                                                                 evaluate_all_equations=evaluate_all_equations, 
-                                                                adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+                                                                adjust_implicit_data_ranges=adjust_implicit_data_ranges,
+                                                                adjust_offset2d = False)
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) 
+        #The adjust_offset2d should be on the copy, if requested.
+        self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
+                                                                simulate_all_series=False, 
+                                                                evaluate_all_equations=False, 
+                                                                adjust_implicit_data_ranges=False,
+                                                                adjust_offset2d=adjust_offset2d)
         #before cleaning and validating, we'll apply styles.
         plot_style = parse_plot_style(plot_style=plot_style)
         self.apply_plot_style(plot_style=plot_style)
         #Now we clean out the fields and make a plotly object.
         if update_and_validate == True: #this will do some automatic 'corrections' during the validation.
             self.update_and_validate_JSONGrapher_record(clean_for_plotly=False) #We use the False argument here because the cleaning will be on the next line with beyond default arguments.
-            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style', '3d_axes', 'bubble', 'superscripts'])
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate', 'custom_units_chevrons', 'equation', 'trace_style', '3d_axes', 'bubble', 'superscripts', 'nested_comments', 'extraInformation'])
         fig = pio.from_json(json.dumps(self.fig_dict))
         #restore the original fig_dict.
         self.fig_dict = original_fig_dict 
@@ -2312,7 +2319,7 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
+    def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True, adjust_offset2d=True):
         """
         Constructs and returns a matplotlib figure generated from fig_dict, with optional simulation, preprocessing, and styling.
 
@@ -2340,9 +2347,16 @@ class JSONGrapherRecord:
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=simulate_all_series, 
                                                                 evaluate_all_equations=evaluate_all_equations, 
-                                                                adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+                                                                adjust_implicit_data_ranges=adjust_implicit_data_ranges,
+                                                                adjust_offset2d=False)
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
+        #We adjust the offsets only after copying, and adjust that one alone.
+        self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
+                                                                simulate_all_series=False, 
+                                                                evaluate_all_equations=False, 
+                                                                adjust_implicit_data_ranges=False,
+                                                                adjust_offset2d=adjust_offset2d)
         #before cleaning and validating, we'll apply styles.
         plot_style = parse_plot_style(plot_style=plot_style)
         self.apply_plot_style(plot_style=plot_style)
@@ -4974,6 +4988,7 @@ def clean_json_fig_dict(json_fig_dict, fields_to_update=None):
         - "trace_style": Removes internal style/tracetype metadata.
         - "3d_axes": Updates layout and data_series for 3D plotting.
         - "superscripts": Replaces superscript strings in titles and labels.
+        - "offset": Removes the offset field from the layout field.
     """
     if fields_to_update is None:  # should not initialize mutable objects in arguments line, so doing here.
         fields_to_update = ["title_field", "extraInformation", "nested_comments"]
@@ -5410,7 +5425,7 @@ def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_
     return updated_fig_dict
 
 
-def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, adjust_offset2d=False):
     """
     Processes data_series dicts in a fig_dict, executing simulate/equation-based series as needed, including setting the simulate/equation evaluation ranges as needed,
     then provides the simulated/equation-evaluated data into the original fig_dict without altering original fig_dict implicit ranges.
@@ -5432,7 +5447,6 @@ def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, 
         while preserving their original metadata and x_range_default boundaries.
     """
     import copy  # Import inside function for modularity
-
     # Create a copy for processing implicit series separately
     fig_dict_for_implicit = copy.deepcopy(fig_dict)
     #first check if any data_series have an equatinon or simulation field. If not, we'll skip.
@@ -5461,10 +5475,137 @@ def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, 
             fig_dict_for_implicit = evaluate_equations_as_needed_in_fig_dict(fig_dict_for_implicit)
             # Copy results back without overwriting the ranges
             fig_dict = update_implicit_data_series_data(target_fig_dict=fig_dict, source_fig_dict=fig_dict_for_implicit, parallel_structure=True, modify_target_directly=True)
-
+        
+    if adjust_offset2d: #This should occur after simulations and evaluations because it could rely on them.
+        #First check if the layout style is that of an offset2d graph.
+        layout_style = fig_dict.get("plot_style", {}).get("layout_style", "")
+        if "offset2d" in layout_style:
+            #This case is different from others -- we will not modify target directly because we are not doing a merge.
+            fig_dict = extract_and_implement_offsets(fig_dict_for_implicit, modify_target_directly = False) 
     return fig_dict
 
+#Small helper function to find if an offset is a float scalar.
+def is_float_scalar(value):
+    try:
+        float(value)
+        return True
+    except (TypeError, ValueError):
+        return False
 
+def extract_and_implement_offsets(fig_dict, modify_target_directly=False, graphical_dimensionality=2):
+    import numpy as np
+    #First, extract offsets.
+    import copy
+    if modify_target_directly == False:
+        fig_dict_with_offsets = copy.deepcopy(fig_dict)
+    else:
+        fig_dict_with_offsets = fig_dict
+    #initialize offset_variable_name as the case someone decides to specify one.
+    offset_variable_name = ""
+    if "offset" in fig_dict["layout"]:
+        #This is the easy case, because we don't need to determine the offset.
+        offset = fig_dict["layout"]["offset"]
+        if is_float_scalar(offset):
+            offset = fig_dict["layout"]["offset"]
+        elif isinstance(offset,str):#check if is a string, in which case it is a variable name.
+            #in this case it is a variable where we will extract it from each dataset.
+            offset_variable_name = offset
+        else:   
+            #Else assume the offset is an array like object, of length equal to number of datapoints.
+            offset = np.array(offset, dtype=float)
+        #Now, implement offsets.
+        if graphical_dimensionality == 2:
+            current_series_offset = 0  # Initialize total offset
+            for data_series_index in range(len(fig_dict["data"])):
+                data_series_y_values = np.array(fig_dict["data"][data_series_index]["y"])
+                if data_series_index == 0:
+                    fig_dict_with_offsets["data"][data_series_index]["y"] = list(data_series_y_values)
+                else:
+                    # Determine the current offset
+                    if offset_variable_name != "":
+                        incremental_offset = np.array(fig_dict["data"][data_series_index][offset_variable_name], dtype=float)
+                    else:
+                        incremental_offset = np.array(offset, dtype=float)
+                    current_series_offset += incremental_offset  # Accumulate the offset
+                    fig_dict_with_offsets["data"][data_series_index]["y"] = list(data_series_y_values + current_series_offset)
+    else:
+        #This is the hard case, we need to determine a reasonable offset for the dataseries.
+        if graphical_dimensionality == 2:
+            fig_dict_with_offsets = determine_and_apply_offset2d_for_fig_dict(fig_dict, modify_target_directly=modify_target_directly)
+    return fig_dict_with_offsets
+
+    #A function that calls helper functions to determine and apply a 2D offset to fig_dict
+def determine_and_apply_offset2d_for_fig_dict(fig_dict, modify_target_directly=False):
+    if modify_target_directly == False:
+        import copy
+        fig_dict = copy.deepcopy(fig_dict)
+    #First, extract data into a numpy array like [[x1, y1], [x2, y2], ...]
+    all_series_array = extract_all_xy_series_data_from_fig_dict(fig_dict)
+    #Then determine and apply a vertical offset. For now, we'll only support using the default
+    #argument which is 1.2 times the maximum height in the series.
+    #If someone wants to do something different, they can provide their own vertical offset value.
+    offset_data_array = apply_vertical_offset2d_for_numpy_arrays_list(all_series_array)
+    #Then, put the data back in.
+    fig_dict = inject_xy_series_data_into_fig_dict(fig_dict=fig_dict, data_list = offset_data_array)
+    return fig_dict
+
+def extract_all_xy_series_data_from_fig_dict(fig_dict):
+    """
+    Extracts all x and y values from a Plotly figure dictionary into a list of NumPy arrays.
+    Each array in the list has shape (n_points, 2), where each row is [x, y] like [[x1, y1], [x2, y2], ...].
+    """
+    import numpy as np
+    series_list = []
+    for data_series in fig_dict.get('data', []):
+        x_vals = np.array(data_series.get('x', []))
+        y_vals = np.array(data_series.get('y', []))
+        #Only keep the xy data if x and y lists are the same length.
+        if len(x_vals) == len(y_vals):
+            series_list.append(np.stack((x_vals, y_vals), axis=-1))
+    return series_list
+
+def apply_vertical_offset2d_for_numpy_arrays_list(data_list, offset_multiplier=1.2):
+    """
+    Applies vertical offsets to a list of 2D NumPy arrays.
+    Each array has shape (n_points, 2), with rows like [[x1, y1], [x2, y2], ...].
+    Returns a list of the same structure with adjusted y values per series index.
+    """
+    import numpy as np
+    spans = [np.max(series[:, 1]) - np.min(series[:, 1]) if len(series) > 0 else 0 for series in data_list]
+    base_offset = max(spans) * offset_multiplier if spans else 0
+    offset_data_list = []
+    for series_index, series_array in enumerate(data_list):
+        # Skip empty series but preserve its position in the output
+        if len(series_array) == 0:
+            offset_data_list.append(series_array)
+            continue
+        # Ensure float type for numerical stability when applying offsets
+        offset_series = np.copy(series_array).astype(float)
+        # Apply vertical offset based on series index and base offset
+        #print("line 5574, before the addition", offset_series)
+        offset_series[:, 1] += series_index * base_offset
+        #print("line 5576, after the addition", offset_series)
+        # Add the adjusted series to the output list
+        offset_data_list.append(offset_series)
+    return offset_data_list
+
+
+
+
+def inject_xy_series_data_into_fig_dict(fig_dict, data_list):
+    """
+    Updates a Plotly figure dictionary in-place by injecting x and y data from a list of NumPy arrays.
+    Each array must have shape (n_points, 2), where each row is [x, y] like [[x1, y1], [x2, y2], ...].
+    The number of arrays must match the number of traces in the figure.
+    """
+    n_traces = len(fig_dict.get('data', []))
+    if len(data_list) != n_traces:
+        raise ValueError("Mismatch between number of traces and number of data series.")
+    for i, trace in enumerate(fig_dict['data']):
+        series = data_list[i]
+        trace['x'] = series[:, 0].tolist()
+        trace['y'] = series[:, 1].tolist()
+    return fig_dict
 
 ### End of section of file that has functions for "simulate" and "equation" fields, to evaluate equations and call external javascript simulators, as well as support functions###
 

@@ -1,6 +1,9 @@
 #This is a simple file for storing the automatically loaded trace_styles_collection dictionary for JSONGrapher.
 #It is not recommended that a person overwrite this file.
 
+#Any styles upgrades made to this file should be made to both the javascript and the python version.
+#The javascript version files are at: https://github.com/AdityaSavara/JSONGrapher/tree/main/styles
+
 #each dictionary below is one 'trace_styles_collection'. "default" is the first one.
 styles_library = {
     "default": {
@@ -73,7 +76,12 @@ styles_library = {
             "mode": "lines+markers",
             "line": {"shape": "spline", "width": 2},
             "marker": {"size": 10},
-        },        
+        },
+        "curve3d": {
+            "mode": "lines",
+            "type": "scatter3d",
+            "line": {"width":4}
+        },                
         "scatter3d": {
             "mode": "markers",
             "type": "scatter3d",

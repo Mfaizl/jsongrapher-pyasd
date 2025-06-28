@@ -1,6 +1,9 @@
 #This is a simple file for storing the automatically loaded trace_styles_collection dictionary for JSONGrapher.
 #It is not recommended that a person overwrite this file.
 
+#Any styles upgrades made to this file should be made to both the javascript and the python version.
+#The javascript version files are at: https://github.com/AdityaSavara/JSONGrapher/tree/main/styles
+
 #each dictionary below, like "default" or "Nature" is one 'layout_style'.
 #Currently, the style names are case sensitive. In the future, it is likely they will not be case sensitive.
 styles_library = {
@@ -15,6 +18,17 @@ styles_library = {
                 }
             }
         },
+        "offset2d": {
+            "layout": {
+                "title": {"font": {"size": 32}, "x": 0.5},
+                "xaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
+                "yaxis": {"title": {"font": {"size": 27}}, "tickfont": {"size": 23}},
+                "legend": {
+                    "title": {"font": {"size": 22}},
+                    "font": {"size": 22}
+                }
+            }
+        },        
         "default3d": {
             "layout": {
                 "scene": {"aspectmode":"cube"},
@@ -28,6 +42,19 @@ styles_library = {
                 }
             }
         },
+        "arrange2dTo3d": {
+            "layout": {
+                "scene": {"aspectmode":"cube"},
+                "title": {"font": {"size": 32}, "x": 0.5},
+                "xaxis": {"title": {"font": {"size": 12}}, "tickfont": {"size": 12}},
+                "yaxis": {"title": {"font": {"size": 12}}, "tickfont": {"size": 12}},
+                "zaxis": {"title": {"font": {"size": 12}}, "tickfont": {"size": 12}},
+                "legend": {
+                    "title": {"font": {"size": 22}},
+                    "font": {"size": 22}
+                }
+            }
+        },        
         "Nature": {
             "layout": {
                 "title": {"font": {"size": 32, "family": "Times New Roman", "color": "black"}},

@@ -1388,7 +1388,7 @@ class JSONGrapherRecord:
         return json.dumps(self.fig_dict, indent=4)
 
 
-    def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
+    def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
         """
         Adds a new x,y data series to the fig_dict with optional metadata, styling, and simulation support.
 
@@ -1399,7 +1399,7 @@ class JSONGrapherRecord:
             simulate (dict, optional): Dictionary specifying on-the-fly simulation parameters.
             simulate_as_added (bool): If True, and if the 'simulate' field is present, then attempts to simulate this series immediately upon addition.
             comments (str): Description or annotations tied to the data series.
-            trace_style (str): Visual representation type (e.g., scatter, line, spline, bar).
+            trace_style (str or dict): trace_style for the data_series (e.g., scatter, line, spline, bar).
             uid (str): Optional unique ID (e.g., DOI) linked to the series.
             line (dict): Dictionary of visual line properties like shape or width.
             extra_fields (dict): A dictionary with custom keys and values to add into the data_series dictionary.
@@ -1445,9 +1445,9 @@ class JSONGrapherRecord:
             data_series_dict["comments"] = comments
         if len(uid) > 0:
             data_series_dict["uid"] = uid
-        if len(line) > 0:
+        if line: #This checks variable is not None, and not empty.
             data_series_dict["line"] = line
-        if len(trace_style) > 0:
+        if trace_style: #This checks variable is not None, and not empty.
             data_series_dict['trace_style'] = trace_style
         #add simulate field if included.
         if simulate:
@@ -1469,7 +1469,11 @@ class JSONGrapherRecord:
         self.fig_dict["data"].append(data_series_dict) #implied return.
         return data_series_dict
 
-    def add_data_series_as_equation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style="", uid="", line="", extra_fields=None):
+    def add_data_series_as_simulation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, simulate_dict=None, simulate_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
+        print("This feature, add_data_series_as_simulation, is not yet implemented. JSONGrapher did not add the series. For now, use add_data_series to add series with simulate fields.")
+        pass #TODO: fill out the logic needed to create a data_series_as_simulation. Look at the regular add_data_series and the add_data_series_as_equation functions, for comparison. Also, should probably change both this and add_data_seris_as_equation into wrappers around add_data_series.
+
+    def add_data_series_as_equation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
         """
         Adds a new data series to the fig_dict using an equation instead of raw data points.
 
@@ -1529,9 +1533,9 @@ class JSONGrapherRecord:
             data_series_dict["comments"] = comments
         if len(uid) > 0:
             data_series_dict["uid"] = uid
-        if len(line) > 0:
+        if line: 
             data_series_dict["line"] = line
-        if len(trace_style) > 0:
+        if trace_style:
             data_series_dict['trace_style'] = trace_style
         #add equation field if included.
         if equation_dict:
@@ -1724,13 +1728,13 @@ class JSONGrapherRecord:
     
     def import_from_file(self, record_filename_or_object):
         """
-        Imports a record from a supported file type or directly from a dictionary, and converts it into fig_dict format.
+        Imports a record from a supported file type or dictionary to create a fig_dict.
             - Automatically detects file type via extension when a string path is provided.
             - CSV/TSV content is handled using import_from_csv with delimiter selection.
             - JSON files and dictionaries are passed directly to import_from_json.
 
         Args:
-            record_filename_or_object (str or dict): A file path pointing to a CSV, TSV, or JSON file,
+            record_filename_or_object (str or dict): A file path for a CSV, TSV, or JSON file,
                 or a dictionary representing a JSONGrapher record.
 
         Returns:
@@ -1764,7 +1768,7 @@ class JSONGrapherRecord:
     def import_from_json(self, json_filename_or_object):
         """
         Imports a fig_dict from a JSON-formatted string, file path, or dictionary.
-            - If a string is passed, the method first attempts to parse it as a JSON-formatted string.
+            - If a string is passed, the method attempts to parse it as a JSON-formatted string.
             - If parsing fails, it attempts to treat the string as a file path to a JSON file.
             - If the file isn’t found, it appends ".json" and tries again.
             - If a dictionary is passed, it is directly assigned to fig_dict.
@@ -1772,7 +1776,7 @@ class JSONGrapherRecord:
               improper quote usage or malformed booleans.
 
         Args:
-            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dictionary 
+            json_filename_or_object (str or dict): A JSON string, a path to a .json file, or a dict
                 representing a valid fig_dict structure.
 
         Returns:
@@ -1785,7 +1789,7 @@ class JSONGrapherRecord:
             except json.JSONDecodeError as e1:  # Catch specific exception
                 try:
                     import os
-                    #if the filename does not exist, then we'll check if adding ".json" fixes the problem.
+                    #if the filename does not exist, check if adding ".json" fixes the problem.
                     if not os.path.exists(json_filename_or_object):
                         json_added_filename = json_filename_or_object + ".json"
                         if os.path.exists(json_added_filename): json_filename_or_object = json_added_filename #only change the filename if the json_filename exists.
@@ -2058,6 +2062,8 @@ class JSONGrapherRecord:
             dict: The fig_dict after all specified operations.
 
         """
+        import copy
+        original_fig_dict = copy.deepcopy(self.fig_dict)
         #if simulate_all_series is true, we'll try to simulate any series that need it, then clean the simulate fields out if requested.
         if simulate_all_series == True:
             self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
@@ -2080,7 +2086,33 @@ class JSONGrapherRecord:
             #Write to file using UTF-8 encoding.
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(self.fig_dict, f, indent=4)
-        return self.fig_dict
+        modified_fig_dict = self.fig_dict #store the modified fig_dict for return .
+        self.fig_dict = original_fig_dict #restore the original fig_dict.
+        return modified_fig_dict
+
+    def get_plotly_json(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True,adjust_implicit_data_ranges=True):
+        """
+        Generates a Plotly-compatible JSON from the current fig_dict
+            - Relies on get_plotly_fig() for figure construction and formatting.
+
+        Args:
+            plot_style (dict, optional): plot_style to apply before exporting.
+            update_and_validate (bool): If True (default), cleans and validates the figure before export.
+            simulate_all_series (bool): If True (default), simulates any data series that include a 'simulate' field before exporting.
+            evaluate_all_equations (bool): If True (default), computes outputs for any equation-based series before exporting.
+            adjust_implicit_data_ranges (bool): If True (default), automatically adjusts 'equation' and 'simulate' series axis ranges to the data, for cases that are compatible with that feature.
+
+        Returns:
+            dict: The Plotly-compatible JSON object, a dictionary, which can be directly plotted with plotly.
+
+        """
+        fig = self.get_plotly_fig(plot_style=plot_style,
+                                  update_and_validate=update_and_validate, 
+                                  simulate_all_series=simulate_all_series, 
+                                  evaluate_all_equations=evaluate_all_equations, 
+                                  adjust_implicit_data_ranges=adjust_implicit_data_ranges)
+        plotly_json_string = fig.to_plotly_json()
+        return plotly_json_string
 
     def export_plotly_json(self, filename, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True,adjust_implicit_data_ranges=True):
         """
@@ -2100,8 +2132,7 @@ class JSONGrapherRecord:
             dict: The Plotly-compatible JSON object, a dictionary, which can be directly plotted with plotly.
 
         """
-        fig = self.get_plotly_fig(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
-        plotly_json_string = fig.to_plotly_json()
+        plotly_json_string = self.get_plotly_json(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         if len(filename) > 0: #this means we will be writing to file.
             # Check if the filename has an extension and append `.json` if not
             if '.json' not in filename.lower():
@@ -2212,8 +2243,8 @@ class JSONGrapherRecord:
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         fig = self.get_plotly_fig(plot_style=plot_style,
-                                  simulate_all_series=simulate_all_series, 
                                   update_and_validate=update_and_validate, 
+                                  simulate_all_series=simulate_all_series, 
                                   evaluate_all_equations=evaluate_all_equations, 
                                   adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         fig.show()
@@ -2222,7 +2253,7 @@ class JSONGrapherRecord:
 
 
     #simulate all series will simulate any series as needed.
-    def export_to_plotly_png(self, filename, simulate_all_series = True, update_and_validate=True, timeout=10):
+    def export_to_plotly_png(self, filename, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, timeout=10):
         """
         Exports the current fig_dict as a PNG image file using a Plotly-rendered figure.
         Notes:
@@ -2236,7 +2267,11 @@ class JSONGrapherRecord:
             timeout (int): Max number of seconds allotted to render and export the figure.
 
         """
-        fig = self.get_plotly_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
+        fig = self.get_plotly_fig(plot_style=plot_style,
+                                  update_and_validate=update_and_validate, 
+                                  simulate_all_series=simulate_all_series, 
+                                  evaluate_all_equations=evaluate_all_equations, 
+                                  adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         # Save the figure to a file, but use the timeout version.
         self.export_plotly_image_with_timeout(plotly_fig = fig, filename=filename, timeout=timeout)
 
@@ -2319,7 +2354,7 @@ class JSONGrapherRecord:
         return fig
 
     #simulate all series will simulate any series as needed.
-    def plot_with_matplotlib(self, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def plot_with_matplotlib(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
         """
         Displays the current fig_dict as a matplotlib figure with optional preprocessing and simulation.
 
@@ -2331,15 +2366,16 @@ class JSONGrapherRecord:
 
         """
         import matplotlib.pyplot as plt
-        fig = self.get_matplotlib_fig(simulate_all_series=simulate_all_series, 
+        fig = self.get_matplotlib_fig(plot_style=plot_style,
                                       update_and_validate=update_and_validate, 
+                                      simulate_all_series=simulate_all_series, 
                                       evaluate_all_equations=evaluate_all_equations, 
                                       adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         plt.show()
         plt.close(fig) #remove fig from memory.
 
     #simulate all series will simulate any series as needed.
-    def export_to_matplotlib_png(self, filename, simulate_all_series = True, update_and_validate=True):
+    def export_to_matplotlib_png(self, filename, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True):
         """
         Export the current fig_dict as a PNG image by rendering it with matplotlib.
             - Calls get_matplotlib_fig() to generate the figure.
@@ -2356,7 +2392,11 @@ class JSONGrapherRecord:
         # Ensure filename ends with .png
         if not filename.lower().endswith(".png"):
             filename += ".png"
-        fig = self.get_matplotlib_fig(simulate_all_series = simulate_all_series, update_and_validate=update_and_validate)       
+        fig = self.get_matplotlib_fig(plot_style=plot_style,
+                                      update_and_validate=update_and_validate, 
+                                      simulate_all_series=simulate_all_series, 
+                                      evaluate_all_equations=evaluate_all_equations, 
+                                      adjust_implicit_data_ranges=adjust_implicit_data_ranges)
         # Save the figure to a file
         fig.savefig(filename)
         plt.close(fig) #remove fig from memory.
@@ -2453,10 +2493,10 @@ class JSONGrapherRecord:
     def remove_plot_style(self):
         """
         Remove styling information from fig_dict, including the 'plot_style' field and associated formatting.
-            - Calls remove_plot_style_from_plotly_dict to strip trace_style and layout_style formatting.
+            - Calls remove_plot_style_from_fig_dict to strip trace_style and layout_style formatting.
         """
         self.fig_dict.pop("plot_style") #This line removes the field of plot_style from the fig_dict.
-        self.fig_dict = remove_plot_style_from_plotly_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
+        self.fig_dict = remove_plot_style_from_fig_dict(self.fig_dict) #This line removes the actual formatting from the fig_dict.
 
     def set_layout_style(self, layout_style):
         """
@@ -2480,12 +2520,12 @@ class JSONGrapherRecord:
     def extract_layout_style(self):
         """
         Extract the layout_style from fig_dict using a helper function.
-            - Calls extract_layout_style_from_plotly_dict to retrieve layout style information.
+            - Calls extract_layout_style_from_fig_dict to retrieve layout style information.
 
         Returns:
             str or dict: The extracted layout style, depending on how styles are stored.
         """
-        layout_style = extract_layout_style_from_plotly_dict(self.fig_dict)
+        layout_style = extract_layout_style_from_fig_dict(self.fig_dict)
         return layout_style
         
     def apply_trace_style_by_index(self, data_series_index, trace_styles_collection='', trace_style=''):
@@ -3220,7 +3260,7 @@ def apply_plot_style_to_plotly_dict(fig_dict, plot_style=None):
         fig_dict = apply_trace_styles_collection_to_plotly_dict(fig_dict=fig_dict,trace_styles_collection=plot_style["trace_styles_collection"])
     return fig_dict
 
-def remove_plot_style_from_plotly_dict(fig_dict):
+def remove_plot_style_from_fig_dict(fig_dict):
     """
     Removes both layout and trace styles from a Plotly figure dictionary.
 
@@ -3926,33 +3966,38 @@ def import_trace_styles_collection(filename):
     Reads a JSON-formatted file and extracts the trace_styles_collection
     identified by its embedded name. The function validates structure and
     ensures the expected format before returning the trace_styles_dictionary.
+    If there is no name in the dictionary, the dictionary is assumed to
+    be a trace_styles_collection dictionary, and the filename is used as the name.
 
     Args:
         filename (str): The name of the JSON file to import from. If the extension is
                         missing, ".json" will be appended automatically.
 
     Returns:
-        dict: A dictionary containing the imported trace_styles_collection.
+        dict: A dictionary containing the imported trace_styles_collection, or a trace_styles_collection dict directly.
 
     Raises:
         ValueError: If the JSON structure is malformed or the collection name is not found.
     """
-    # Ensure the filename ends with .json
+    import os
+    # Ensure the filename ends with .json. Add that extension if it's not present.
     if not filename.lower().endswith(".json"):
         filename += ".json"
-
     with open(filename, "r", encoding="utf-8") as file:  # Specify UTF-8 encoding for compatibility
         data = json.load(file)
 
     # Validate JSON structure
-    containing_dict = data.get("trace_styles_collection")
-    if not isinstance(containing_dict, dict):
+    dict_from_file = data.get("trace_styles_collection")
+    if not isinstance(dict_from_file, dict):
         raise ValueError("Error: Missing or malformed 'trace_styles_collection'.")
 
-    collection_name = containing_dict.get("name")
-    if not isinstance(collection_name, str) or collection_name not in containing_dict:
-        raise ValueError(f"Error: Expected dictionary '{collection_name}' is missing or malformed.")
-    trace_styles_collection  = containing_dict[collection_name]
+    collection_name = dict_from_file.get("name") #check if the dictionary has a name field.
+    if not isinstance(collection_name, str) or collection_name not in dict_from_file:
+        # Use filename without extension if there is no name field in the dictionary.
+        collection_name = os.path.splitext(os.path.basename(filename))[0]
+        trace_styles_collection = dict_from_file #Take the dictionary received directly, assume there is no containing dict.
+    else: #This is actually the normal case, that the trace_styles_collection will be in a containing dictionary.
+        trace_styles_collection  = dict_from_file[collection_name]
     # Return only the dictionary corresponding to the collection name
     return trace_styles_collection
 
@@ -4174,7 +4219,7 @@ def remove_layout_style_from_plotly_dict(fig_dict):
             fig_dict["plot_style"].pop("layout_style")
     return fig_dict
 
-def extract_layout_style_from_plotly_dict(fig_dict):
+def extract_layout_style_from_fig_dict(fig_dict):
     """
     Extracts a layout_style dictionary from a fig_dict by pulling out the cosmetic formatting layout properties.
 

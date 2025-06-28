@@ -3966,33 +3966,38 @@ def import_trace_styles_collection(filename):
     Reads a JSON-formatted file and extracts the trace_styles_collection
     identified by its embedded name. The function validates structure and
     ensures the expected format before returning the trace_styles_dictionary.
+    If there is no name in the dictionary, the dictionary is assumed to
+    be a trace_styles_collection dictionary, and the filename is used as the name.
 
     Args:
         filename (str): The name of the JSON file to import from. If the extension is
                         missing, ".json" will be appended automatically.
 
     Returns:
-        dict: A dictionary containing the imported trace_styles_collection.
+        dict: A dictionary containing the imported trace_styles_collection, or a trace_styles_collection dict directly.
 
     Raises:
         ValueError: If the JSON structure is malformed or the collection name is not found.
     """
-    # Ensure the filename ends with .json
+    import os
+    # Ensure the filename ends with .json. Add that extension if it's not present.
     if not filename.lower().endswith(".json"):
         filename += ".json"
-
     with open(filename, "r", encoding="utf-8") as file:  # Specify UTF-8 encoding for compatibility
         data = json.load(file)
 
     # Validate JSON structure
-    containing_dict = data.get("trace_styles_collection")
-    if not isinstance(containing_dict, dict):
+    dict_from_file = data.get("trace_styles_collection")
+    if not isinstance(dict_from_file, dict):
         raise ValueError("Error: Missing or malformed 'trace_styles_collection'.")
 
-    collection_name = containing_dict.get("name")
-    if not isinstance(collection_name, str) or collection_name not in containing_dict:
-        raise ValueError(f"Error: Expected dictionary '{collection_name}' is missing or malformed.")
-    trace_styles_collection  = containing_dict[collection_name]
+    collection_name = dict_from_file.get("name") #check if the dictionary has a name field.
+    if not isinstance(collection_name, str) or collection_name not in dict_from_file:
+        # Use filename without extension if there is no name field in the dictionary.
+        collection_name = os.path.splitext(os.path.basename(filename))[0]
+        trace_styles_collection = dict_from_file #Take the dictionary received directly, assume there is no containing dict.
+    else: #This is actually the normal case, that the trace_styles_collection will be in a containing dictionary.
+        trace_styles_collection  = dict_from_file[collection_name]
     # Return only the dictionary corresponding to the collection name
     return trace_styles_collection
 

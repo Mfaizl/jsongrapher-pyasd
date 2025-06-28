@@ -26,3 +26,5 @@ example_9_scatter3d_and_mesh3d_plots shows an example of 3D plots (both scatter3
 example_10_bubble_plot shows an example of how to create a bubble2d plot and also a bubble3d plot. The bubble size adds an extra dimension to the image.
 
 example_11_local_python_call shows an example where the json record calls a local python function to simulate and populate a dataseries. This feature requires the user's script to call the feature, for security reasons. The JSON record cannot call functions "by itself".
+
+example_12_offset_and_series2dTo3d shows an example where a series of 2d spectra are offset to or converted into a 3d image. This can also be done with timeseries, scatter, etc.

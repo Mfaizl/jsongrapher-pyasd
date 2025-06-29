@@ -2143,7 +2143,7 @@ class JSONGrapherRecord:
         return plotly_json_string
 
     #simulate all series will simulate any series as needed.
-    def get_plotly_fig(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, adjust_offset2d=True):
+    def get_plotly_fig(self, plot_style=None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, adjust_offset2d=True, adjust_arrange2dTo3d=True):
         """
         Constructs and returns a Plotly figure object based on the current fig_dict with optional preprocessing steps.
             - A deep copy of fig_dict is created to avoid unintended mutation of the source object.
@@ -2178,7 +2178,8 @@ class JSONGrapherRecord:
                                                                 simulate_all_series=simulate_all_series, 
                                                                 evaluate_all_equations=evaluate_all_equations, 
                                                                 adjust_implicit_data_ranges=adjust_implicit_data_ranges,
-                                                                adjust_offset2d = False)
+                                                                adjust_offset2d = False,
+                                                                adjust_arrange2dTo3d=False)
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
         original_fig_dict = copy.deepcopy(self.fig_dict) 
         #The adjust_offset2d should be on the copy, if requested.
@@ -2186,7 +2187,8 @@ class JSONGrapherRecord:
                                                                 simulate_all_series=False, 
                                                                 evaluate_all_equations=False, 
                                                                 adjust_implicit_data_ranges=False,
-                                                                adjust_offset2d=adjust_offset2d)
+                                                                adjust_offset2d=adjust_offset2d,
+                                                                adjust_arrange2dTo3d=adjust_arrange2dTo3d)
         #before cleaning and validating, we'll apply styles.
         plot_style = parse_plot_style(plot_style=plot_style)
         self.apply_plot_style(plot_style=plot_style)
@@ -2225,7 +2227,7 @@ class JSONGrapherRecord:
         return self.plot_with_plotly(plot_style=plot_style, update_and_validate=update_and_validate, simulate_all_series=simulate_all_series, evaluate_all_equations=evaluate_all_equations, adjust_implicit_data_ranges=adjust_implicit_data_ranges)
 
     #simulate all series will simulate any series as needed. If changing this function's arguments, also change those for self.plot()
-    def plot_with_plotly(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True):
+    def plot_with_plotly(self, plot_style = None, update_and_validate=True, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, browser=True):
         """
         Displays the current fig_dict as an interactive Plotly figure with optional preprocessing and styling.
         A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
@@ -2247,6 +2249,8 @@ class JSONGrapherRecord:
             plotly fig: A Plotly figure object rendered from the processed fig_dict. However, the main 'real' return is a graph window that pops up.
 
         """
+        if browser == True:
+            import plotly.io as pio; pio.renderers.default = "browser"#
         if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
             plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         fig = self.get_plotly_fig(plot_style=plot_style,
@@ -2319,7 +2323,7 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True, adjust_offset2d=True):
+    def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True, adjust_offset2d=True, adjust_arrange2dTo3d=True):
         """
         Constructs and returns a matplotlib figure generated from fig_dict, with optional simulation, preprocessing, and styling.
 
@@ -2348,15 +2352,17 @@ class JSONGrapherRecord:
                                                                 simulate_all_series=simulate_all_series, 
                                                                 evaluate_all_equations=evaluate_all_equations, 
                                                                 adjust_implicit_data_ranges=adjust_implicit_data_ranges,
-                                                                adjust_offset2d=False)
+                                                                adjust_offset2d = False,
+                                                                adjust_arrange2dTo3d=False)
         #Regardless of implicit data series, we make a fig_dict copy, because we will clean self.fig_dict for creating the new plotting fig object.
-        original_fig_dict = copy.deepcopy(self.fig_dict) #we will get a copy, because otherwise the original fig_dict will be forced to be overwritten.    
-        #We adjust the offsets only after copying, and adjust that one alone.
+        original_fig_dict = copy.deepcopy(self.fig_dict) 
+        #The adjust_offset2d should be on the copy, if requested.
         self.fig_dict = execute_implicit_data_series_operations(self.fig_dict, 
                                                                 simulate_all_series=False, 
                                                                 evaluate_all_equations=False, 
                                                                 adjust_implicit_data_ranges=False,
-                                                                adjust_offset2d=adjust_offset2d)
+                                                                adjust_offset2d=adjust_offset2d,
+                                                                adjust_arrange2dTo3d=adjust_arrange2dTo3d)
         #before cleaning and validating, we'll apply styles.
         plot_style = parse_plot_style(plot_style=plot_style)
         self.apply_plot_style(plot_style=plot_style)
@@ -5425,7 +5431,7 @@ def update_implicit_data_series_data(target_fig_dict, source_fig_dict, parallel_
     return updated_fig_dict
 
 
-def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, adjust_offset2d=False):
+def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, evaluate_all_equations=True, adjust_implicit_data_ranges=True, adjust_offset2d=False, adjust_arrange2dTo3d=False):
     """
     Processes data_series dicts in a fig_dict, executing simulate/equation-based series as needed, including setting the simulate/equation evaluation ranges as needed,
     then provides the simulated/equation-evaluated data into the original fig_dict without altering original fig_dict implicit ranges.
@@ -5482,7 +5488,60 @@ def execute_implicit_data_series_operations(fig_dict, simulate_all_series=True, 
         if "offset2d" in layout_style:
             #This case is different from others -- we will not modify target directly because we are not doing a merge.
             fig_dict = extract_and_implement_offsets(fig_dict_for_implicit, modify_target_directly = False) 
+    if adjust_arrange2dTo3d: #This should occur after simulations and evaluations because it could rely on them.
+        #First check if the layout style is that of an arrange2dTo3d graph.
+        layout_style = fig_dict.get("plot_style", {}).get("layout_style", "")
+        if "arrange2dTo3d" in layout_style:
+            #This case is different from others -- we will not modify target directly because we are not doing a merge.
+            fig_dict = implement_arrange2dTo3d(fig_dict_for_implicit, modify_target_directly = False) 
+
     return fig_dict
+
+
+def implement_arrange2dTo3d(fig_dict, modify_target_directly=False):
+    import copy
+    #TODO: add some logic that enables left, right, and vertical axes variables to be determined
+    #TODO: add some logic that enables the axes labels to be moved as needed.
+    scratch_fig_dict = copy.deepcopy(fig_dict) #initialize. This fig_dict will be modified with pre-processing, then drawn from.
+    modified_fig_dict = copy.deepcopy(fig_dict) #initialize.
+    vertical_axis_variable = fig_dict["layout"].get("vertical_axis_variable", {})
+    if len(vertical_axis_variable) == 0:#This means one was not provided, in which case we'll make a sequential graph with default, which makes y into the vertical axis.
+        vertical_axis_variable = 'y'
+    left_axis_variable = fig_dict["layout"].get("left_axis_variable", {})
+    if len(left_axis_variable) == 0:#This means one was not provided, in which case we'll make a sequential graph with default, which makes x into left axis.
+        left_axis_variable = 'x'
+    right_axis_variable = fig_dict["layout"].get("right_axis_variable", {})
+    if len(right_axis_variable) == 0:#This means one was not provided, in which case we'll make an ascending sequence for the right-axis, which we initiate as "ascending_sequence"
+        right_axis_variable = 'data_series_index_vector'        
+        #Now we'll populate the ascending sequence into each data_series.
+        for data_series_index in range(len(fig_dict["data"])):
+            length_needed = len(fig_dict["data"][data_series_index]["x"])
+            data_series_index_vector = [data_series_index] * length_needed #this repeats the data_series_index as many times as needed in a list.
+            scratch_fig_dict["data"][data_series_index]["data_series_index_vector"] = data_series_index_vector
+    #Now, need to rearrange the axes labels as needed.
+    # Ensure nested structure for xaxis, yaxis, and zaxis titles exists
+    #For plotly 3D axes: y is left, x is right, and z is up.
+    for axis in ["xaxis", "yaxis", "zaxis"]:
+        modified_fig_dict.setdefault("layout", {}).setdefault(axis, {}).setdefault("title", {})["text"] = ""
+    modified_fig_dict["layout"]["yaxis"]["title"]["text"] = scratch_fig_dict["layout"][str(left_axis_variable)+"axis"]["title"]["text"] 
+    if right_axis_variable != "data_series_index_vector":
+        modified_fig_dict["layout"]["xaxis"]["title"]["text"] = scratch_fig_dict["layout"][str(right_axis_variable)+"axis"]["title"]["text"]  
+    else: #This means it's sequence of data series.
+        modified_fig_dict["layout"]["xaxis"]["title"]["text"] = "Data Set"
+    modified_fig_dict["layout"]["zaxis"]["title"]["text"] = scratch_fig_dict["layout"][str(vertical_axis_variable)+"axis"]["title"]["text"]  
+    #Now, need to rearrange the variables as would be expected, and need to do it for each data series.
+    for data_series_index in range(len(fig_dict["data"])):
+        #We will support two trace_styles: scatter3d and curve3d.
+        if "scatter" in modified_fig_dict["data"][data_series_index]["trace_style"]:
+            modified_fig_dict["data"][data_series_index]["trace_style"] = "scatter3d" #This is currently the only supported trace style. Need to add some logic.
+        else:
+            modified_fig_dict["data"][data_series_index]["trace_style"] = "curve3d" #This is currently the only supported trace style. Need to add some logic.
+        #For plotly 3D axes: y is left, x is right, and z is up.
+        modified_fig_dict["data"][data_series_index]["y"] = scratch_fig_dict["data"][data_series_index][left_axis_variable]
+        modified_fig_dict["data"][data_series_index]["x"] = scratch_fig_dict["data"][data_series_index][right_axis_variable]
+        modified_fig_dict["data"][data_series_index]["z"] = scratch_fig_dict["data"][data_series_index][vertical_axis_variable]
+    return modified_fig_dict
+
 
 #Small helper function to find if an offset is a float scalar.
 def is_float_scalar(value):

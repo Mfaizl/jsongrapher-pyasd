@@ -2323,7 +2323,7 @@ class JSONGrapherRecord:
     #update_and_validate will 'clean' for plotly. 
     #In the case of creating a matplotlib figure, this really just means removing excess fields.
     #simulate all series will simulate any series as needed.
-    def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True, adjust_offset2d=True, adjust_arrange2dTo3d=True):
+    def get_matplotlib_fig(self, plot_style = None, update_and_validate=True, simulate_all_series = True, evaluate_all_equations = True, adjust_implicit_data_ranges=True, adjust_offset2d=True):
         """
         Constructs and returns a matplotlib figure generated from fig_dict, with optional simulation, preprocessing, and styling.
 

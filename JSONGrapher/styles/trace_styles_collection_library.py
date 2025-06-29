@@ -1,4 +1,5 @@
-#This is a simple file for storing the automatically loaded trace_styles_collection dictionary for JSONGrapher.
+#This is a simple file for storing the automatically loaded trace_styles_collection dictionary
+# for JSONGrapher.
 #It is not recommended that a person overwrite this file.
 
 #Any styles upgrades made to this file should be made to both the javascript and the python version.
@@ -44,7 +45,7 @@ styles_library = {
                             "colorscale": "viridis_r",
                             "showscale": True
                         }
-        },        
+        },
         "bubble2d": {
             "type": "scatter",
             "mode": "markers",
@@ -53,7 +54,7 @@ styles_library = {
                             "colorscale": "viridis_r",
                             "showscale": True
                         }
-        },     
+        },
         "spline": {
             "type": "scatter",
             "mode": "lines",
@@ -81,7 +82,7 @@ styles_library = {
             "mode": "lines",
             "type": "scatter3d",
             "line": {"width":4}
-        },                
+        },
         "scatter3d": {
             "mode": "markers",
             "type": "scatter3d",

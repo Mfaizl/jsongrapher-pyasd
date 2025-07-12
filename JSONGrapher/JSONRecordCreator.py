@@ -1916,47 +1916,53 @@ class JSONGrapherRecord:
             self.fig_dict["data"] = new_data
             return self.fig_dict
 
-    def export_to_csv(self, filename=None, delimiter=","):
+    def export_to_csv(self, filename=None, delimiter=",", 
+                      update_and_validate=True, validate=True, 
+                      simulate_all_series=True, remove_simulate_fields=False, 
+                      remove_equation_fields=False, remove_remaining_hints=False):
         """
-        Serializes a fig_dict into a CSV string. Supports both XYYY and XYXY layouts.
-        Allows an optional filename override.
+        Serializes fig_dict into a CSV file with optional preprocessing.
+        Returns the modified fig_dict like export_to_json_file.
 
         Args:
-            self with fig_dict (dict): Figure dictionary, with keys:
-                - comments (str)
-                - datatype (str)
-                - layout.title.text (str)  # interpreted as graph_title
-                - layout.xaxis.title.text (str)
-                - layout.yaxis.title.text (str)
-                - data (list of dicts, each with 'name', 'x', 'y')
-            filename (str, optional): If provided, used as the CSV filename.
-                Defaults to "mergedJSONGrapherRecord.csv" when omitted.
+            filename (str, optional): Destination filename. Appends '.csv' if missing.
             delimiter (str): Field separator. Defaults to ','.
+            update_and_validate (bool): Apply corrections before validation.
+            validate (bool): Perform validation without corrections.
+            simulate_all_series (bool): Simulate any series with simulate fields.
+            remove_simulate_fields (bool): Remove 'simulate' fields if True.
+            remove_equation_fields (bool): Remove 'equation' fields if True.
+            remove_remaining_hints (bool): Remove developer hints if True.
 
         Returns:
-            tuple: (csv_string, out_filename)
+            dict: The fig_dict after processing.
         """
+        import copy
+        original_fig_dict = copy.deepcopy(self.fig_dict)
+
+        if simulate_all_series:
+            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        if remove_simulate_fields:
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
+        if remove_equation_fields:
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['equation'])
+        if remove_remaining_hints:
+            self.remove_hints()
+        if update_and_validate:
+            self.update_and_validate_JSONGrapher_record()
+        elif validate:
+            self.validate_JSONGrapher_record()
+
         fig_dict = self.fig_dict
-        # Extract metadata
         comments    = fig_dict.get("comments", "")
         datatype    = fig_dict.get("datatype", "")
-        graph_title = fig_dict.get("layout", {}) \
-                            .get("title", {}) \
-                            .get("text", "")
-        x_label     = fig_dict.get("layout", {}) \
-                            .get("xaxis", {}) \
-                            .get("title", {}) \
-                            .get("text", "")
-        y_label     = fig_dict.get("layout", {}) \
-                            .get("yaxis", {}) \
-                            .get("title", {}) \
-                            .get("text", "")
+        graph_title = fig_dict.get("layout", {}).get("title", {}).get("text", "")
+        x_label     = fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", "")
+        y_label     = fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", "")
         data_sets   = fig_dict.get("data", [])
 
-        # Build series names line
         series_names = delimiter.join(ds.get("name", "") for ds in data_sets)
 
-        # Header lines
         lines = [
             f"comments: {comments}",
             f"datatype: {datatype}",
@@ -1966,28 +1972,21 @@ class JSONGrapherRecord:
             f"series_names:{delimiter}{series_names}"
         ]
 
-        # Detect XYYY vs XYXY layout
-        # Check if all of the x columns exist and are the same.
         all_x = [ds.get("x", []) for ds in data_sets]
         is_xyyy = bool(all_x) and all(x == all_x[0] for x in all_x)
 
         if is_xyyy:
-            # XYYY: one x column, multiple y columns
             y_headers = [f"y_{i+1}" for i in range(len(data_sets))]
             lines.append(delimiter.join(["x_values"] + y_headers))
-
-            length = len(all_x[0])
-            for i in range(length):
+            for i in range(len(all_x[0])):
                 row = [str(all_x[0][i])]
                 for ds in data_sets:
                     y_vals = ds.get("y", [])
                     row.append(str(y_vals[i]) if i < len(y_vals) else "")
                 lines.append(delimiter.join(row))
         else:
-            # XYXY: each series has its own x,y pair
             headers = [f"x_{i+1}{delimiter}y_{i+1}" for i in range(len(data_sets))]
             lines.append(delimiter.join(headers))
-
             max_len = max((len(ds.get("x", [])) for ds in data_sets), default=0)
             for i in range(max_len):
                 row_cells = []
@@ -1999,10 +1998,19 @@ class JSONGrapherRecord:
                     row_cells.extend([xv, yv])
                 lines.append(delimiter.join(row_cells))
 
-        # Final CSV string and default filename
         csv_string = "\r\n".join(lines) + "\r\n"
         out_filename = filename if filename else "mergedJSONGrapherRecord.csv"
-        return csv_string, out_filename
+
+        if len(out_filename) > 0:
+            if '.csv' not in out_filename.lower():
+                out_filename += ".csv"
+            with open(out_filename, 'w', encoding='utf-8') as f:
+                f.write(csv_string)
+
+        modified_fig_dict = self.fig_dict
+        self.fig_dict = original_fig_dict
+        return modified_fig_dict
+
 
     def set_datatype(self, datatype):
         """

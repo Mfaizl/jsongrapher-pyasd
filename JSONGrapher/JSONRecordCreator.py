@@ -1806,66 +1806,211 @@ class JSONGrapherRecord:
             return self.fig_dict
 
     def import_from_csv(self, filename, delimiter=","):
+            """
+            Imports a CSV or TSV file and converts its contents into a fig_dict.
+                - The input file must follow a specific format, as of 6/25/25, but this may be made more general in the future.
+                    * Lines 1–5 define config metadata (e.g., comments, datatype, axis labels).
+                    * Line 6 defines series names.
+                    * Data rows begin on line 9.
+                    * The data table portion of the file can be xyxy or xyyy data.
+
+            Args:
+                filename (str): File path to the CSV or TSV file. If no extension is provided,
+                    ".csv" or ".tsv" is inferred based on the delimiter.
+                delimiter (str, optional): Field separator character. Defaults to ",". Use "\\t" for TSV files.
+
+            Returns:
+                dict: The created fig_dict.
+
+            """
+            import os
+            import math
+
+            # Ensure correct file extension
+            file_extension = os.path.splitext(filename)[1]
+            if delimiter == "," and not file_extension: #for no extension present.
+                filename += ".csv"
+            elif delimiter == "\t" and not file_extension:  #for no extension present.
+                filename += ".tsv"
+
+            with open(filename, "r", encoding="utf-8") as file:
+                file_content = file.read().strip()
+
+            arr = file_content.split("\n") #separate the rows.
+            if len(arr[-1].strip()) < 2:
+                arr = arr[:-1]  # Trim empty trailing line
+
+            # Extract metadata
+            comments = arr[0].split(delimiter)[0].split(":")[1].strip()
+            datatype = arr[1].split(delimiter)[0].split(":")[1].strip()
+            chart_label = arr[2].split(delimiter)[0].split(":")[1].strip()
+            x_label = arr[3].split(delimiter)[0].split(":")[1].strip()
+            y_label = arr[4].split(delimiter)[0].split(":")[1].strip()
+            series_names_array = [
+                n.strip() for n in arr[5].split(":")[1].split('"')[0].split(delimiter)
+                if n.strip()
+            ]
+
+            raw_data = [row.split(delimiter) for row in arr[8:]]
+            column_count = len(raw_data[0])
+            
+            # Format detection
+            series_columns_format = "xyyy"  # assume xyyy as default
+            if column_count >= 4:
+                last_row = raw_data[-1]
+                for i in range(1, column_count, 2):
+                    # Get last row, with failsafe that handles rows that may 
+                    # have missing delimiters or fewer columns than expected
+                    val = last_row[i] if i < len(last_row) else ""
+                    try:
+                        num = float(val)
+                        if math.isnan(num):
+                            series_columns_format = "xyxy"
+                            break
+                    except (ValueError, TypeError):
+                        series_columns_format = "xyxy"
+                        break
+
+            # Prepare fig_dict
+            self.fig_dict["comments"] = comments
+            self.fig_dict["datatype"] = datatype
+            self.fig_dict["layout"]["title"] = {"text": chart_label}
+            self.fig_dict["layout"]["xaxis"]["title"] = {"text": x_label}
+            self.fig_dict["layout"]["yaxis"]["title"] = {"text": y_label}
+
+            #Create the series data sets.
+            new_data = []
+
+            if series_columns_format == "xyyy":
+                parsed_data = [[float(val) if val.strip() else None for val in row] for row in raw_data]
+                for i in range(1, column_count):
+                    x_series = [row[0] for row in parsed_data if row[0] is not None]
+                    y_series = [row[i] for row in parsed_data if row[i] is not None]
+                    data_series_dict = {
+                        "name": series_names_array[i - 1] if i - 1 < len(series_names_array) else f"Series {i}",
+                        "x": x_series,
+                        "y": y_series,
+                        "uid": str(i - 1)
+                    }
+                    new_data.append(data_series_dict)
+            else:  # xyxy format
+                for i in range(0, column_count, 2):
+                    x_vals = []
+                    y_vals = []
+                    for row in raw_data:
+                        try:
+                            x = float(row[i])
+                            y = float(row[i + 1])
+                            x_vals.append(x)
+                            y_vals.append(y)
+                        except (ValueError, IndexError):
+                            continue
+                    series_number = i // 2
+                    data_series_dict = {
+                        "name": series_names_array[series_number] if series_number < len(series_names_array) else f"Series {series_number + 1}",
+                        "x": x_vals,
+                        "y": y_vals,
+                        "uid": str(series_number)
+                    }
+                    new_data.append(data_series_dict)
+            self.fig_dict["data"] = new_data
+            return self.fig_dict
+
+    def export_to_csv(self, filename=None, delimiter=",", 
+                      update_and_validate=True, validate=True, 
+                      simulate_all_series=True, remove_simulate_fields=False, 
+                      remove_equation_fields=False, remove_remaining_hints=False):
         """
-        Imports a CSV or TSV file and converts its contents into a fig_dict.
-            - The input file must follow a specific format, as of 6/25/25, but this may be made more general in the future.
-                * Lines 1–5 define config metadata (e.g., comments, datatype, axis labels).
-                * Line 6 defines series names.
-                * Data rows begin on line 9.
+        Serializes fig_dict into a CSV file with optional preprocessing.
+        Returns the modified fig_dict like export_to_json_file.
 
         Args:
-            filename (str): File path to the CSV or TSV file. If no extension is provided,
-                ".csv" or ".tsv" is inferred based on the delimiter.
-            delimiter (str, optional): Field separator character. Defaults to ",". Use "\\t" for TSV files.
+            filename (str, optional): Destination filename. Appends '.csv' if missing.
+            delimiter (str): Field separator. Defaults to ','.
+            update_and_validate (bool): Apply corrections before validation.
+            validate (bool): Perform validation without corrections.
+            simulate_all_series (bool): Simulate any series with simulate fields.
+            remove_simulate_fields (bool): Remove 'simulate' fields if True.
+            remove_equation_fields (bool): Remove 'equation' fields if True.
+            remove_remaining_hints (bool): Remove developer hints if True.
 
         Returns:
-            dict: The created fig_dict.
-
+            dict: The fig_dict after processing.
         """
-        import os  
-        # Modify the filename based on the delimiter and existing extension
-        file_extension = os.path.splitext(filename)[1]
-        if delimiter == "," and not file_extension:  # No extension present
-            filename += ".csv"
-        elif delimiter == "\t" and not file_extension:  # No extension present
-            filename += ".tsv"
-        with open(filename, "r", encoding="utf-8") as file:
-            file_content = file.read().strip()
-        # Separate rows
-        arr = file_content.split("\n")
-        # Count number of columns
-        number_of_columns = len(arr[5].split(delimiter))
-        # Extract config information
-        comments = arr[0].split(delimiter)[0].split(":")[1].strip()
-        datatype = arr[1].split(delimiter)[0].split(":")[1].strip()
-        chart_label = arr[2].split(delimiter)[0].split(":")[1].strip()
-        x_label = arr[3].split(delimiter)[0].split(":")[1].strip()
-        y_label = arr[4].split(delimiter)[0].split(":")[1].strip()
-        # Extract series names
-        series_names_array = [
-            n.strip()
-            for n in arr[5].split(":")[1].split('"')[0].split(delimiter)
-            if n.strip()
+        import copy
+        original_fig_dict = copy.deepcopy(self.fig_dict)
+
+        if simulate_all_series:
+            self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)
+        if remove_simulate_fields:
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['simulate'])
+        if remove_equation_fields:
+            self.fig_dict = clean_json_fig_dict(self.fig_dict, fields_to_update=['equation'])
+        if remove_remaining_hints:
+            self.remove_hints()
+        if update_and_validate:
+            self.update_and_validate_JSONGrapher_record()
+        elif validate:
+            self.validate_JSONGrapher_record()
+
+        fig_dict = self.fig_dict
+        comments    = fig_dict.get("comments", "")
+        datatype    = fig_dict.get("datatype", "")
+        graph_title = fig_dict.get("layout", {}).get("title", {}).get("text", "")
+        x_label     = fig_dict.get("layout", {}).get("xaxis", {}).get("title", {}).get("text", "")
+        y_label     = fig_dict.get("layout", {}).get("yaxis", {}).get("title", {}).get("text", "")
+        data_sets   = fig_dict.get("data", [])
+
+        series_names = delimiter.join(ds.get("name", "") for ds in data_sets)
+
+        lines = [
+            f"comments: {comments}",
+            f"datatype: {datatype}",
+            f"graph_title: {graph_title}",
+            f"x_label: {x_label}",
+            f"y_label: {y_label}",
+            f"series_names:{delimiter}{series_names}"
         ]
-        # Extract data
-        data = [[float(str_val) for str_val in row.split(delimiter)] for row in arr[8:]]
-        self.fig_dict["comments"] = comments
-        self.fig_dict["datatype"] = datatype
-        self.fig_dict["layout"]["title"] = {"text": chart_label}
-        self.fig_dict["layout"]["xaxis"]["title"] = {"text": x_label}
-        self.fig_dict["layout"]["yaxis"]["title"] = {"text": y_label}
-        # Create series datasets
-        new_data = []
-        for index, series_name in enumerate(series_names_array):
-            data_series_dict = {}
-            data_series_dict["name"] = series_name
-            data_series_dict["x"] = [row[0] for row in data]
-            data_series_dict["y"] = [row[index + 1] for row in data]
-            data_series_dict["uid"] = str(index)
-            new_data.append(data_series_dict)
-        self.fig_dict["data"] = new_data
-        self.fig_dict = self.fig_dict
-        return self.fig_dict 
+
+        all_x = [ds.get("x", []) for ds in data_sets]
+        is_xyyy = bool(all_x) and all(x == all_x[0] for x in all_x)
+
+        if is_xyyy:
+            y_headers = [f"y_{i+1}" for i in range(len(data_sets))]
+            lines.append(delimiter.join(["x_values"] + y_headers))
+            for i in range(len(all_x[0])):
+                row = [str(all_x[0][i])]
+                for ds in data_sets:
+                    y_vals = ds.get("y", [])
+                    row.append(str(y_vals[i]) if i < len(y_vals) else "")
+                lines.append(delimiter.join(row))
+        else:
+            headers = [f"x_{i+1}{delimiter}y_{i+1}" for i in range(len(data_sets))]
+            lines.append(delimiter.join(headers))
+            max_len = max((len(ds.get("x", [])) for ds in data_sets), default=0)
+            for i in range(max_len):
+                row_cells = []
+                for ds in data_sets:
+                    x_vals = ds.get("x", [])
+                    y_vals = ds.get("y", [])
+                    xv = str(x_vals[i]) if i < len(x_vals) else ""
+                    yv = str(y_vals[i]) if i < len(y_vals) else ""
+                    row_cells.extend([xv, yv])
+                lines.append(delimiter.join(row_cells))
+
+        csv_string = "\r\n".join(lines) + "\r\n"
+        out_filename = filename if filename else "mergedJSONGrapherRecord.csv"
+
+        if len(out_filename) > 0:
+            if '.csv' not in out_filename.lower():
+                out_filename += ".csv"
+            with open(out_filename, 'w', encoding='utf-8') as f:
+                f.write(csv_string)
+
+        modified_fig_dict = self.fig_dict
+        self.fig_dict = original_fig_dict
+        return modified_fig_dict
+
 
     def set_datatype(self, datatype):
         """

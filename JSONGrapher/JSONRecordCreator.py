@@ -1916,6 +1916,93 @@ class JSONGrapherRecord:
             self.fig_dict["data"] = new_data
             return self.fig_dict
 
+    def export_to_csv(self, filename=None, delimiter=","):
+        """
+        Serializes a fig_dict into a CSV string. Supports both XYYY and XYXY layouts.
+        Allows an optional filename override.
+
+        Args:
+            self with fig_dict (dict): Figure dictionary, with keys:
+                - comments (str)
+                - datatype (str)
+                - layout.title.text (str)  # interpreted as graph_title
+                - layout.xaxis.title.text (str)
+                - layout.yaxis.title.text (str)
+                - data (list of dicts, each with 'name', 'x', 'y')
+            filename (str, optional): If provided, used as the CSV filename.
+                Defaults to "mergedJSONGrapherRecord.csv" when omitted.
+            delimiter (str): Field separator. Defaults to ','.
+
+        Returns:
+            tuple: (csv_string, out_filename)
+        """
+        fig_dict = self.fig_dict
+        # Extract metadata
+        comments    = fig_dict.get("comments", "")
+        datatype    = fig_dict.get("datatype", "")
+        graph_title = fig_dict.get("layout", {}) \
+                            .get("title", {}) \
+                            .get("text", "")
+        x_label     = fig_dict.get("layout", {}) \
+                            .get("xaxis", {}) \
+                            .get("title", {}) \
+                            .get("text", "")
+        y_label     = fig_dict.get("layout", {}) \
+                            .get("yaxis", {}) \
+                            .get("title", {}) \
+                            .get("text", "")
+        data_sets   = fig_dict.get("data", [])
+
+        # Build series names line
+        series_names = delimiter.join(ds.get("name", "") for ds in data_sets)
+
+        # Header lines
+        lines = [
+            f"comments: {comments}",
+            f"datatype: {datatype}",
+            f"graph_title: {graph_title}",
+            f"x_label: {x_label}",
+            f"y_label: {y_label}",
+            f"series_names:{delimiter}{series_names}"
+        ]
+
+        # Detect XYYY vs XYXY layout
+        # Check if all of the x columns exist and are the same.
+        all_x = [ds.get("x", []) for ds in data_sets]
+        is_xyyy = bool(all_x) and all(x == all_x[0] for x in all_x)
+
+        if is_xyyy:
+            # XYYY: one x column, multiple y columns
+            y_headers = [f"y_{i+1}" for i in range(len(data_sets))]
+            lines.append(delimiter.join(["x_values"] + y_headers))
+
+            length = len(all_x[0])
+            for i in range(length):
+                row = [str(all_x[0][i])]
+                for ds in data_sets:
+                    y_vals = ds.get("y", [])
+                    row.append(str(y_vals[i]) if i < len(y_vals) else "")
+                lines.append(delimiter.join(row))
+        else:
+            # XYXY: each series has its own x,y pair
+            headers = [f"x_{i+1}{delimiter}y_{i+1}" for i in range(len(data_sets))]
+            lines.append(delimiter.join(headers))
+
+            max_len = max((len(ds.get("x", [])) for ds in data_sets), default=0)
+            for i in range(max_len):
+                row_cells = []
+                for ds in data_sets:
+                    x_vals = ds.get("x", [])
+                    y_vals = ds.get("y", [])
+                    xv = str(x_vals[i]) if i < len(x_vals) else ""
+                    yv = str(y_vals[i]) if i < len(y_vals) else ""
+                    row_cells.extend([xv, yv])
+                lines.append(delimiter.join(row_cells))
+
+        # Final CSV string and default filename
+        csv_string = "\r\n".join(lines) + "\r\n"
+        out_filename = filename if filename else "mergedJSONGrapherRecord.csv"
+        return csv_string, out_filename
 
     def set_datatype(self, datatype):
         """

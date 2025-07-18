@@ -20,9 +20,15 @@ class DragDropApp:
     (function_for_after_file_addition) is invoked with two lists: 
     all_selected_file_paths and newly_added_file_paths.
 
-    The app displays selected filenames, allows clearing the selection,
+    The callback function allows the developer's main program
+    to take actions after the user has selected files.
+    For example, with JSONGrapher, data is read in and merged into
+    a global dataset each time a file is selected. 
+
+    The app enables chosing files, displays selected filenames, allows clearing the selection,
     and can optionally download processed output returned by the callback function.
-    The class must be initialized using the companion function `create_and_launch`.
+    The class *cannot* be initaited directly, it 
+    must be initialized using the companion function `create_and_launch`.
 
     Attributes:
         root (Tk): The main Tkinter window object.

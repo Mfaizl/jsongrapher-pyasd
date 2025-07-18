@@ -573,7 +573,14 @@ def generate_points_from_range_dict(range_dict, variable_name="x"):
     values from a range_dict.
 
     This function extracts the relevant range and point-generation parameters based
-    on naming conventions. It applies range narrowing if stricter limits are provided,
+    on naming conventions.
+
+    The function follows these rules:
+    1. If '{variable_name}_range_limits' is provided as a list of two numbers, it is used as the range.
+    2. Otherwise, '{variable_name}_range_default' is used as the range.
+    3. Calls generate_points_by_spacing() to generate the appropriate sequence based on num_of_points and points_spacing.
+    
+    It applies range narrowing if stricter limits are provided,
     and delegates the generation logic to `generate_points_by_spacing()` using the
     determined boundaries and settings.
 
@@ -637,7 +644,7 @@ def generate_points_from_range_dict(range_dict, variable_name="x"):
 
 def return_custom_units_markup(units_string, custom_units_list):
     """
-    Wraps custom unit labels in markup using angle brackets for tagging.
+    Wraps specified custom units in a string using angle brackets, with '<' and '>' so they are tagged.
 
     The function first sorts the custom unit list from longest to shortest to avoid
     premature replacement conflicts (e.g., 'meter' before 'm'). It then iterates

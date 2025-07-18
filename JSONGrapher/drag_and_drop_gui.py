@@ -30,7 +30,7 @@ class DragDropApp:
         function_for_after_file_addition (Callable): User-defined function to be called 
             whenever new files are added.
         drop_frame (tk.Label): Drop zone for drag-and-drop file addition.
-        file_listbox (tk.Listbox): Visual list displaying selected filenames.
+        file_listbox (tk.Listbox): Visual list displaying a list of filenames in a 'listbox' of the GUI
         select_button (tk.Button): Opens file dialog for manual selection.
         clear_button (tk.Button): Clears all selected files.
         download_button (tk.Button): Saves the output from the callback function.

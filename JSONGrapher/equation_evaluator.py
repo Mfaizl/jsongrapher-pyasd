@@ -5,9 +5,52 @@ import re
 ureg = UnitRegistry()
 
 def parse_equation(equation_str, variables):
-    """Replace variable names and standalone numbers with their magnitudes and formatted units."""
+    """
+    Parses an equation string by substituting variable names and standalone numbers
+    with their magnitudes and formatted units.
+
+    Variable names are replaced with their magnitudes and unit representations, while
+    numeric values followed by unit labels are detected and transformed into structured
+    unit expressions. Constants without magnitude attributes are substituted directly
+    with their values.
+
+    Args:
+        equation_str (str): The raw equation containing variable names and/or 
+            standalone numeric-unit pairs.
+        variables (dict): A dictionary mapping variable names to values. Values
+            may be plain constants or Pint quantities with magnitude and units.
+
+    Returns:
+        str: A modified equation string in which all applicable values are replaced
+            with their corresponding magnitudes and formatted units.
+
+    Example:
+        Given `equation_str = "F = m * a + 10 kg"` and 
+        `variables = {"m": 5 * ureg.kg, "a": 2 * ureg.m / ureg.s**2}`,
+        the result would be:
+        `"F = (5 * kilogram) * (2 * meter / second ** 2) + (10 * kilogram)"`
+    """
     def detect_and_format_units(equation_str):
-        """Detect standalone numbers with units and format them correctly."""
+        """
+        Detects standalone numbers followed by unit symbols within an equation string
+        and reformats them into structured magnitude-unit expressions.
+
+        Uses pattern matching to identify numeric-unit pairs (e.g., "10 m") and wraps
+        each as "(magnitude * unit)" using Pint for unit interpretation. Supports both
+        integer and decimal formats and gracefully ignores invalid conversions.
+
+        Args:
+            equation_str (str): A string containing equations with numeric-unit patterns
+                such as "3.5 kg", "10 m", or "100s".
+
+        Returns:
+            str: The modified equation string with valid numeric-unit pairs replaced
+                by formatted expressions like "(3.5 * kilogram)".
+
+        Example:
+            detect_and_format_units("10 m + 3.5 kg - 100s")
+            # Output: "(10 * meter) + (3.5 * kilogram) - (100 * second)"
+        """
         pattern = r"(\d+(\.\d+)?)\s*([a-zA-Z]+)"
         matches = re.findall(pattern, equation_str)
         # Explanation of regular expression parts
@@ -61,18 +104,40 @@ def parse_equation(equation_str, variables):
 
 def solve_equation(equation_string, independent_variables_values_and_units, dependent_variable):
     """
-        Solve for the specified dependent variable in terms of multiple independent variables.
-        # # Example usage
-        # independent_variables_values_and_units = {
-        #     "x": "2 m / s",
-        #     "y": "3 meter"
-        # }
-        # equation_string = "x * t + y = 10 m"
-        # solve_equation(equation_string, independent_variables_values_and_units, dependent_variable="t")
-        # It will solve for the value of t. 
-        # What is returned is a list of solutions.
-        # if there is any "^" in the equation, it will be changed to **
+    Solves a symbolic equation for a specified dependent variable using the provided
+    values and units for independent variables.
 
+    The equation string is transformed into a SymPy expression, with independent
+    variables substituted by their corresponding quantities. The function handles
+    unit-aware parsing and symbolic manipulation to extract clean, formatted solutions.
+    The caret operator (^) is internally replaced with "**" for compatibility with
+    Python exponentiation syntax.
+
+    Args:
+        equation_string (str): The equation containing a dependent variable and one
+            or more independent variables, formatted as a string (e.g., "x * t + y = 10 m").
+        independent_variables_values_and_units (dict): Dictionary mapping independent
+            variable names to their string-formatted values and units
+            (e.g., {"x": "2 m / s", "y": "3 meter"}).
+        dependent_variable (str): The name of the variable to solve for.
+
+    Returns:
+        list: A list of solution strings, each formatted with magnitude and unit
+            separated by a space in parentheses (e.g., ["2.5 (second)", "3.0 (second)"]).
+            A well behaved function has single solutions, but some equations can have
+            more than one solution, that is why a list is returned.
+
+    Example:
+        equation_string = "x * t + y = 10 m"
+        independent_variables_values_and_units = {
+            "x": "2 m / s",
+            "y": "3 meter"
+        }
+        dependent_variable = "t"
+
+        solve_equation(equation_string, independent_variables_values_and_units, dependent_variable)
+        # Output: ["3.5 (second)"]
+        # The returned output is a list of solutions.
     """
     # Convert string inputs into Pint quantities
     variables = {name: ureg(value) for name, value in independent_variables_values_and_units.items()}
@@ -109,7 +174,64 @@ def solve_equation(equation_string, independent_variables_values_and_units, depe
 
 
 def parse_equation_dict(equation_dict):
+    """
+    Parses a dictionary containing equation constants and extracts numeric values
+    along with their unit labels, if present.
+
+    Each constant in the dictionary is assumed to be a string formatted as either
+    "value (units)" or simply "value". The inner `extract_value_units` function handles
+    trimming and splitting the string, returning the value and unit separately.
+    Constants without a unit are stored with `None` as the unit.
+
+    Args:
+        equation_dict (dict): A dictionary mapping constant names to string
+            representations of values, optionally followed by units 
+            (e.g., {"g": "9.8 (m/s^2)", "pi": "3.1415"}).
+
+    Returns:
+        dict: A dictionary mapping each constant name to a list containing two elements:
+            the numeric value as a string or float, and the unit as a string or None.
+
+    Example:
+        equation_dict = {
+            "g": "9.8 (m/s^2)",
+            "c": "3.0e8 (m/s)",
+            "pi": "3.1415"
+        }
+
+        parse_equation_dict(equation_dict)
+        # Output: {
+        #     "g": ["9.8", "(m/s^2)"],
+        #     "c": ["3.0e8", "(m/s)"],
+        #     "pi": [3.1415, None]
+        # }
+    """
     def extract_value_units(entry):
+        """
+        Separates a numeric value and unit label from a formatted string entry.
+
+        The function trims surrounding whitespace, then splits the string at the first
+        space. If both a value and a unit are present, it returns them as separate elements.
+        If no unit is found, the numeric portion is converted to a float and returned
+        with `None` as the unit.
+
+        Args:
+            entry (str): A string containing a numerical value, optionally followed by
+                a unit (e.g., "3.5 (kg)", "42").
+
+        Returns:
+            list: A list of two elements —
+                - value (str or float): The extracted value as a string (if unit present)
+                or float (if no unit).
+                - unit (str or None): The associated unit string, or None if no unit exists.
+
+        Example:
+            extract_value_units("4.2 (m)")
+            # Output: ["4.2", "(m)"]
+
+            extract_value_units("100")
+            # Output: [100.0, None]
+        """
         trimmed_entry = entry.strip()  # Remove leading/trailing whitespace
         split_entry = trimmed_entry.split(" ", 1)  # Split on the first space
         if len(split_entry) > 1:
@@ -120,12 +242,64 @@ def parse_equation_dict(equation_dict):
             return [float(split_entry[0]), None]  # Handle constants without units
 
     def extract_constants(constants_dict):
+        """
+        Parses a dictionary of constants and extracts their numeric values along with
+        any associated unit labels.
+
+        Iterates over each entry in the input dictionary and delegates extraction of
+        value-unit pairs to `extract_value_units()`. Handles both constants with units
+        (e.g., "3.5 (kg)") and plain numeric values (e.g., "42").
+
+        Args:
+            constants_dict (dict): A dictionary mapping constant names to strings
+                containing values with optional units.
+
+        Returns:
+            dict: A dictionary mapping each constant name to a list with two elements —
+                the value and the unit string, or None if no unit is provided.
+
+        Example:
+            constants_dict = {
+                "R": "8.314 (J/(mol*K))",
+                "pi": "3.1415"
+            }
+
+            extract_constants(constants_dict)
+            # Output: {
+            #     "R": ["8.314", "(J/(mol*K))"],
+            #     "pi": [3.1415, None]
+            # }
+        """
         return {
             name: extract_value_units(value)
             for name, value in constants_dict.items()
         }
 
     def extract_equation(equation_string):
+        """
+        Extracts a list of variable-like tokens from an input equation string using
+        basic pattern matching.
+
+        Uses a regular expression to identify consecutive alphabetic sequences,
+        which typically correspond to variable names or function identifiers. All matches
+        are returned as a list alongside the original equation.
+
+        Args:
+            equation_string (str): A symbolic string expression containing variable names
+                (e.g., "E = mc^2", "k = A*exp(-Ea/(R*T))").
+
+        Returns:
+            dict: A dictionary with:
+                - "equation_string" (str): The original input string.
+                - "variables_list" (list): List of extracted alphabetic variable tokens.
+
+        Example:
+            extract_equation("k = A * (e ** ((-Ea) / (R * T)))")
+            # Output: {
+            #     "equation_string": "k = A * (e ** ((-Ea) / (R * T)))",
+            #     "variables_list": ["k", "A", "e", "Ea", "R", "T"]
+            # }
+        """
         variables_list = re.findall(r"([A-Za-z]+)", equation_string)
         return {"equation_string": equation_string, "variables_list": variables_list}
 
@@ -152,6 +326,33 @@ def parse_equation_dict(equation_dict):
         z_variable_extracted_dict = {"label": z_match[0], "units": z_match[1]}
 
     def prepare_independent_variables(constants_extracted_dict):
+        """
+        Formats a dictionary of constants into unit-aware strings for independent variable usage.
+
+        Combines numeric values and units into space-separated strings (e.g., "3.5 (kg)")
+        suitable for equation parsing and evaluation. If a constant lacks a unit, only
+        its value is included.
+
+        Args:
+            constants_extracted_dict (dict): Dictionary mapping constant names to a pair —
+                a numeric value (str or float) and an optional unit string (str or None).
+
+        Returns:
+            dict: A dictionary mapping each constant name to a formatted string suitable
+                for unit-aware symbolic substitution.
+
+        Example:
+            constants_extracted_dict = {
+                "Ea": ["30000", "((J)*(mol^(-1)))"],
+                "pi": [3.1415, None]
+            }
+
+            prepare_independent_variables(constants_extracted_dict)
+            # Output: {
+            #     "Ea": "30000 ((J)*(mol^(-1)))",
+            #     "pi": "3.1415"
+            # }
+        """
         independent_variables_dict = {
             name: f"{value} {units}" if units else f"{value}"
             for name, (value, units) in constants_extracted_dict.items()
@@ -184,25 +385,38 @@ def parse_equation_dict(equation_dict):
 
 def generate_multiplicative_points(range_min, range_max, num_of_points=None, factor=None, reverse_scaling=False):
     """
-    Generates a sequence of points using relative spacing within a normalized range.
-    
-    - Spacing between points changes multiplicatively (e.g., doubling means each interval doubles).
-    - Returns range_min and range_max explicitly in all cases.
-    - Works for negative values and cases where min is negative while max is positive.
-    - If `reverse_scaling` is True, exponential scaling occurs from the max end instead.
+    Generates a sequence of points using relative spacing within a normalized range,
+    and spacing is based on a multiplicative factor (uniform when factor is 1).
 
-    Parameters:
-    - range_min (float): The starting value of the sequence.
-    - range_max (float): The maximum limit for generated values.
-    - num_of_points (int, optional): Desired number of points (excluding min/max).
-    - factor (float, optional): Multiplication factor for spacing between successive values.
-    - reverse_scaling (bool, optional): If True, spacing is applied in reverse direction.
+    The function supports flexible spacing strategies, including equal intervals
+    or multiplicative increments controlled via a scaling factor. It also supports
+    reversed spacing (descending increment size), by instead applying
+    the algorithm from from the upper bound down. The output always
+    includes the exact values of `range_min` and `range_max`.
+
+    Args:
+        range_min (float): The lower bound of the range.
+        range_max (float): The upper bound of the range.
+        num_of_points (int, optional): Number of intermediate points to generate.
+            Must be greater than 1 if provided.
+        factor (float, optional): Multiplication factor used for exponential spacing.
+            Must be greater than zero.
+        reverse_scaling (bool, optional): If True, exponential scaling is applied
+            in reverse, starting from `range_max` instead of `range_min`.
 
     Returns:
-    - List of generated points (standard Python floats).
+        list: A list of floating-point numbers representing the scaled positions
+            within the specified range.
 
     Raises:
-    - ValueError: If neither num_of_points nor factor is provided.
+        ValueError: If both `num_of_points` and `factor` are not provided.
+
+    Example:
+        generate_multiplicative_points(0, 100, num_of_points=5)
+        # Output: [0.0, 25.0, 50.0, 75.0, 100.0]
+
+        generate_multiplicative_points(0, 100, factor=2)
+        # Output: [0.0, 1.0, 3.0, 7.0, ..., 100.0] (approximate values based on spacing)
     """
 
     # Define normalized bounds
@@ -291,25 +505,33 @@ def generate_multiplicative_points(range_min, range_max, num_of_points=None, fac
 
 def generate_points_by_spacing(num_of_points=10, range_min=0, range_max=1, points_spacing="linear"):
     """
-    Generates a sequence of points based on the specified spacing method.
-    
-    Supported spacing types:
-    - "linear": Evenly spaced values between range_min and range_max.
-    - "logarithmic": Logarithmically spaced values.
-    - "exponential": Exponentially increasing values.
-    - A real number > 0: Used as a multiplication factor to generate values.
-    
-    Parameters:
-    - num_of_points (int): The number of points to generate. Default is 10.
-    - range_min (float): The starting value of the sequence. Default is 1.
-    - range_max (float): The maximum limit for generated values. Default is 100.
-    - points_spacing (str or float): Defines the spacing method or multiplication factor.
-    
+    Generates a sequence of numerical points using a selected spacing strategy across
+    a defined range.
+
+    Supports multiple spacing modes including uniform linear intervals, logarithmic
+    steps, exponential growth, and multiplicative spacing using a user-specified factor.
+    Automatically includes `range_min` and `range_max` in the returned list.
+
+    Args:
+        num_of_points (int): Number of values to generate within the range. Defaults to 10.
+        range_min (float): Lower bound of the range. Defaults to 0.
+        range_max (float): Upper bound of the range. Defaults to 1.
+        points_spacing (str or float): Defines the spacing strategy. Accepted values:
+            - "linear": Uniform spacing.
+            - "logarithmic": Logarithmicly increasing values (which is exponential increase with base 10)
+            - "exponential": Exponentially increasing values (exponential base e)
+            - float > 0: Used as a multiplication factor for spacing (like doubling between points)
+
     Returns:
-    - List of generated points.
-    
+        list: A list of float values representing the computed points between the
+            specified bounds.
+
     Raises:
-    - ValueError: If an unsupported spacing type is provided.
+        ValueError: If `points_spacing` is not supported or improperly defined.
+
+    Example:
+        generate_points_by_spacing(num_of_points=10, range_min=1, range_max=100, points_spacing="logarithmic")
+        # Output: [1.0, 1.6681..., 2.7864..., ..., 100.0]
     """
     import numpy as np  # Ensure numpy is imported
     spacing_type = str(points_spacing).lower() if isinstance(points_spacing, str) else None
@@ -347,20 +569,45 @@ def generate_points_by_spacing(num_of_points=10, range_min=0, range_max=1, point
 
 def generate_points_from_range_dict(range_dict, variable_name="x"):
     """
-    Extracts the necessary range and parameters from range_dict and generates a sequence of points.
-    In practice, the range_dict can be a full equation_dict with extra fields that will not be used.
+    Generates a sequence of points for a specified variable using configuration
+    values from a range_dict.
+
+    This function extracts the relevant range and point-generation parameters based
+    on naming conventions.
 
     The function follows these rules:
     1. If '{variable_name}_range_limits' is provided as a list of two numbers, it is used as the range.
     2. Otherwise, '{variable_name}_range_default' is used as the range.
     3. Calls generate_points_by_spacing() to generate the appropriate sequence based on num_of_points and points_spacing.
+    
+    It applies range narrowing if stricter limits are provided,
+    and delegates the generation logic to `generate_points_by_spacing()` using the
+    determined boundaries and settings.
 
-    Parameters:
-    - range_dict (dict): Dictionary containing equation details, including range limits, num_of_points, and spacing type.
-    - variable_name (str, optional): Name of the variable to determine the range settings. Defaults to 'x'.
+    Args:
+        range_dict (dict): A dictionary that may contain default range values,
+            narrowed limits, and spacing configuration. Can include additional unused fields.
+        variable_name (str, optional): The name of the variable used to construct
+            lookup keys in range_dict (e.g., "x" → keys like "x_range_limits").
+            Defaults to "x".
 
     Returns:
-    - List of generated points.
+        list: A list of floats representing the generated sequence of points
+            for the specified variable.
+
+    Raises:
+        ValueError: If neither default nor limit values specify a valid range.
+
+    Example:
+        range_dict = {
+            "x_range_default": [0, 100],
+            "x_range_limits": [10, 90],
+            "num_of_points": 5,
+            "points_spacing": "linear"
+        }
+
+        generate_points_from_range_dict(range_dict)
+        # Output: [10.0, 30.0, 50.0, 70.0, 90.0]
     """
     range_default_key = f"{variable_name}_range_default"
     range_limits_key = f"{variable_name}_range_limits"
@@ -396,7 +643,27 @@ def generate_points_from_range_dict(range_dict, variable_name="x"):
 ## Start of Portion of code for parsing out tagged ustom units and returning them ##
 
 def return_custom_units_markup(units_string, custom_units_list):
-    """puts markup around custom units with '<' and '>' """
+    """
+    Wraps specified custom units in a string using angle brackets, with '<' and '>' so they are tagged.
+
+    The function first sorts the custom unit list from longest to shortest to avoid
+    premature replacement conflicts (e.g., 'meter' before 'm'). It then iterates
+    through each unit and replaces its occurrences in the input string with a tagged
+    version using angle brackets (e.g., "<meter>").
+
+    Args:
+        units_string (str): A string containing units or expressions with unit labels.
+        custom_units_list (list): A list of custom unit strings to be wrapped in markup.
+
+    Returns:
+        str: A modified string with all matching custom unit names wrapped in '<>'.
+
+    Example:
+        units_string = "10 meter per second squared"
+        custom_units_list = ["meter", "second"]
+        return_custom_units_markup(units_string, custom_units_list)
+        # Output: "10 <meter> per <second> squared"
+    """
     sorted_custom_units_list = sorted(custom_units_list, key=len, reverse=True)
     #the units should be sorted from longest to shortest if not already sorted that way.
     for custom_unit in sorted_custom_units_list:
@@ -404,8 +671,25 @@ def return_custom_units_markup(units_string, custom_units_list):
     return units_string
 
 def extract_tagged_strings(text):
-    """Extracts tags surrounded by <> from a given string. Used for custom units.
-       returns them as a list sorted from longest to shortest"""
+    """
+    Extracts substrings enclosed in angle brackets (<>) from a text and returns
+    them as a sorted list.
+
+    Tags are typically used to mark custom units or identifiers within a string.
+    Duplicate tags are removed, and the final list is sorted from longest to shortest
+    to preserve priority in downstream replacements.
+
+    Args:
+        text (str): A string containing one or more tagged items formatted with angle
+            brackets (e.g., "velocity in <meter_per_second> or <m/s>").
+
+    Returns:
+        list: A list of unique tagged strings sorted in descending order by length.
+
+    Example:
+        extract_tagged_strings("Speed: <meter_per_second>, Force: <newton>, Alt: <m>")
+        # Output: ["meter_per_second", "newton", "m"]
+    """
     list_of_tags = re.findall(r'<(.*?)>', text)
     set_of_tags = set(list_of_tags)
     sorted_tags = sorted(set_of_tags, key=len, reverse=True)
@@ -419,6 +703,29 @@ def extract_tagged_strings(text):
 #It was written by copilot and refined by further prompting of copilot by testing.
 #The depth is because the function works iteratively and then stops when finished.
 def convert_inverse_units(expression, depth=100):
+    """
+    Converts reciprocal-style unit expressions into exponent notation for symbolic evaluation.
+
+    Rewrites patterns such as "1/bar" into "(bar)**(-1)" and handles nested reciprocal
+    cases through iterative pattern matching. The replacement process continues until
+    no further changes are detected or a maximum iteration depth is reached.
+
+    Args:
+        expression (str): A string containing unit expressions with reciprocal notation
+            (e.g., "1/bar", "1/(1/kg)").
+        depth (int, optional): Maximum number of passes over the string to resolve nested
+            reciprocals. Defaults to 100.
+
+    Returns:
+        str: The transformed expression with reciprocals converted to exponent form.
+
+    Example:
+        convert_inverse_units("1/bar")
+        # Output: "(bar)**(-1)"
+
+        convert_inverse_units("1/(1/kg)")
+        # Output: "(kg)**(1)"
+    """
     # Patterns to match valid reciprocals while ignoring multiplied units, so (1/bar)*bar should be  handled correctly.
     patterns = [r"1/\((1/.*?)\)", r"1/([a-zA-Z]+)"]
     for _ in range(depth):
@@ -432,9 +739,31 @@ def convert_inverse_units(expression, depth=100):
         expression = new_expression
     return expression
 
-#This support function is just for code readability.
 #It returnts two strings in a list, split at the first delimiter.
 def split_at_first_delimiter(string, delimter=" "):
+    """
+    Splits a string into two parts at the first occurrence of a specified delimiter.
+
+    This helper function is for parsing and separates a string
+    based on the first occurrence of a chosen delimiter. If the delimiter is not found, the
+    entire string is returned as the first element, with no second part.
+
+    Args:
+        string (str): The input string to be split.
+        delimter (str, optional): The delimiter used to perform the split.
+            Defaults to a single space (" ").
+
+    Returns:
+        list: A list containing two elements — the substring before the first
+            delimiter, and the remainder of the string after it.
+
+    Example:
+        split_at_first_delimiter("unit kg", delimter=" ")
+        # Output: ["unit", "kg"]
+
+        split_at_first_delimiter("speed:30", delimter=":")
+        # Output: ["speed", "30"]
+    """
     return string.split(delimter, 1)
 
 #This function takes an equation dict (see examples) and returns the x_points, y_points, and x_units and y_units.
@@ -446,6 +775,65 @@ def split_at_first_delimiter(string, delimter=" "):
 #I would still expect the optimzed code to be an order of magnitude faster. So it may be worth finding the slow steps.
 #One possibility might be to use "re.compile()"
 def evaluate_equation_dict(equation_dict, verbose=False):
+    """
+    Evaluates a structured equation dictionary to compute output values across 
+    dynamically generated input ranges, supporting both 2D and 3D data mappings.
+
+    This function parses the input `equation_dict`, identifies independent and 
+    dependent variables, and automatically detects and registers custom units. 
+    It generates points along specified axes, solves the symbolic equation 
+    for each set of inputs, and collects corresponding outputs. All custom units 
+    are formatted and handled appropriately, including inverse notation and 
+    tagged markup.
+
+    Supports graphical dimensionality of 2 or 3:
+    - For 2D, it computes y as a function of x.
+    - For 3D, it computes z as a function of x and y.
+
+    Args:
+        equation_dict (dict): A dictionary containing:
+            - equation_string (str): The symbolic equation to solve.
+            - x_variable, y_variable, z_variable (str): Variable labels including units.
+            - constants (dict): Named constants with units or plain values.
+            - num_of_points (int): Number of evaluation points.
+            - x_range_default, y_range_default (list): Default min/max ranges.
+            - x_range_limits, y_range_limits (list): Optional bounds to narrow range.
+            - x_points_specified (list): Currently unused.
+            - points_spacing (str or float): Spacing for output points (linear, logarithmic, exponential, or factor).
+            - reverse_scaling (bool): If True, spacing trend (such as exponential) is applied in reverse.
+            - graphical_dimensionality (int, optional): Either 2 or 3. Defaults to 2 if unspecified.
+            - verbose (bool, optional): Enables debug prints if True.
+
+        verbose (bool, optional): If True, prints intermediate computation steps.
+
+    Returns:
+        dict: A dictionary containing:
+            - graphical_dimensionality (int): Either 2 or 3.
+            - x_units, y_units, z_units (str): Formatted and tagged unit strings.
+            - x_points, y_points, z_points (list): Computed values from equation evaluation.
+
+    Raises:
+        ValueError: If graphical_dimensionality is not 2 or 3, or if valid range information is missing.
+
+    Example:
+        example_equation_dict = {
+            'equation_string': 'k = A*(e**((-Ea)/(R*T)))',
+            'x_variable': 'T (K)',
+            'y_variable': 'k (s**(-1))',
+            'constants': {
+                'Ea': '30000 (J)*(mol^(-1))',
+                'R': '8.314 (J)*(mol^(-1))*(K^(-1))',
+                'A': '1*10^13 (s^-1)',
+                'e': '2.71828'
+            },
+            'num_of_points': 10,
+            'x_range_default': [200, 500],
+            'points_spacing': 'Linear'
+        }
+
+        result = evaluate_equation_dict(example_equation_dict)
+        # Returns a dictionary of computed x/y pairs and unit metadata
+    """
     import copy
     equation_dict = copy.deepcopy(equation_dict)  # Create a deep copy to prevent unintended modifications
     #First a block of code to extract the x_points needed
@@ -483,6 +871,24 @@ def evaluate_equation_dict(equation_dict, verbose=False):
     custom_units_list = []
     #helper function to clean custom units brackets. In future, could be made more general rather than hardcoded as angle brackets.
     def clean_brackets(string):
+        """
+        Removes angle brackets from a string, typically used to strip markup from
+        custom-tagged units or identifiers.
+
+        This utility is useful for sanitizing strings that use '<>' as delimiters
+        for tagging purposes. It preserves all other content while removing both
+        opening and closing angle brackets.
+
+        Args:
+            string (str): The input string containing optional angle brackets.
+
+        Returns:
+            str: The cleaned string with all '<' and '>' characters removed.
+
+        Example:
+            clean_brackets("<meter_per_second>")
+            # Output: "meter_per_second"
+        """
         return string.replace("<", "").replace(">", "")
 
     for constant_entry_key in independent_variables_dict.keys():
@@ -682,4 +1088,3 @@ if __name__ == "__main__":
 
     example_evaluated_dict = evaluate_equation_dict(example_equation_dict)
     print(example_evaluated_dict)
-

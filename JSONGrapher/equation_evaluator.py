@@ -248,7 +248,7 @@ def parse_equation_dict(equation_dict):
 
         Iterates over each entry in the input dictionary and delegates extraction of
         value-unit pairs to `extract_value_units()`. Handles both constants with units
-        (e.g., "3.5 kg") and plain numeric values (e.g., "42").
+        (e.g., "3.5 (kg)") and plain numeric values (e.g., "42").
 
         Args:
             constants_dict (dict): A dictionary mapping constant names to strings
@@ -260,13 +260,13 @@ def parse_equation_dict(equation_dict):
 
         Example:
             constants_dict = {
-                "R": "8.314 J/(mol*K)",
+                "R": "8.314 (J/(mol*K))",
                 "pi": "3.1415"
             }
 
             extract_constants(constants_dict)
             # Output: {
-            #     "R": ["8.314", "J/(mol*K)"],
+            #     "R": ["8.314", "(J/(mol*K))"],
             #     "pi": [3.1415, None]
             # }
         """

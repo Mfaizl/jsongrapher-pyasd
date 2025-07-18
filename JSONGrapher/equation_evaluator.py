@@ -739,14 +739,13 @@ def convert_inverse_units(expression, depth=100):
         expression = new_expression
     return expression
 
-#This support function is just for code readability.
 #It returnts two strings in a list, split at the first delimiter.
 def split_at_first_delimiter(string, delimter=" "):
     """
     Splits a string into two parts at the first occurrence of a specified delimiter.
 
-    This utility improves readability by clearly separating the head from the tail
-    of a string based on a chosen delimiter. If the delimiter is not found, the
+    This helper function is for parsing and separates a string
+    based on the first occurrence of a chosen delimiter. If the delimiter is not found, the
     entire string is returned as the first element, with no second part.
 
     Args:

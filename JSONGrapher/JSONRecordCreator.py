@@ -1807,65 +1807,137 @@ class JSONGrapherRecord:
 
     def import_from_csv(self, filename, delimiter=","):
         """
-        Imports a CSV or TSV file and converts its contents into a fig_dict.
-            - The input file must follow a specific format, as of 6/25/25, but this may be made more general in the future.
-                * Lines 1–5 define config metadata (e.g., comments, datatype, axis labels).
-                * Line 6 defines series names.
-                * Data rows begin on line 9.
-
+        Imports a CSV or TSV file and converts it into a fig_dict containing chart metadata and series data.
+    
+        The input file must follow a specific format:
+            - Line 1: Comments (e.g., purpose or notes)
+            - Line 2: Datatype
+            - Line 3: Chart label (used as title)
+            - Line 4: X-axis label
+            - Line 5: Y-axis label
+            - Line 6: Series names (comma- or tab-separated)
+            - Line 9 onward: Numerical data in either xyxy or xyyy column format
+    
+        The function detects the column structure and builds the fig_dict accordingly,
+        including layout and one or more data_series dictionaries.
+    
         Args:
-            filename (str): File path to the CSV or TSV file. If no extension is provided,
-                ".csv" or ".tsv" is inferred based on the delimiter.
-            delimiter (str, optional): Field separator character. Defaults to ",". Use "\\t" for TSV files.
-
+            filename (str): Path to the input file. If no extension is provided, ".csv" or ".tsv"
+                is inferred based on the delimiter.
+            delimiter (str, optional): Character used to separate fields. Defaults to ",".
+                Use "\\t" for tab-separated (TSV) files.
+    
         Returns:
-            dict: The created fig_dict.
-
+            dict: A complete fig_dict containing layout metadata and a list of data_series dictionaries.
         """
-        import os  
-        # Modify the filename based on the delimiter and existing extension
+    
+        import os
+        import math 
+        
+        # Ensure correct file extension
         file_extension = os.path.splitext(filename)[1]
-        if delimiter == "," and not file_extension:  # No extension present
+        if delimiter == "," and not file_extension:
             filename += ".csv"
-        elif delimiter == "\t" and not file_extension:  # No extension present
+        elif delimiter == "\t" and not file_extension:
             filename += ".tsv"
+    
         with open(filename, "r", encoding="utf-8") as file:
             file_content = file.read().strip()
-        # Separate rows
+    
         arr = file_content.split("\n")
-        # Count number of columns
-        number_of_columns = len(arr[5].split(delimiter))
-        # Extract config information
+        if len(arr[-1].strip()) < 2:
+            arr = arr[:-1]  # Trim empty trailing line
+    
+        # Extract metadata
         comments = arr[0].split(delimiter)[0].split(":")[1].strip()
         datatype = arr[1].split(delimiter)[0].split(":")[1].strip()
         chart_label = arr[2].split(delimiter)[0].split(":")[1].strip()
         x_label = arr[3].split(delimiter)[0].split(":")[1].strip()
         y_label = arr[4].split(delimiter)[0].split(":")[1].strip()
-        # Extract series names
         series_names_array = [
             n.strip()
             for n in arr[5].split(":")[1].split('"')[0].split(delimiter)
             if n.strip()
         ]
-        # Extract data
-        data = [[float(str_val) for str_val in row.split(delimiter)] for row in arr[8:]]
+    
+        # Only keep rows that look like numeric data
+        raw_data = []
+        for row in arr[8:]:
+            cells = row.split(delimiter)
+            try:
+                _ = [float(val) for val in cells]
+                raw_data.append(cells)
+            except ValueError:
+                continue
+    
+        if not raw_data:
+            raise ValueError("No valid numeric data found in CSV.")
+    
+        column_count = len(raw_data[0])
+    
+        # Format detection
+        series_columns_format = "xyyy"
+        if column_count >= 4:
+            last_row = raw_data[-1]
+            for i in range(1, column_count, 2):
+                val = last_row[i] if i < len(last_row) else ""
+                try:
+                    num = float(val)
+                    if math.isnan(num):
+                        series_columns_format = "xyxy"
+                        break
+                except (ValueError, TypeError):
+                    series_columns_format = "xyxy"
+                    break
+    
+        # Prepare fig_dict
         self.fig_dict["comments"] = comments
         self.fig_dict["datatype"] = datatype
         self.fig_dict["layout"]["title"] = {"text": chart_label}
         self.fig_dict["layout"]["xaxis"]["title"] = {"text": x_label}
         self.fig_dict["layout"]["yaxis"]["title"] = {"text": y_label}
-        # Create series datasets
+    
+        # Create the series data sets
         new_data = []
-        for index, series_name in enumerate(series_names_array):
-            data_series_dict = {}
-            data_series_dict["name"] = series_name
-            data_series_dict["x"] = [row[0] for row in data]
-            data_series_dict["y"] = [row[index + 1] for row in data]
-            data_series_dict["uid"] = str(index)
-            new_data.append(data_series_dict)
+    
+        if series_columns_format == "xyyy":
+            parsed_data = [
+                [float(val) if val.strip() else None for val in row]
+                for row in raw_data
+            ]
+            for i in range(1, column_count):
+                x_series = [row[0] for row in parsed_data if row[0] is not None]
+                y_series = [row[i] for row in parsed_data if row[i] is not None]
+                data_series_dict = {
+                    "name": series_names_array[i - 1] if i - 1 < len(series_names_array) else f"Series {i}",
+                    "x": x_series,
+                    "y": y_series,
+                    "uid": str(i - 1),
+                }
+                new_data.append(data_series_dict)
+        else:  # xyxy format
+            for i in range(0, column_count, 2):
+                x_vals = []
+                y_vals = []
+                for row in raw_data:
+                    try:
+                        x = float(row[i])
+                        y = float(row[i + 1])
+                        x_vals.append(x)
+                        y_vals.append(y)
+                    except (ValueError, IndexError):
+                        continue
+                series_number = i // 2
+                data_series_dict = {
+                    "name": series_names_array[series_number] if series_number < len(series_names_array) else f"Series {series_number + 1}",
+                    "x": x_vals,
+                    "y": y_vals,
+                    "uid": str(series_number),
+                }
+                new_data.append(data_series_dict)
+    
         self.fig_dict["data"] = new_data
-        self.fig_dict = self.fig_dict
-        return self.fig_dict 
+        return self.fig_dict
 
     def set_datatype(self, datatype):
         """
@@ -5709,6 +5781,5 @@ if __name__ == "__main__":
     
     print("NOW WILL MERGE THE RECORDS, AND USE THE SECOND ONE TWICE (AS A JSONGrapher OBJECT THEN JUST THE FIG_DICT)")
     print(merge_JSONGrapherRecords([Record, Record_from_existing, Record_from_existing.fig_dict]))
-
 
 

@@ -135,6 +135,7 @@ def solve_equation(equation_string, independent_variables_values_and_units, depe
 
         solve_equation(equation_string, independent_variables_values_and_units, dependent_variable)
         # Output: ["3.5 (second)"]
+        # The returned output is a list of solutions.
     """
     # Convert string inputs into Pint quantities
     variables = {name: ureg(value) for name, value in independent_variables_values_and_units.items()}

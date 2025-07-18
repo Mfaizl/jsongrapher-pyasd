@@ -518,9 +518,9 @@ def generate_points_by_spacing(num_of_points=10, range_min=0, range_max=1, point
         range_max (float): Upper bound of the range. Defaults to 1.
         points_spacing (str or float): Defines the spacing strategy. Accepted values:
             - "linear": Uniform spacing.
-            - "logarithmic": Logarithmic distribution.
-            - "exponential": Exponential increase.
-            - float > 0: Used as a multiplication factor for spacing.
+            - "logarithmic": Logarithmicly increasing values (which is exponential increase with base 10)
+            - "exponential": Exponentially increasing values (exponential base e)
+            - float > 0: Used as a multiplication factor for spacing (like doubling between points)
 
     Returns:
         list: A list of float values representing the computed points between the

@@ -124,6 +124,8 @@ def solve_equation(equation_string, independent_variables_values_and_units, depe
     Returns:
         list: A list of solution strings, each formatted with magnitude and unit
             separated by a space in parentheses (e.g., ["2.5 (second)", "3.0 (second)"]).
+            A well behaved function has single solutions, but some equations can have
+            more than one solution, that is why a list is returned.
 
     Example:
         equation_string = "x * t + y = 10 m"

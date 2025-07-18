@@ -4,6 +4,12 @@ from tkinter import filedialog
 from tkinterdnd2 import DND_FILES, TkinterDnD
 
 
+#This module contains a class called DragDropApp and also a function called create_and_launch.
+#This module creates a GUI for users to select (and clear) files to be used with a developer's
+# main program, such as JSONGrapher.  The way to use this module is through the create_and_launch function
+# A developer should not (normally) ever need to make a DragAndDrop object instance themselves.
+
+
 #The below class creates a window for dragging and dropping or browsing and selecting files
 #And each time one or more file is added, the full file list and most recently added files will be passed to
 #The function supplied by the user (function_for_after_file_addition)
@@ -206,13 +212,18 @@ def create_and_launch(app_name = '', function_for_after_file_addition=None):
     Launches the drag-and-drop file selection GUI.
 
     Creates and initializes a window using the DragDropApp class, allowing users
-    to select files via drag-and-drop or manual browsing. Once the window is closed
-    by the user, the complete list of selected file paths is returned.
+    to select files via drag-and-drop or manual browsing. 
+    As each file is added, a callback function from the user's main program
+    is called, so that the user's main program can take action each time a file is selected.
+    For example, JSONGrapher reads in the contents of each file
+    and merges the data into a global data set each time a file is added.
+    Once the window is closed by the user, the complete list of selected file paths is returned.
 
     Args:
         app_name (str, optional): Title for the GUI window. Defaults to an empty string.
         function_for_after_file_addition (Callable, optional): Function to be called 
-            each time new files are added. Receives all_selected_file_paths and 
+            each time new files are added. This is a callback function.
+            Receives all_selected_file_paths and 
             newly_added_file_paths as arguments. Defaults to None.
 
     Returns:

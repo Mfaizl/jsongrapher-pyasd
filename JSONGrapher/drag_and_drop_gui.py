@@ -67,7 +67,7 @@ class DragDropApp:
         self.drop_frame = tk.Label(root, text="Drag and drop files here \n\n Click End When Finished", bg="lightgray", width=50, height=10)
         self.drop_frame.pack(pady=10)
 
-        # Create a listbox to display selected files
+        # Create a listbox to display selected files - it is a part of the GUI to show the filenames in a list.
         self.file_listbox = tk.Listbox(root, width=60, height=10)
         self.file_listbox.pack(pady=10)
 
@@ -96,7 +96,7 @@ class DragDropApp:
         """
         Clears all selected files from the interface and resets internal storage.
 
-        Removes all items from the listbox display and resets the list of selected 
+        Removes all items from the filelist in the GUI listbox display and resets the list of selected 
         file paths. If a callback function is provided, it is called with empty lists
         for both all_selected_file_paths and newly_added_file_paths.
         """
@@ -111,7 +111,7 @@ class DragDropApp:
         Opens a file dialog for manually selecting files.
 
         Allows the user to choose one or more files using the system's file browser.
-        Newly selected files are added to the internal list and reflected in the listbox.
+        Newly selected files are added to the internal list and reflected in the GUI filelist listbox.
         If a callback function is defined, it is called with updated lists of 
         all_selected_file_paths and newly_added_file_paths.
         """
@@ -126,7 +126,7 @@ class DragDropApp:
         Handles files dropped into the GUI window.
 
         Parses the dropped file paths from the drag-and-drop event, updates the 
-        internal list of selected files, and refreshes the listbox display. If a 
+        internal list of selected files, and refreshes the GUI filelist listbox display. If a 
         callback function is provided, it is invoked with the current lists of 
         all_selected_file_paths and newly_added_file_paths.
         
@@ -143,7 +143,7 @@ class DragDropApp:
         """
         Updates the GUI with all selected files and triggers post-addition actions.
 
-        Clears the visual list of filenames in the listbox, reinserts updated entries,
+        Clears the visual list of filenames in the GUI filelist listbox, reinserts updated entries,
         and invokes the callback function if defined. The callback receives both the 
         complete list of selected files and the list of newly added ones. The first 
         item returned by the callback is stored for later download.

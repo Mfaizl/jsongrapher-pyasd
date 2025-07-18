@@ -799,8 +799,8 @@ def evaluate_equation_dict(equation_dict, verbose=False):
             - x_range_default, y_range_default (list): Default min/max ranges.
             - x_range_limits, y_range_limits (list): Optional bounds to narrow range.
             - x_points_specified (list): Currently unused.
-            - points_spacing (str or float): Spacing method (linear, logarithmic, exponential, or factor).
-            - reverse_scaling (bool): If True, spacing is applied in reverse.
+            - points_spacing (str or float): Spacing for output points (linear, logarithmic, exponential, or factor).
+            - reverse_scaling (bool): If True, spacing trend (such as exponential) is applied in reverse.
             - graphical_dimensionality (int, optional): Either 2 or 3. Defaults to 2 if unspecified.
             - verbose (bool, optional): Enables debug prints if True.
 

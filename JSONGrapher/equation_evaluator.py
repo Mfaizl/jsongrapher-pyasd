@@ -179,14 +179,14 @@ def parse_equation_dict(equation_dict):
     along with their unit labels, if present.
 
     Each constant in the dictionary is assumed to be a string formatted as either
-    "value unit" or simply "value". The inner `extract_value_units` function handles
+    "value (units)" or simply "value". The inner `extract_value_units` function handles
     trimming and splitting the string, returning the value and unit separately.
     Constants without a unit are stored with `None` as the unit.
 
     Args:
         equation_dict (dict): A dictionary mapping constant names to string
             representations of values, optionally followed by units 
-            (e.g., {"g": "9.8 m/s^2", "pi": "3.1415"}).
+            (e.g., {"g": "9.8 (m/s^2)", "pi": "3.1415"}).
 
     Returns:
         dict: A dictionary mapping each constant name to a list containing two elements:
@@ -194,15 +194,15 @@ def parse_equation_dict(equation_dict):
 
     Example:
         equation_dict = {
-            "g": "9.8 m/s^2",
-            "c": "3.0e8 m/s",
+            "g": "9.8 (m/s^2)",
+            "c": "3.0e8 (m/s)",
             "pi": "3.1415"
         }
 
         parse_equation_dict(equation_dict)
         # Output: {
-        #     "g": ["9.8", "m/s^2"],
-        #     "c": ["3.0e8", "m/s"],
+        #     "g": ["9.8", "(m/s^2)"],
+        #     "c": ["3.0e8", "(m/s)"],
         #     "pi": [3.1415, None]
         # }
     """
@@ -217,7 +217,7 @@ def parse_equation_dict(equation_dict):
 
         Args:
             entry (str): A string containing a numerical value, optionally followed by
-                a unit (e.g., "3.5 kg", "42").
+                a unit (e.g., "3.5 (kg)", "42").
 
         Returns:
             list: A list of two elements —
@@ -226,8 +226,8 @@ def parse_equation_dict(equation_dict):
                 - unit (str or None): The associated unit string, or None if no unit exists.
 
         Example:
-            extract_value_units("4.2 m")
-            # Output: ["4.2", "m"]
+            extract_value_units("4.2 (m)")
+            # Output: ["4.2", "(m)"]
 
             extract_value_units("100")
             # Output: [100.0, None]

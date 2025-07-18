@@ -385,12 +385,13 @@ def parse_equation_dict(equation_dict):
 
 def generate_multiplicative_points(range_min, range_max, num_of_points=None, factor=None, reverse_scaling=False):
     """
-    Generates a list of points spaced either uniformly or exponentially across a
-    specified numerical range.
+    Generates a sequence of points using relative spacing within a normalized range,
+    and spacing is based on a multiplicative factor (uniform when factor is 1).
 
     The function supports flexible spacing strategies, including equal intervals
     or multiplicative increments controlled via a scaling factor. It also supports
-    reversed exponential spacing from the upper bound down. The output always
+    reversed spacing (descending increment size), by instead applying
+    the algorithm from from the upper bound down. The output always
     includes the exact values of `range_min` and `range_max`.
 
     Args:

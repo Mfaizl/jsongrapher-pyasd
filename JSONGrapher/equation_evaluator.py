@@ -329,7 +329,7 @@ def parse_equation_dict(equation_dict):
         """
         Formats a dictionary of constants into unit-aware strings for independent variable usage.
 
-        Combines numeric values and units into space-separated strings (e.g., "3.5 kg")
+        Combines numeric values and units into space-separated strings (e.g., "3.5 (kg)")
         suitable for equation parsing and evaluation. If a constant lacks a unit, only
         its value is included.
 
@@ -343,13 +343,13 @@ def parse_equation_dict(equation_dict):
 
         Example:
             constants_extracted_dict = {
-                "Ea": ["30000", "(J)*(mol^(-1))"],
+                "Ea": ["30000", "((J)*(mol^(-1)))"],
                 "pi": [3.1415, None]
             }
 
             prepare_independent_variables(constants_extracted_dict)
             # Output: {
-            #     "Ea": "30000 (J)*(mol^(-1))",
+            #     "Ea": "30000 ((J)*(mol^(-1)))",
             #     "pi": "3.1415"
             # }
         """

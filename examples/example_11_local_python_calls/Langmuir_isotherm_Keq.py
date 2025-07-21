@@ -60,7 +60,7 @@ def simulate(input_dict):
     output_as_json_dict["message"] = "Simulation completed successfully"
     #Make a data subfield which starts as a deep copy of the input dictionary.
     output_as_json_dict["data"] ={}
-    output_as_json_dict["data"]["simulate"] = copy.deepcopy(input_dict) #this returns the inputs we started with.
+    output_as_json_dict["data"]["simulate"] = copy.deepcopy(input_dict["simulate"]) #this returns the inputs we started with.
     output_as_json_dict["data"]["x"] = simulation_result["x_values"]
     output_as_json_dict["data"]["y"] = simulation_result["y_values"]
     output_as_json_dict["data"]["x_label"] = simulation_result["x_label"]
@@ -109,11 +109,9 @@ if __name__ == "__main__":
     #     "message": "Simulation completed successfully",
     #     "data": {
     #         "simulate": {
-    #             "simulate": {
     #                 "K_eq": "5.0(L/mol)",
     #                 "sigma_max": "1.2(<Monolayer>)",
     #                 "simulation_function_label": "simulate_Langmuir_by_Keq"
-    #             }
     #         },
     #         "x": [
     #             0.026666666666666665,

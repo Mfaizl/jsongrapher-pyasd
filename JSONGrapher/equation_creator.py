@@ -20,6 +20,27 @@ class Equation:
 
     The class can simulate point data, validate unit formats, construct Z matrices for 3D
     relationships, and output the equation dictionary in human-readable or file-friendly formats.
+        Initialization:
+    - Normally, should be initialized as a blank dict object like example_Arrhenius = Equation().
+    - Defaults to an empty equation with predefined structure.
+    - Accepts an optional dictionary (`initial_dict`) to prepopulate the equation dictionary.
+
+    Example structure:
+    ```
+    custom_dict = {
+        'equation_string': "k = A * (e ** (-Ea / (R * T)))",
+        'x_variable': "T (K)",
+        'y_variable': "k (s**-1)",
+        'constants': {"Ea": "30000 J/mol", "R": "8.314 J/(mol*K)", "A": "1*10**13 (s**-1)", "e": "2.71828"},
+        'num_of_points': 10,
+        'x_range_default': [200, 500],
+        'x_range_limits': [None, 600],
+        'points_spacing': "Linear"
+        'graphical_dimensionality': 2
+    }
+
+    #The reason we use 'graphical_dimensionality' rather than 'dimensionality' is that mathematicians define the dimensionality in terms of independent variables.
+    #But here, we are usually expecting users who are concerned with 2D or 3D graphing.
 
     Args:
         initial_dict (dict, optional): A dictionary used to initialize equation properties.
@@ -140,7 +161,7 @@ class Equation:
         """
         Sets the y-variable for the equation_dict with a descriptive label including units.
 
-        This label represents the dependent variable in the equation and should
+        This label represents the dependent variable when graphical_dimensionality = 2, in the equation and should
         include both the symbol and its unit in parentheses for clarity.
 
         Args:

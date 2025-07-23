@@ -5350,17 +5350,17 @@ def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
         else: #if there is no "data" field, we will assume that only the data_series_dict has been returned.
             simulation_result = simulation_return
         return simulation_result
-    try:
-        simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose=verbose)
-        if isinstance(simulation_return, dict) and "error" in simulation_return: # Check for errors in the returned data
-            print(f"Simulation failed: {simulation_return.get('error_message', 'Unknown error')}")
-            print(simulation_return)
+    else:
+        try:
+            simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose=verbose)
+            if isinstance(simulation_return, dict) and "error" in simulation_return: # Check for errors in the returned data
+                print(f"Simulation failed: {simulation_return.get('error_message', 'Unknown error')}")
+                print(simulation_return)
+                return None
+            return simulation_return.get("data", None) # Returns data, but will return "None" if data does not exist.
+        except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except
+            print(f"Exception occurred in simulate_data_series function of JSONRecordCreator.py: {e}")
             return None
-        return simulation_return.get("data", None)
-
-    except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except
-        print(f"Exception occurred in simulate_data_series function of JSONRecordCreator.py: {e}")
-        return None
 
 #Function that goes through a fig_dict data series and simulates each data series as needed.
 #If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.

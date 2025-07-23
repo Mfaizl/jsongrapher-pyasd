@@ -1452,11 +1452,6 @@ class JSONGrapherRecord:
         #add simulate field if included.
         if simulate:
             data_series_dict["simulate"] = simulate
-        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
-            try:
-                data_series_dict = simulate_data_series(data_series_dict)
-            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
-                pass
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
@@ -1467,6 +1462,14 @@ class JSONGrapherRecord:
         data_series_dict = JSONGrapher_data_series_object
         #Add to the JSONGrapherRecord class object's data list.
         self.fig_dict["data"].append(data_series_dict) #implied return.
+
+        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                #we use simulate_specific_data_series_by_index rather than just the simulate funciton because we want unit scaling and clearing of labels as needed.
+                data_series_index = len(self.fig_dict["data"]) - 1
+                data_series_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index)
+            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
+                pass
         return data_series_dict
 
     def add_data_series_as_simulation(self, series_name,graphical_dimensionality, x_values=None,y_values=None, simulate_dict=None,simulate_as_added=True,comments="",trace_style=None,uid="",line=None,extra_fields=None):

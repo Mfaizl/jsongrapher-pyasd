@@ -1452,11 +1452,6 @@ class JSONGrapherRecord:
         #add simulate field if included.
         if simulate:
             data_series_dict["simulate"] = simulate
-        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
-            try:
-                data_series_dict = simulate_data_series(data_series_dict)
-            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
-                pass
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
@@ -1467,98 +1462,126 @@ class JSONGrapherRecord:
         data_series_dict = JSONGrapher_data_series_object
         #Add to the JSONGrapherRecord class object's data list.
         self.fig_dict["data"].append(data_series_dict) #implied return.
+
+        if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+            try:
+                #we use simulate_specific_data_series_by_index rather than just the simulate funciton because we want unit scaling and clearing of labels as needed.
+                data_series_index = len(self.fig_dict["data"]) - 1
+                data_series_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index)
+            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
+                pass
         return data_series_dict
 
-    def add_data_series_as_simulation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, simulate_dict=None, simulate_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
-        print("This feature, add_data_series_as_simulation, is not yet implemented. JSONGrapher did not add the series. For now, use add_data_series to add series with simulate fields.")
-        pass #TODO: fill out the logic needed to create a data_series_as_simulation. Look at the regular add_data_series and the add_data_series_as_equation functions, for comparison. Also, should probably change both this and add_data_seris_as_equation into wrappers around add_data_series.
-
-    def add_data_series_as_equation(self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
+    def add_data_series_as_simulation(self, series_name,graphical_dimensionality, x_values=None,y_values=None, simulate_dict=None,simulate_as_added=True,comments="",trace_style=None,uid="",line=None,extra_fields=None):
         """
-        Adds a new data series to the fig_dict using an equation instead of raw data points.
+        Adds a simulation-style data_series using the `add_data_series` method.
+
+        This method wraps the provided series data and simulation configuration,
+        including graphical dimensionality and style options, and forwards them
+        to `add_data_series`.
 
         Args:
-            series_name (str): Label for the data series displayed on the graph.
-            graphical_dimensionality (int): Number of geometric dimensions, typically 2 or 3.
-            x_values (list or array-like, optional): Normally should not be passed in for an equation based data_series. Will become an empty list to be populated when the equation is evaluated.
-            y_values (list or array-like, optional): Normally should not be passed in for an equation based data_series. Will become an empty list to be populated when the equation is evaluated.
-            equation_dict (dict, optional): Dictionary defining the equation using json_equationer structure.
-            evaluate_equations_as_added (bool): If True (default), attempts to evaluate the equation immediately after addition.
-            comments (str): Annotation or description associated with this data series.
-            trace_style (str): Visual trace_style for plotting (e.g., scatter, bar, scatter3d, bubble2d, bubble3d).
-            uid (str): Optional unique identifier (e.g., DOI) for the series.
-            line (dict): Dictionary of line formatting options (e.g., shape, width).
-            extra_fields (dict): A dictionary with custom keys and values to add into the data_series dictionary.
+            series_name (str): Name of the data_series to be added.
+            graphical_dimensionality (int): Indicates how the simulation should be visualized.
+            x_values (list, optional): List of x-axis values. Defaults to empty list if None.
+            y_values (list, optional): List of y-axis values. Defaults to empty list if None.
+            simulate_dict (dict, optional): Dictionary containing simulation metadata. 
+                Will be initialized if not provided. The key 'graphical_dimensionality' 
+                is always set based on the input.
+            simulate_as_added (bool, optional): Whether to mark the simulation as added. Defaults to True.
+            comments (str, optional): Additional notes or annotations for the data_series.
+            trace_style (dict, optional): Dictionary specifying visual trace_style.
+            uid (str, optional): Unique identifier for the data_series.
+            line (Any, optional): Line formatting information for the plot trace.
+            extra_fields (dict, optional): Extra metadata fields to include.
 
         Returns:
-            dict: The constructed data_series dictionary.
-
-        Notes:
-            - There is also an 'implied' return in that the new data_series_dict is added to the JSONGrapher object's fig_dict.
-            - The graphical_dimensionality is embedded in the equation_dict before use.
-            - Evaluation is deferred until after the series is appended to fig_dict to ensure layout-based unit validation.
-            - If evaluation fails, it is silently skipped to maintain runtime flow.
+            Any: Result of calling `add_data_series` with the provided arguments.
         """
-        # series_name: Name of the data series.
-        # graphical_dimensionality is the number of geometric dimensions, so should be either 2 or 3.
-        # x: List of x-axis values. Or similar structure.
-        # y: List of y-axis values. Or similar structure.
-        # equation_dict: This is the field for the equation_dict of json_equationer type
-        # evaluate_equations_as_added: Boolean for evaluating equations immediately.
-        # comments: Optional description of the data series.
-        # plot_type: Type of the data (e.g., scatter, line).
-        # line: Dictionary describing line properties (e.g., shape, width).
-        # uid: Optional unique identifier for the series (e.g., a DOI).
-        # extra_fields: Dictionary containing additional fields to add to the series.
-        #Should not have mutable objects initialized as defaults, so putting them in below.
+        if x_values is None:
+            x_values = []
+        if y_values is None:
+            y_values = []
+        if simulate_dict is None:
+            simulate_dict = {}
+
+        simulate_dict["graphical_dimensionality"] = int(graphical_dimensionality)
+
+        return self.add_data_series(
+            series_name=series_name,
+            x_values=x_values,
+            y_values=y_values,
+            simulate=simulate_dict,
+            simulate_as_added=simulate_as_added,
+            comments=comments,
+            trace_style=trace_style,
+            uid=uid,
+            line=line,
+            extra_fields=extra_fields
+        )
+
+    def add_data_series_as_equation( self, series_name, graphical_dimensionality, x_values=None, y_values=None, equation_dict=None, evaluate_equations_as_added=True, comments="", trace_style=None, uid="",line=None,extra_fields=None):
+        """
+        Adds an equation-style data_series using the `add_data_series` method.
+
+        This method incorporates the equation metadata into extra_fields and 
+        optionally evaluates the equations immediately after adding the data_series.
+
+        Args:
+            series_name (str): Name of the data_series to be added.
+            graphical_dimensionality (int): Visual representation dimensionality.
+            x_values (list, optional): List of x-axis values. Defaults to an empty list.
+            y_values (list, optional): List of y-axis values. Defaults to an empty list.
+            equation_dict (dict, optional): Dictionary representing equation metadata.
+                The key 'graphical_dimensionality' is automatically set.
+            evaluate_equations_as_added (bool, optional): Whether to evaluate the equation 
+                immediately after adding. Defaults to True.
+            comments (str, optional): Additional notes or annotations for the data_series.
+            trace_style (dict, optional): Dictionary specifying visual trace_style.
+            uid (str, optional): Unique identifier for the data_series.
+            line (Any, optional): Line formatting information for the plot trace.
+            extra_fields (dict, optional): Dictionary for extra metadata; updated with equation_dict.
+
+        Returns:
+            Any: Result from `add_data_series`, potentially updated in fig_dict after evaluation.
+        """
         if x_values is None:
             x_values = []
         if y_values is None:
             y_values = []
         if equation_dict is None:
             equation_dict = {}
+
+        # Add required key
         equation_dict["graphical_dimensionality"] = int(graphical_dimensionality)
 
-        x_values = list(x_values)
-        y_values = list(y_values)
+        # Prepare extra_fields with equation dict
+        if extra_fields is None:
+            extra_fields = {}
+        extra_fields["equation"] = equation_dict
 
-        data_series_dict = {
-            "name": series_name,
-            "x": x_values, 
-            "y": y_values,
-        }
+        # Add the series
+        data_series = self.add_data_series(
+            series_name=series_name,
+            x_values=x_values,
+            y_values=y_values,
+            comments=comments,
+            trace_style=trace_style,
+            uid=uid,
+            line=line,
+            extra_fields=extra_fields
+        )
 
-        #Add optional inputs.
-        if len(comments) > 0:
-            data_series_dict["comments"] = comments
-        if len(uid) > 0:
-            data_series_dict["uid"] = uid
-        if line: 
-            data_series_dict["line"] = line
-        if trace_style:
-            data_series_dict['trace_style'] = trace_style
-        #add equation field if included.
-        if equation_dict:
-            data_series_dict["equation"] = equation_dict
-        # Add extra fields if provided, they will be added.
-        if extra_fields:
-            data_series_dict.update(extra_fields)
-        
-        #make this a JSONGrapherDataSeries class object, that way a person can use functions to do things like change marker size etc. more easily.
-        JSONGrapher_data_series_object = JSONGrapherDataSeries()
-        JSONGrapher_data_series_object.update_while_preserving_old_terms(data_series_dict)
-        data_series_dict = JSONGrapher_data_series_object
-        #Add to the JSONGrapherRecord class object's data list.
-        self.fig_dict["data"].append(data_series_dict)  
-        #Now evaluate the equation as added, if requested. It does seem counterintuitive to do this "at the end",
-        #but the reason this happens at the end is that the evaluation *must* occur after being a fig_dict because we
-        #need to check the units coming out against the units in the layout. Otherwise we would not be able to convert units.
-        new_data_series_index = len(self.fig_dict["data"])-1 
-        if evaluate_equations_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
+        # Evaluate if required
+        if evaluate_equations_as_added:
             try:
-                self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, new_data_series_index)
-            except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
+                index = len(self.fig_dict["data"]) - 1
+                self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, index)
+            except Exception:
                 pass
+
+        return data_series
+
         
     def change_data_series_name(self, series_index, series_name):
         """
@@ -5330,17 +5353,17 @@ def simulate_data_series(data_series_dict, simulator_link='', verbose=False):
         else: #if there is no "data" field, we will assume that only the data_series_dict has been returned.
             simulation_result = simulation_return
         return simulation_result
-    try:
-        simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose=verbose)
-        if isinstance(simulation_return, dict) and "error" in simulation_return: # Check for errors in the returned data
-            print(f"Simulation failed: {simulation_return.get('error_message', 'Unknown error')}")
-            print(simulation_return)
+    else:
+        try:
+            simulation_return = run_js_simulation(simulator_link, data_series_dict, verbose=verbose)
+            if isinstance(simulation_return, dict) and "error" in simulation_return: # Check for errors in the returned data
+                print(f"Simulation failed: {simulation_return.get('error_message', 'Unknown error')}")
+                print(simulation_return)
+                return None
+            return simulation_return.get("data", None) # Returns data, but will return "None" if data does not exist.
+        except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except
+            print(f"Exception occurred in simulate_data_series function of JSONRecordCreator.py: {e}")
             return None
-        return simulation_return.get("data", None)
-
-    except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except
-        print(f"Exception occurred in simulate_data_series function of JSONRecordCreator.py: {e}")
-        return None
 
 #Function that goes through a fig_dict data series and simulates each data series as needed.
 #If the simulated data returned has "x_label" and/or "y_label" with units, those will be used to scale the data, then will be removed.

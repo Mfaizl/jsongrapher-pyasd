@@ -7,20 +7,47 @@ function simulate(input) {
     // Returns an object with the following properties:
     //  - value: the value 
     //  - units: the unit
-    this.parseUnit = function(value){
-        var regex = /\(([^)]+)\)/;
-        var match = regex.exec(value);
-        if (match != null) {
+    this.parseUnit = function(value) {
+        // Function to check for balanced parentheses
+        function hasBalancedParens(str) {
+            let depth = 0;
+            for (let char of str) {
+                if (char === '(') depth++;
+                else if (char === ')') depth--;
+                if (depth < 0) return false;
+            }
+            return depth === 0;
+        }
+
+        // Check for balanced parentheses before parsing
+        if (!hasBalancedParens(value)) {
             return {
-                value: parseFloat(value.replace('(' + match[1] + ')', '')),
-                unit: match[1], 
+                value: NaN,
+                unit: '',
+                error: 'Unbalanced parentheses'
             };
         }
+
+        // Find the first '(' and last ')'
+        const start = value.indexOf('(');
+        const end = value.lastIndexOf(')');
+
+        if (start !== -1 && end !== -1 && end > start) {
+            const unit = value.slice(start + 1, end);
+            const numericPart = value.slice(0, start).trim();
+            return {
+                value: parseFloat(numericPart),
+                unit: unit
+            };
+        }
+
+        // No parentheses found
         return {
             value: parseFloat(value),
-            unit: '',
+            unit: ''
         };
-    }
+    };
+
 
     // Convert a value from one unit to another
     this.getPredictedValues = function(K_eqValue, K_eqUnit, sigma_max = 1, sigma_maxUnit = "<Monolayer>") {
@@ -28,7 +55,7 @@ function simulate(input) {
         const Y_absolute = Y_relative.map(y => y * sigma_max); // Convert relative coverage to absolute adsorption
         const Y = Y_absolute;
         const X = Y_relative.map(y => sigma_max * y / (K_eqValue * (1 - y))); // Pressure calculation
-        const x_label = `Pressure (1/(${K_eqUnit}))`;
+        const x_label = `Pressure ((${K_eqUnit})^(-1))`;
         const y_label = `Amount Adsorbed (${sigma_maxUnit})`;
 
         return {
@@ -50,7 +77,7 @@ function simulate(input) {
         const K_eq = k_adsValue / k_desValue;
         return {
             value: K_eq,
-            unit: "(" + k_adsUnit + ")/(" + k_desUnit + ")",
+            unit: "( (" + k_adsUnit + ")*(" + k_desUnit + ")^(-1) )",
         };
     }
 

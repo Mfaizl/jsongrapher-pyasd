@@ -59,7 +59,7 @@ def simulate(input_dict):
     output_as_json_dict["message"] = "Simulation completed successfully"
     #Make a data subfield which starts as a deep copy of the input dictionary.
     output_as_json_dict["data"] ={}
-    output_as_json_dict["data"]["simulate"] = copy.deepcopy(input_dict) #this returns the inputs we started with.
+    output_as_json_dict["data"]["simulate"] = copy.deepcopy(input_dict["simulate"]) #this returns the inputs we started with.
     output_as_json_dict["data"]["x"] = simulation_result["x_values"]
     output_as_json_dict["data"]["y"] = simulation_result["y_values"]
     output_as_json_dict["data"]["x_label"] = simulation_result["x_label"]
@@ -123,12 +123,10 @@ if __name__ == "__main__":
     #     "message": "Simulation completed successfully",
     #     "data": {
     #         "simulate": {
-    #             "simulate": {
     #                 "k_ads": "200 (1/(bar * s))",
     #                 "k_des": "100 (1/s)",
     #                 "sigma_max": "1.0267670459667 (<Monolayer>)",
     #                 "simulation_function_label": "simulate_Langmuir_by_kadskdes"
-    #             }
     #         },
     #         "x": [
     #             0.057042613664816666,

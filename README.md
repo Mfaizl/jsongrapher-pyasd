@@ -12,28 +12,28 @@ Alternatively, you can download the directory directly.<br>
 
 ## **0\. Plotting a JSON Record**
 To create an interactive plot, you just need one line of code! <br>
-Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples/example_1_drag_and_drop) JSONGrapher record into the window to plot! Below are example 2D and 3D plots. <br>
+Then drag an [example](https://github.com/AdityaSavara/jsongrapher-py/tree/main/Tutorials/example_1_drag_and_drop) JSONGrapher record into the window to plot! Below are example 2D and 3D plots. <br>
 Further below shows how easy it is to create your own json records.
 <pre>
 import JSONGrapher; JSONGrapher.launch()
 # Then just drag records into the window!
 </pre>
 
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif" width="20%"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/UAN_DTA_image.gif" width="25%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/JSONGrapherWindowShortened.gif" width="20%"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/UAN_DTA_image.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/UAN_DTA_image.gif" width="25%"></a>
 <br>
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif" width="35%"></a>
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_Scatter3d_example10.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_Scatter3d_example10.gif" width="35%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/Rate_Constant_mesh3d.gif" width="35%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/Rate_Constant_Scatter3d_example10.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/Rate_Constant_Scatter3d_example10.gif" width="35%"></a>
 <br>
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_bubble.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/Rate_Constant_bubble.gif" width="35%"></a>&nbsp;&nbsp;&nbsp;
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif" width="30%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/Rate_Constant_bubble.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/Rate_Constant_bubble.gif" width="35%"></a>&nbsp;&nbsp;&nbsp;
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/SrTiO3_rainbow_image.gif" width="30%"></a>
 <br><br>
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/O_OH_Scaling.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_1_drag_and_drop/images/O_OH_Scaling.gif" width="50%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/O_OH_Scaling.gif"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_1_drag_and_drop/images/O_OH_Scaling.gif" width="50%"></a>
 
 
 ## **1\. Preparing to Create a Record**
 
-The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/jsongrapher-py/blob/main/examples/example_2_creating_records_and_using_styles/example_2_json_record_tutorial.py) which shows how to create graphable .json records. The records can then be plotted with python JSONGrapher or with jsongrapher.com<br>
+The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/jsongrapher-py/blob/main/Tutorials/example_2_creating_records_and_using_styles/example_2_json_record_tutorial.py) which shows how to create graphable .json records. The records can then be plotted with python JSONGrapher or with jsongrapher.com<br>
 
 Let's create an example where we plot the height of a pear tree over several years. 
 <pre>
@@ -92,16 +92,16 @@ We can plot the data with plotly, interact with the graph, and save as a png fil
 <pre>
 Record.plot_with_plotly() #Try hovering your mouse over points after this command!
 </pre>
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2_creating_records_and_using_styles/image_from_tutorial_plotly_fig.png"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2_creating_records_and_using_styles/image_from_tutorial_plotly_fig.png" width="40%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_2_creating_records_and_using_styles/image_from_tutorial_plotly_fig.png"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_2_creating_records_and_using_styles/image_from_tutorial_plotly_fig.png" width="40%"></a>
 
 We can plot the data using Matplotlib and export the plot as a PNG file.
 <pre>
 Record.plot_with_matplotlib()
 Record.export_to_matplotlib_png("image_from_tutorial_matplotlib_fig")
 </pre>
-<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2_creating_records_and_using_styles/image_from_tutorial_matplotlib_fig.png"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/examples/example_2_creating_records_and_using_styles/image_from_tutorial_matplotlib_fig.png" width="40%"></a>
+<a href="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_2_creating_records_and_using_styles/image_from_tutorial_matplotlib_fig.png"><img src="https://raw.githubusercontent.com/AdityaSavara/JSONGrapher-py/main/Tutorials/example_2_creating_records_and_using_styles/image_from_tutorial_matplotlib_fig.png" width="40%"></a>
 
-You can also see more examples: https://github.com/AdityaSavara/jsongrapher-py/tree/main/examples
+You can also see more examples: https://github.com/AdityaSavara/jsongrapher-py/tree/main/Tutorials
 
 Additionally, json records you send to others can be plotted by them at www.jsongrapher.com
 This 'see the plot using a browser' capability is intended to facilitate including JSONGrapher records in supporting information of scientific publications.

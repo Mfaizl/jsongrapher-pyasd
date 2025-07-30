@@ -187,36 +187,45 @@ class Equation:
         """
         Sets the default range for the x-variable in equation_dict.
 
-        Accepts a numeric range defined by two values to guide simulation or plotting.
-        Helps specify the domain where x values are most relevant or commonly observed.
+        This defines the standard domain over which x is typically simulated or visualized.
+        It’s useful for guiding behavior when no hard limits are enforced.
+
+        Notes:
+            - Used during initialization of default plotting ranges.
+            - Structure: Provide two numeric values [min, max].
+            - Applies across graphical_dimensionality levels.
 
         Args:
             x_range (list): A list containing two numeric values [min, max].
-                Example: [200, 500] for temperatures between 200K and 500K.
+                Example: [200, 500] for temperature ranges in Kelvin.
 
         Raises:
             ValueError: If x_range is not a list of two numeric values.
         """
+
         if not (isinstance(x_range, list) and len(x_range) == 2 and all(isinstance(i, (int, float)) for i in x_range)):
             raise ValueError("x_range must be a list of two numeric values.")
         self.equation_dict['x_range_default'] = x_range
 
     def set_x_range_limits(self, x_limits):
         """
-        Sets hard boundaries for x-variable values in equation_dict.
+        Sets hard boundaries for the x-variable in equation_dict.
 
-        Allows definition of a lower and upper limit, either of which may be left
-        open-ended using None. Useful for constraining input values during simulation
-        or plotting.
+        These are strict simulation constraints. Limits may be open-ended (None) or fixed numerics.
+
+        Notes:
+            - Typically applied when input values must fall within a defined range.
+            - Structure: [min, max] elements can be numeric or None.
+            - Applies across graphical_dimensionality levels.
 
         Args:
-            x_limits (list): A list containing two elements [min, max], each either
-                numeric or None. Example: [None, 500] allows any lower value but
-                restricts the upper limit to 500.
+            x_limits (list): A list with two elements [min, max], each numeric or None.
+                Example: [None, 500] restricts the upper bound but leaves the lower open.
 
         Raises:
-            ValueError: If the input is not a list of exactly two numeric or None values.
+            ValueError: If x_limits isn’t a list of two numeric or None values.
         """
+
         if not (isinstance(x_limits, list) and len(x_limits) == 2):
             raise ValueError("x_limits must be a list of two elements (numeric or None).")
         if not all(isinstance(i, (int, float)) or i is None for i in x_limits):
@@ -227,35 +236,47 @@ class Equation:
         """
         Sets the default range for the y-variable in equation_dict.
 
-        Specifies the expected range of y values for simulation or plotting,
-        using two numeric boundaries that reflect commonly observed or desired behavior.
+        This range represents commonly observed or expected y-values used in simulation
+        or plotting. It provides standard bounds but does not impose restrictions.
+
+        Notes:
+            - Used to initialize visualization defaults.
+            - Structure: Provide two numeric values [min, max].
+            - Relevant across graphical_dimensionality levels.
+              Note: When graphical_dimensionality = 2, y acts as the dependent variable.
 
         Args:
             y_range (list): A list of two numeric values [min, max].
-                Example: [0, 100] for a percentage-based scale.
+                Example: [0, 100] for percentage scales.
 
         Raises:
             ValueError: If y_range is not a list of two numeric values.
         """
+
         if not (isinstance(y_range, list) and len(y_range) == 2 and all(isinstance(i, (int, float)) for i in y_range)):
             raise ValueError("y_range must be a list of two numeric values.")
         self.equation_dict['y_range_default'] = y_range
 
     def set_y_range_limits(self, y_limits):
         """
-        Sets hard boundaries for y-variable values in equation_dict.
+        Sets hard boundaries for the y-variable in equation_dict.
 
-        Enables constraint of y values through defined lower and upper limits,
-        each of which can be numeric or left open-ended using None.
+        These limits constrain allowable y-values during simulation or input validation.
+        Boundaries may be numeric or open-ended using None.
+
+        Notes:
+            - Limits enforce strict boundaries versus default ranges.
+            - Structure: [min, max], where each is numeric or None.
+            - Applies across graphical_dimensionality levels.
 
         Args:
-            y_limits (list): A list containing two elements [min, max], where each is
-                either a numeric value or None. Example: [None, 50] restricts the upper
-                limit but allows any lower value.
+            y_limits (list): A list containing two elements [min, max], each numeric or None.
+                Example: [None, 50] allows unrestricted lower values but caps upper at 50.
 
         Raises:
-            ValueError: If the input is not a list of two numeric or None elements.
+            ValueError: If y_limits is not a list of two numeric or None values.
         """
+
         if not (isinstance(y_limits, list) and len(y_limits) == 2):
             raise ValueError("y_limits must be a list of two elements (numeric or None).")
         if not all(isinstance(i, (int, float)) or i is None for i in y_limits):
@@ -266,35 +287,46 @@ class Equation:
         """
         Sets the default range for the z-variable in equation_dict.
 
-        Defines the suggested numeric bounds used for simulation or visualization
-        of the z-dimension when plotting in 3D. This range does not enforce strict limits.
+        Defines expected numeric bounds for simulation or 3D plotting. These are not
+        enforced as constraints, but inform rendering or behavior.
+
+        Notes:
+            - Typically relevant when graphical_dimensionality = 3.
+            - Structure: Two numeric values [min, max] as standard domain.
+            - Used for guiding visualization.
 
         Args:
             z_range (list): A list of two numeric values [min, max].
-                Example: [0, 5000] for energy values measured in Joules.
+                Example: [0, 5000] for energy values in Joules.
 
         Raises:
             ValueError: If z_range is not a list of two numeric values.
         """
+
         if not (isinstance(z_range, list) and len(z_range) == 2 and all(isinstance(i, (int, float)) for i in z_range)):
             raise ValueError("z_range must be a list of two numeric values.")
         self.equation_dict['z_range_default'] = z_range
 
     def set_z_range_limits(self, z_limits):
         """
-        Sets hard boundaries for z-variable values in equation_dict.
+        Sets hard boundaries for the z-variable in equation_dict.
 
-        Defines absolute limits on z values for use in 3D simulations or visualizations.
-        Each boundary can be a numeric value or left undefined using None.
+        These absolute limits apply in 3D simulation contexts and may be numeric
+        or left open using None.
+
+        Notes:
+            - Enforced limits constrain simulation boundaries.
+            - Structure: [min, max], with each value numeric or None.
+            - Primarily used when graphical_dimensionality = 3.
 
         Args:
-            z_limits (list): A list of two elements [min, max], each either a numeric value
-                or None. Example: [100, None] restricts the lower limit while leaving
-                the upper limit open.
+            z_limits (list): A list containing two elements [min, max], each numeric or None.
+                Example: [100, None] enforces a lower bound but leaves the upper open.
 
         Raises:
-            ValueError: If the input is not a list of two numeric or None values.
+            ValueError: If z_limits is not a list of two numeric or None values.
         """
+
         if not (isinstance(z_limits, list) and len(z_limits) == 2):
             raise ValueError("z_limits must be a list of two elements (numeric or None).")
         if not all(isinstance(i, (int, float)) or i is None for i in z_limits):

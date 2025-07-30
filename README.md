@@ -33,7 +33,7 @@ import JSONGrapher; JSONGrapher.launch()
 
 ## **1\. Preparing to Create a Record**
 
-The remainder of this landing page follows a json record tutorial [example file](https://github.com/AdityaSavara/jsongrapher-py/blob/main/Tutorials/tutorial_2_creating_records_and_using_styles/tutorial_2_json_record_tutorial.py) which shows how to create graphable .json records. The records can then be plotted with python JSONGrapher or with jsongrapher.com<br>
+The remainder of this landing page follows a json record [tutorial example](https://github.com/AdityaSavara/jsongrapher-py/blob/main/Tutorials/tutorial_2_creating_records_and_using_styles/tutorial_2_json_record_tutorial.py) which shows how to create graphable .json records. The records can then be plotted with python JSONGrapher or with jsongrapher.com<br>
 
 Let's create an example where we plot the height of a pear tree over several years. 
 <pre>

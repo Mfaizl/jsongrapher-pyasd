@@ -1,6 +1,6 @@
 Please note that all of the JSON files can be dragged into JSONGrapher.
-The reason that python scripts are provided in most of these examples
-is because these examples are to teach a user how to create JSONGrapher records.
+The reason that python scripts are provided in most of these tutorial examples
+is because these tutorials are to teach a user how to create JSONGrapher records.
 Anyone can drag the records into jsongrapher (without any knowledge) after that.
 
 Each directory has a separate example with the python file to run beginning with the word "tutorial"

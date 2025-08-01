@@ -148,7 +148,7 @@ class Equation:
         """
         Sets the x-variable label in the equation_dict, including its unit.
 
-        This label represents the independent variable (typically shown on the x-axis).
+        This label represents an independent variable for the x-axis
         It should include both the symbol and its unit in parentheses for clarity.
 
         Args:
@@ -161,7 +161,7 @@ class Equation:
         """
         Sets the y-variable label in the equation_dict, including its unit.
 
-        This label represents the dependent variable (typically shown on the y-axis in 2D graphs).
+        This label represents a dependent variable (for 2D) or independent variable (for 3D)
         It should include both the symbol and its unit in parentheses for clarity.
 
         Args:
@@ -174,7 +174,7 @@ class Equation:
         """
         Sets the z-variable label in the equation_dict, including its unit.
 
-        This label represents the third axis variable in 3D plotting.
+        This label represents a dependent variable (for 3D).
         It should include both the symbol and its unit in parentheses for clarity.
 
         Args:
@@ -185,13 +185,13 @@ class Equation:
 
     def set_x_range_default(self, x_range):
         """
-        Set the default range for the x-axis.
+        Set the default range for the axis.
 
-        This function updates the equation dictionary with the default x-axis range,
-        typically used when generating visualizations. It does not enforce or restrict
-        user input but provides a fallback when no limits are explicitly set.
+        This function updates the equation dictionary with a specified default range for the axis.
+        This then decides the equation evaluation range. It does not enforce or restrict
+        user input but provides a fallback when no axis display  limits are explicitly set.
 
-        Parameters:
+        Args:
             equation_dict (dict): The equation dictionary to modify.
             value (list[float]): A list of two floats representing the default lower and upper bounds for the x-axis.
 
@@ -205,11 +205,11 @@ class Equation:
 
     def set_x_range_limits(self, x_limits):
         """
-        Set explicit range limits for the x-axis.
-
-        This function overrides any default x-axis range by defining fixed lower and
-        upper bounds, which are typically used to control the domain of a graph or computation.
-
+        Set explicit range limits to not evaluate outside of for the equation.
+        
+        This function defines fixed lower and upper bounds for this variable 
+        and the equation will not be evaluated outside of these limits.
+        
         Parameters:
             equation_dict (dict): The equation dictionary to update.
             value (list[float]): A list of two floats specifying the lower and upper bounds for the x-axis.
@@ -226,11 +226,11 @@ class Equation:
 
     def set_y_range_default(self, y_range):
         """
-        Set the default range for the y-axis.
+        Set the default range for the axis.
 
-        This function updates the equation dictionary with the default y-axis range,
-        typically used when generating visualizations. It does not enforce or restrict
-        user input but provides a fallback when no limits are explicitly set.
+        This function updates the equation dictionary with a specified default range for the axis.
+        This then decides the equation evaluation range. It does not enforce or restrict
+        user input but provides a fallback when no axis display  limits are explicitly set.
 
         Parameters:
             equation_dict (dict): The equation dictionary to modify.
@@ -246,11 +246,11 @@ class Equation:
 
     def set_y_range_limits(self, y_limits):
         """
-        Set explicit range limits for the y-axis.
-
-        This function overrides any default y-axis range by defining fixed lower and
-        upper bounds, which are typically used to control the domain of a graph or computation.
-
+        Set explicit range limits to not evaluate outside of for the equation.
+        
+        This function defines fixed lower and upper bounds for this variable 
+        and the equation will not be evaluated outside of these limits.
+        
         Parameters:
             equation_dict (dict): The equation dictionary to update.
             value (list[float]): A list of two floats specifying the lower and upper bounds for the y-axis.
@@ -267,11 +267,11 @@ class Equation:
 
     def set_z_range_default(self, z_range):
         """
-        Set the default range for the z-axis.
+        Set the default range for the axis.
 
-        This function updates the equation dictionary with the default z-axis range,
-        typically used when generating visualizations. It does not enforce or restrict
-        user input but provides a fallback when no limits are explicitly set.
+        This function updates the equation dictionary with a specified default range for the axis.
+        This then decides the equation evaluation range. It does not enforce or restrict
+        user input but provides a fallback when no axis display  limits are explicitly set.
 
         Parameters:
             equation_dict (dict): The equation dictionary to modify.
@@ -287,11 +287,11 @@ class Equation:
 
     def set_z_range_limits(self, z_limits):
         """
-        Set explicit range limits for the z-axis.
-
-        This function overrides any default z-axis range by defining fixed lower and
-        upper bounds, which are typically used to control the domain of a graph or computation.
-
+        Set explicit range limits to not evaluate outside of for the equation.
+        
+        This function defines fixed lower and upper bounds for this variable 
+        and the equation will not be evaluated outside of these limits.
+        
         Parameters:
             equation_dict (dict): The equation dictionary to update.
             value (list[float]): A list of two floats specifying the lower and upper bounds for the z-axis.

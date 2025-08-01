@@ -198,7 +198,6 @@ class Equation:
         Raises:
             ValueError: If the provided value is not a list of exactly two floats.
         """
-
         if not (isinstance(x_range, list) and len(x_range) == 2 and all(isinstance(i, (int, float)) for i in x_range)):
             raise ValueError("x_range must be a list of two numeric values.")
         self.equation_dict['x_range_default'] = x_range
@@ -211,14 +210,13 @@ class Equation:
         This then decides the equation evaluation range. It does not enforce or restrict
         user input but provides a fallback when no axis display  limits are explicitly set.
 
-        Parameters:
+        Args:
             equation_dict (dict): The equation dictionary to modify.
             value (list[float]): A list of two floats representing the default lower and upper bounds for the y-axis.
 
         Raises:
             ValueError: If the provided value is not a list of exactly two floats.
         """
-
         if not (isinstance(y_range, list) and len(y_range) == 2 and all(isinstance(i, (int, float)) for i in y_range)):
             raise ValueError("y_range must be a list of two numeric values.")
         self.equation_dict['y_range_default'] = y_range
@@ -231,14 +229,13 @@ class Equation:
         This then decides the equation evaluation range. It does not enforce or restrict
         user input but provides a fallback when no axis display  limits are explicitly set.
 
-        Parameters:
+        Args:
             equation_dict (dict): The equation dictionary to modify.
             value (list[float]): A list of two floats representing the default lower and upper bounds for the z-axis.
 
         Raises:
             ValueError: If the provided value is not a list of exactly two floats.
         """
-
         if not (isinstance(z_range, list) and len(z_range) == 2 and all(isinstance(i, (int, float)) for i in z_range)):
             raise ValueError("z_range must be a list of two numeric values.")
         self.equation_dict['z_range_default'] = z_range
@@ -246,18 +243,17 @@ class Equation:
     def set_x_range_limits(self, x_limits):
         """
         Set explicit range limits to not evaluate outside of for the equation.
-        
+
         This function defines fixed lower and upper bounds for this variable 
         and the equation will not be evaluated outside of these limits.
-        
-        Parameters:
+
+        Args:
             equation_dict (dict): The equation dictionary to update.
             value (list[float]): A list of two floats specifying the lower and upper bounds for the x-axis.
 
         Raises:
             ValueError: If the provided value is not a list of exactly two floats.
         """
-
         if not (isinstance(x_limits, list) and len(x_limits) == 2):
             raise ValueError("x_limits must be a list of two elements (numeric or None).")
         if not all(isinstance(i, (int, float)) or i is None for i in x_limits):
@@ -267,18 +263,17 @@ class Equation:
     def set_y_range_limits(self, y_limits):
         """
         Set explicit range limits to not evaluate outside of for the equation.
-        
+
         This function defines fixed lower and upper bounds for this variable 
         and the equation will not be evaluated outside of these limits.
-        
-        Parameters:
+
+        Args:
             equation_dict (dict): The equation dictionary to update.
             value (list[float]): A list of two floats specifying the lower and upper bounds for the y-axis.
 
         Raises:
             ValueError: If the provided value is not a list of exactly two floats.
         """
-
         if not (isinstance(y_limits, list) and len(y_limits) == 2):
             raise ValueError("y_limits must be a list of two elements (numeric or None).")
         if not all(isinstance(i, (int, float)) or i is None for i in y_limits):
@@ -288,11 +283,11 @@ class Equation:
     def set_z_range_limits(self, z_limits):
         """
         Set explicit range limits to not evaluate outside of for the equation.
-        
+
         This function defines fixed lower and upper bounds for this variable 
         and the equation will not be evaluated outside of these limits.
-        
-        Parameters:
+
+        Args:
             equation_dict (dict): The equation dictionary to update.
             value (list[float]): A list of two floats specifying the lower and upper bounds for the z-axis.
 
@@ -304,6 +299,7 @@ class Equation:
         if not all(isinstance(i, (int, float)) or i is None for i in z_limits):
             raise ValueError("Elements in z_limits must be numeric or None.")
         self.equation_dict['z_range_limits'] = z_limits
+
 
     def get_z_matrix(self, x_points=None, y_points=None, z_points=None, return_as_list=False):
         """

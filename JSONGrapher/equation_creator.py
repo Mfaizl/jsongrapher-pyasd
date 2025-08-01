@@ -254,6 +254,7 @@ class Equation:
         self.equation_dict["x_points"] = evaluated_dict["x_points"]
         self.equation_dict["y_points"] = evaluated_dict["y_points"]
         if graphical_dimensionality == 3:
+            self.equation_dict["z_units"] = evaluated_dict["z_units"]
             self.equation_dict["z_points"] = evaluated_dict["z_points"]
         if remove_equation_fields == True:
             #we'll just make a fresh dictionary for simplicity, in this case.

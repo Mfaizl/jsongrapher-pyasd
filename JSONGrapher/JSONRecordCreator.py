@@ -330,6 +330,12 @@ def get_units_scaling_ratio(units_string_1, units_string_2):
     if units_string_1 == units_string_2:
         return 1
     import unitpy #this function uses unitpy.
+    #for the purposes of this function, there are some unit strings which we will replace.
+    dictionary_for_replacements = {"electron_volt":"eV"}
+    keys_list = list(dictionary_for_replacements.keys())
+    for key in keys_list:
+        units_string_1 = units_string_1.replace(key, dictionary_for_replacements[key])
+        units_string_2 = units_string_2.replace(key, dictionary_for_replacements[key])
     #Replace "^" with "**" for unit conversion purposes.
     #We won't need to replace back because this function only returns the ratio in the end.
     units_string_1 = units_string_1.replace("^", "**")
@@ -5509,9 +5515,12 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
         data_dict_filled['y_label'] = data_dict_filled['equation']['y_variable'] 
         data_dict_filled['x'] = list(equation_dict_evaluated['x_points'])
         data_dict_filled['y'] = list(equation_dict_evaluated['y_points'])
+        data_dict_filled['x_units'] = equation_dict_evaluated['x_units']
+        data_dict_filled['y_units'] = equation_dict_evaluated['y_units']
         if graphical_dimensionality == 3:
             data_dict_filled['z_label'] = data_dict_filled['equation']['z_variable'] 
             data_dict_filled['z'] = list(equation_dict_evaluated['z_points'])
+            data_dict_filled['z_units'] = equation_dict_evaluated['z_units']
         #data_dict_filled may include "x_label" and/or "y_label". If it does, we'll need to check about scaling units.
         if (("x_label" in data_dict_filled) or ("y_label" in data_dict_filled)) or ("z_label" in data_dict_filled):
             #first, get the units that are in the layout of fig_dict so we know what to convert to.
@@ -5519,23 +5528,32 @@ def evaluate_equation_for_data_series_by_index(fig_dict, data_series_index, verb
             existing_record_y_label = fig_dict["layout"]["yaxis"]["title"]["text"] #this is a dictionary.
             existing_record_x_units = separate_label_text_from_units(existing_record_x_label)["units"]
             existing_record_y_units = separate_label_text_from_units(existing_record_y_label)["units"]
+            existing_record_z_label = '' #initializing so it is not undefined.
             if "z_label" in data_dict_filled:
                 existing_record_z_label = fig_dict["layout"]["zaxis"]["title"]["text"] #this is a dictionary.
-            if (existing_record_x_units == '') and (existing_record_y_units == ''): #skip scaling if there are no units.
+                existing_record_z_units = separate_label_text_from_units(existing_record_z_label)["units"]
+            if (existing_record_x_units == '') and (existing_record_y_units == '') and (existing_record_z_units == ''): #skip scaling if there are no units.
                 pass
             else: #If we will be scaling...
                 #now, get the units from the evaluated equation output.
-                simulated_data_series_x_units = separate_label_text_from_units(data_dict_filled['x_label'])["units"]
-                simulated_data_series_y_units = separate_label_text_from_units(data_dict_filled['y_label'])["units"]
-                x_units_ratio = get_units_scaling_ratio(simulated_data_series_x_units, existing_record_x_units)
-                y_units_ratio = get_units_scaling_ratio(simulated_data_series_y_units, existing_record_y_units)
+                simulated_data_series_x_units = data_dict_filled['x_units']
+                simulated_data_series_y_units = data_dict_filled['y_units']
+                x_units_ratio = get_units_scaling_ratio(existing_record_x_units, simulated_data_series_x_units)
+                y_units_ratio = get_units_scaling_ratio(existing_record_y_units, simulated_data_series_y_units)
+                z_units_ratio = 1 #initializing
+                if "z_label" in data_dict_filled:
+                    simulated_data_series_z_units = data_dict_filled['z_units']
+                    z_units_ratio = get_units_scaling_ratio(existing_record_z_units, simulated_data_series_z_units)
                 #We scale the dataseries, which really should be a function.
-                scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by = x_units_ratio, num_to_scale_y_values_by = y_units_ratio)
+                scale_dataseries_dict(data_dict_filled, num_to_scale_x_values_by = x_units_ratio, num_to_scale_y_values_by = y_units_ratio, num_to_scale_z_values_by = z_units_ratio)
             #Now need to remove the "x_label" and "y_label" to be compatible with plotly.
             data_dict_filled.pop("x_label", None)
             data_dict_filled.pop("y_label", None)
+            data_dict_filled.pop("x_units", None)
+            data_dict_filled.pop("y_units", None)
             if "z_label" in data_dict_filled:
                 data_dict_filled.pop("z_label", None)
+                data_dict_filled.pop("z_units", None)
         if "type" not in data_dict:
             if graphical_dimensionality == 2:
                 data_dict_filled['type'] = 'spline'

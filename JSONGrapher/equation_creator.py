@@ -146,10 +146,10 @@ class Equation:
 
     def set_x_variable(self, x_variable):
         """
-        Sets the x-variable for the equation_dict with a descriptive label including units.
+        Sets the x-variable label in the equation_dict, including its unit.
 
-        This label represents the independent variable in the equation and should
-        include both the symbol and its unit in parentheses for clarity.
+        This label represents the independent variable (typically shown on the x-axis).
+        It should include both the symbol and its unit in parentheses for clarity.
 
         Args:
             x_variable (str): Descriptive name of the x-variable, including unit.
@@ -159,23 +159,23 @@ class Equation:
 
     def set_y_variable(self, y_variable):
         """
-        Sets the y-variable for the equation_dict with a descriptive label including units.
+        Sets the y-variable label in the equation_dict, including its unit.
 
-        This label represents the dependent variable when graphical_dimensionality = 2, in the equation and should
-        include both the symbol and its unit in parentheses for clarity.
+        This label represents the dependent variable (typically shown on the y-axis in 2D graphs).
+        It should include both the symbol and its unit in parentheses for clarity.
 
         Args:
             y_variable (str): Descriptive name of the y-variable, including unit.
-                Example: "k (s**-1)" for a rate constant measured in inverse seconds.
+                Example: "k (s**-1)" for a rate constant in inverse seconds.
         """
         self.equation_dict["y_variable"] = y_variable
 
     def set_z_variable(self, z_variable):
         """
-        Sets the z-variable for the equation_dict with a descriptive label including units.
+        Sets the z-variable label in the equation_dict, including its unit.
 
-        This label represents the variable used in 3D plotting contexts and should
-        include both the symbol and its unit in parentheses for clarity.
+        This label represents the third axis variable in 3D plotting.
+        It should include both the symbol and its unit in parentheses for clarity.
 
         Args:
             z_variable (str): Descriptive name of the z-variable, including unit.
@@ -185,22 +185,18 @@ class Equation:
 
     def set_x_range_default(self, x_range):
         """
-        Sets the default range for the x-variable in equation_dict.
+        Set the default range for the x-axis.
 
-        This defines the standard domain over which x is typically simulated or visualized.
-        It’s useful for guiding behavior when no hard limits are enforced.
+        This function updates the equation dictionary with the default x-axis range,
+        typically used when generating visualizations. It does not enforce or restrict
+        user input but provides a fallback when no limits are explicitly set.
 
-        Notes:
-            - Used during initialization of default plotting ranges.
-            - Structure: Provide two numeric values [min, max].
-            - Applies across graphical_dimensionality levels.
-
-        Args:
-            x_range (list): A list containing two numeric values [min, max].
-                Example: [200, 500] for temperature ranges in Kelvin.
+        Parameters:
+            equation_dict (dict): The equation dictionary to modify.
+            value (list[float]): A list of two floats representing the default lower and upper bounds for the x-axis.
 
         Raises:
-            ValueError: If x_range is not a list of two numeric values.
+            ValueError: If the provided value is not a list of exactly two floats.
         """
 
         if not (isinstance(x_range, list) and len(x_range) == 2 and all(isinstance(i, (int, float)) for i in x_range)):
@@ -209,21 +205,17 @@ class Equation:
 
     def set_x_range_limits(self, x_limits):
         """
-        Sets hard boundaries for the x-variable in equation_dict.
+        Set explicit range limits for the x-axis.
 
-        These are strict simulation constraints. Limits may be open-ended (None) or fixed numerics.
+        This function overrides any default x-axis range by defining fixed lower and
+        upper bounds, which are typically used to control the domain of a graph or computation.
 
-        Notes:
-            - Typically applied when input values must fall within a defined range.
-            - Structure: [min, max] elements can be numeric or None.
-            - Applies across graphical_dimensionality levels.
-
-        Args:
-            x_limits (list): A list with two elements [min, max], each numeric or None.
-                Example: [None, 500] restricts the upper bound but leaves the lower open.
+        Parameters:
+            equation_dict (dict): The equation dictionary to update.
+            value (list[float]): A list of two floats specifying the lower and upper bounds for the x-axis.
 
         Raises:
-            ValueError: If x_limits isn’t a list of two numeric or None values.
+            ValueError: If the provided value is not a list of exactly two floats.
         """
 
         if not (isinstance(x_limits, list) and len(x_limits) == 2):
@@ -234,23 +226,18 @@ class Equation:
 
     def set_y_range_default(self, y_range):
         """
-        Sets the default range for the y-variable in equation_dict.
+        Set the default range for the y-axis.
 
-        This range represents commonly observed or expected y-values used in simulation
-        or plotting. It provides standard bounds but does not impose restrictions.
+        This function updates the equation dictionary with the default y-axis range,
+        typically used when generating visualizations. It does not enforce or restrict
+        user input but provides a fallback when no limits are explicitly set.
 
-        Notes:
-            - Used to initialize visualization defaults.
-            - Structure: Provide two numeric values [min, max].
-            - Relevant across graphical_dimensionality levels.
-              Note: When graphical_dimensionality = 2, y acts as the dependent variable.
-
-        Args:
-            y_range (list): A list of two numeric values [min, max].
-                Example: [0, 100] for percentage scales.
+        Parameters:
+            equation_dict (dict): The equation dictionary to modify.
+            value (list[float]): A list of two floats representing the default lower and upper bounds for the y-axis.
 
         Raises:
-            ValueError: If y_range is not a list of two numeric values.
+            ValueError: If the provided value is not a list of exactly two floats.
         """
 
         if not (isinstance(y_range, list) and len(y_range) == 2 and all(isinstance(i, (int, float)) for i in y_range)):
@@ -259,22 +246,17 @@ class Equation:
 
     def set_y_range_limits(self, y_limits):
         """
-        Sets hard boundaries for the y-variable in equation_dict.
+        Set explicit range limits for the y-axis.
 
-        These limits constrain allowable y-values during simulation or input validation.
-        Boundaries may be numeric or open-ended using None.
+        This function overrides any default y-axis range by defining fixed lower and
+        upper bounds, which are typically used to control the domain of a graph or computation.
 
-        Notes:
-            - Limits enforce strict boundaries versus default ranges.
-            - Structure: [min, max], where each is numeric or None.
-            - Applies across graphical_dimensionality levels.
-
-        Args:
-            y_limits (list): A list containing two elements [min, max], each numeric or None.
-                Example: [None, 50] allows unrestricted lower values but caps upper at 50.
+        Parameters:
+            equation_dict (dict): The equation dictionary to update.
+            value (list[float]): A list of two floats specifying the lower and upper bounds for the y-axis.
 
         Raises:
-            ValueError: If y_limits is not a list of two numeric or None values.
+            ValueError: If the provided value is not a list of exactly two floats.
         """
 
         if not (isinstance(y_limits, list) and len(y_limits) == 2):
@@ -285,22 +267,18 @@ class Equation:
 
     def set_z_range_default(self, z_range):
         """
-        Sets the default range for the z-variable in equation_dict.
+        Set the default range for the z-axis.
 
-        Defines expected numeric bounds for simulation or 3D plotting. These are not
-        enforced as constraints, but inform rendering or behavior.
+        This function updates the equation dictionary with the default z-axis range,
+        typically used when generating visualizations. It does not enforce or restrict
+        user input but provides a fallback when no limits are explicitly set.
 
-        Notes:
-            - Typically relevant when graphical_dimensionality = 3.
-            - Structure: Two numeric values [min, max] as standard domain.
-            - Used for guiding visualization.
-
-        Args:
-            z_range (list): A list of two numeric values [min, max].
-                Example: [0, 5000] for energy values in Joules.
+        Parameters:
+            equation_dict (dict): The equation dictionary to modify.
+            value (list[float]): A list of two floats representing the default lower and upper bounds for the z-axis.
 
         Raises:
-            ValueError: If z_range is not a list of two numeric values.
+            ValueError: If the provided value is not a list of exactly two floats.
         """
 
         if not (isinstance(z_range, list) and len(z_range) == 2 and all(isinstance(i, (int, float)) for i in z_range)):
@@ -309,24 +287,18 @@ class Equation:
 
     def set_z_range_limits(self, z_limits):
         """
-        Sets hard boundaries for the z-variable in equation_dict.
+        Set explicit range limits for the z-axis.
 
-        These absolute limits apply in 3D simulation contexts and may be numeric
-        or left open using None.
+        This function overrides any default z-axis range by defining fixed lower and
+        upper bounds, which are typically used to control the domain of a graph or computation.
 
-        Notes:
-            - Enforced limits constrain simulation boundaries.
-            - Structure: [min, max], with each value numeric or None.
-            - Primarily used when graphical_dimensionality = 3.
-
-        Args:
-            z_limits (list): A list containing two elements [min, max], each numeric or None.
-                Example: [100, None] enforces a lower bound but leaves the upper open.
+        Parameters:
+            equation_dict (dict): The equation dictionary to update.
+            value (list[float]): A list of two floats specifying the lower and upper bounds for the z-axis.
 
         Raises:
-            ValueError: If z_limits is not a list of two numeric or None values.
+            ValueError: If the provided value is not a list of exactly two floats.
         """
-
         if not (isinstance(z_limits, list) and len(z_limits) == 2):
             raise ValueError("z_limits must be a list of two elements (numeric or None).")
         if not all(isinstance(i, (int, float)) or i is None for i in z_limits):

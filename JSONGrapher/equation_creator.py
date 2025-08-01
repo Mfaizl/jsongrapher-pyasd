@@ -265,7 +265,6 @@ class Equation:
             if graphical_dimensionality == 3:
                 equation_dict["z_units"] = self.equation_dict["z_units"]
                 equation_dict["z_points"] = self.equation_dict["z_points"] 
-                print("line 223", equation_dict["z_points"])
             self.equation_dict = equation_dict
         return self.equation_dict
 

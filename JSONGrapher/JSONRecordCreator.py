@@ -1846,6 +1846,7 @@ class JSONGrapherRecord:
             - The data table portion of the file can be in either `xyxy` or `xyyy` format:
                 * `xyyy`: One shared x-column followed by multiple y-columns.
                 * `xyxy`: Each series has its own x and y column pair.
+                * You can explicitly specify the format using the `series_columns_format` metadata field.
 
         Recognized metadata fields:
             - comments: Description or notes about the dataset
@@ -1854,6 +1855,7 @@ class JSONGrapherRecord:
             - x_label: Label for the x-axis
             - y_label: Label for the y-axis
             - series_names: Comma- or tab-separated names for each data series
+            - series_columns_format: Optional field to specify data format ("xyyy" or "xyxy")
             - custom_variables: Optional field that may appear before the series header
 
         Example metadata block:
@@ -1863,6 +1865,7 @@ class JSONGrapherRecord:
             x_label: CO2 Pressure (kPa)
             y_label: CO2 Adsorbed (mol/kg)
             series_names: CO2 Adsorption on amino_silane_Silica (343 K exp)
+            series_columns_format: xyyy
             custom_variables:
             x_values    y_values
 
@@ -1876,6 +1879,7 @@ class JSONGrapherRecord:
         """
         import os
         import math
+        import re
 
         # Ensure correct file extension
         file_extension = os.path.splitext(filename)[1]
@@ -1899,8 +1903,13 @@ class JSONGrapherRecord:
         metadata_dict = {}
         for line in metadata_lines:
             if ":" in line:
-                key, val = line.split(":", 1)
-                metadata_dict[key.strip().lower()] = val.strip()
+                raw_key, raw_field_value = line.split(":", 1)
+                normalized_key = re.sub(r"\s+", "", raw_key).replace("\ufeff", "").lower()
+                if normalized_key != "series_names":
+                    cleaned_value = raw_field_value.strip().rstrip(delimiter)
+                else:
+                    cleaned_value = raw_field_value.strip()
+                metadata_dict[normalized_key] = cleaned_value
 
         # Extract metadata fields
         comments = metadata_dict.get("comments", "")
@@ -1917,20 +1926,22 @@ class JSONGrapherRecord:
         raw_data = [row.split(delimiter) for row in arr[header_index + 1:]]
         column_count = len(raw_data[0])
 
-        # Format detection
-        series_columns_format = "xyyy"
-        if column_count >= 4:
-            last_row = raw_data[-1]
-            for i in range(1, column_count, 2):
-                val = last_row[i] if i < len(last_row) else ""
-                try:
-                    num = float(val)
-                    if math.isnan(num):
+        # Format specification or fallback detection
+        series_columns_format = metadata_dict.get("series_columns_format", "").strip().lower()
+        if series_columns_format not in {"xyyy", "xyxy"}:
+            series_columns_format = "xyyy"
+            if column_count >= 4:
+                last_row = raw_data[-1]
+                for i in range(1, column_count, 2):
+                    val = last_row[i] if i < len(last_row) else ""
+                    try:
+                        num = float(val)
+                        if math.isnan(num):
+                            series_columns_format = "xyxy"
+                            break
+                    except (ValueError, TypeError):
                         series_columns_format = "xyxy"
                         break
-                except (ValueError, TypeError):
-                    series_columns_format = "xyxy"
-                    break
 
         # Prepare fig_dict
         self.fig_dict["comments"] = comments
@@ -1977,7 +1988,6 @@ class JSONGrapherRecord:
 
         self.fig_dict["data"] = new_data
         return self.fig_dict
-
 
     def export_to_csv(self, filename=None, delimiter=",", 
                       update_and_validate=True, validate=True, 

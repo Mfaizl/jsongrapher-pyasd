@@ -1394,9 +1394,9 @@ class JSONGrapherRecord:
         return json.dumps(self.fig_dict, indent=4)
 
 
-    def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None):
+    def add_data_series(self, series_name, x_values=None, y_values=None, simulate=None, simulate_as_added=True, comments="", trace_style=None, uid="", line=None, extra_fields=None, equation=None, evaluate_equations_as_added=True):
         """
-        Adds a new x,y data series to the fig_dict with optional metadata, styling, and simulation support.
+        Adds a new x,y data series to the fig_dict with optional metadata, styling, and processing support.
 
         Args:
             series_name (str): Label for the data series to appear in the graph.
@@ -1409,6 +1409,8 @@ class JSONGrapherRecord:
             uid (str): Optional unique ID (e.g., DOI) linked to the series.
             line (dict): Dictionary of visual line properties like shape or width.
             extra_fields (dict): A dictionary with custom keys and values to add into the data_series dictionary.
+            equation (dict, optional): An equation dictionary that can be evaluated to produce a data series on the graph.
+            evaluate_equations_as_added (bool): If True, and if the 'equation' field is present, then attempts to evaluate this equation immediately upon addition.
 
         Returns:
             dict: The newly constructed data_series dictionary.
@@ -1416,7 +1418,7 @@ class JSONGrapherRecord:
         Notes:
             - There is also an 'implied' return in that the new data_series_dict is added to the JSONGrapher object's fig_dict.
             - Inputs are converted to lists to ensure consistency with expected format.
-            - Simulation failures are silently ignored to maintain program flow.
+            - Simulation and equation evaluation failures are silently ignored to maintain program flow.
             - The returned object allows extended editing of visual and structural properties.
         """
         # series_name: Name of the data series.
@@ -1429,6 +1431,8 @@ class JSONGrapherRecord:
         # line: Dictionary describing line properties (e.g., shape, width).
         # uid: Optional unique identifier for the series (e.g., a DOI).
         # extra_fields: Dictionary containing additional fields to add to the series.
+        # equation: Dictionary containing equation parameters to add to the series.
+        # evaluate_equations_as_added: Boolean for calling equation evaluation immediately.
         #Should not have mutable objects initialized as defaults, so putting them in below.
         if x_values is None:
             x_values = []
@@ -1436,16 +1440,18 @@ class JSONGrapherRecord:
             y_values = []
         if simulate is None:
             simulate = {}
-
+        if equation is None:
+            equation = {}
+        
         x_values = list(x_values)
         y_values = list(y_values)
-
+        
         data_series_dict = {
             "name": series_name,
-            "x": x_values, 
+            "x": x_values,
             "y": y_values,
         }
-
+        
         #Add optional inputs.
         if len(comments) > 0:
             data_series_dict["comments"] = comments
@@ -1461,14 +1467,17 @@ class JSONGrapherRecord:
         # Add extra fields if provided, they will be added.
         if extra_fields:
             data_series_dict.update(extra_fields)
-
+        # Add equation field if included.
+        if equation:
+            data_series_dict["equation"] = equation
+        
         #make this a JSONGrapherDataSeries class object, that way a person can use functions to do things like change marker size etc. more easily.
         JSONGrapher_data_series_object = JSONGrapherDataSeries()
         JSONGrapher_data_series_object.update_while_preserving_old_terms(data_series_dict)
         data_series_dict = JSONGrapher_data_series_object
         #Add to the JSONGrapherRecord class object's data list.
         self.fig_dict["data"].append(data_series_dict) #implied return.
-
+        
         if simulate_as_added: #will try to simulate. But because this is the default, will use a try and except rather than crash program.
             try:
                 #we use simulate_specific_data_series_by_index rather than just the simulate funciton because we want unit scaling and clearing of labels as needed.
@@ -1476,6 +1485,14 @@ class JSONGrapherRecord:
                 data_series_dict = simulate_specific_data_series_by_index(fig_dict=self.fig_dict, data_series_index=data_series_index)
             except Exception as e: # This is so VS code pylint does not flag this line. pylint: disable=broad-except, disable=unused-variable
                 pass
+
+        if evaluate_equations_as_added:
+            try:
+                index = len(self.fig_dict["data"]) - 1
+                self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, index)
+            except Exception:
+                pass
+
         return data_series_dict
 
     def add_data_series_as_simulation(self, series_name,graphical_dimensionality, x_values=None,y_values=None, simulate_dict=None,simulate_as_added=True,comments="",trace_style=None,uid="",line=None,extra_fields=None):
@@ -1491,8 +1508,8 @@ class JSONGrapherRecord:
             graphical_dimensionality (int): Indicates how the simulation should be visualized.
             x_values (list, optional): List of x-axis values. Defaults to empty list if None.
             y_values (list, optional): List of y-axis values. Defaults to empty list if None.
-            simulate_dict (dict, optional): Dictionary containing simulation metadata. 
-                Will be initialized if not provided. The key 'graphical_dimensionality' 
+            simulate_dict (dict, optional): Dictionary containing simulation metadata.
+                Will be initialized if not provided. The key 'graphical_dimensionality'
                 is always set based on the input.
             simulate_as_added (bool, optional): Whether to mark the simulation as added. Defaults to True.
             comments (str, optional): Additional notes or annotations for the data_series.
@@ -1530,8 +1547,8 @@ class JSONGrapherRecord:
         """
         Adds an equation-style data_series using the `add_data_series` method.
 
-        This method incorporates the equation metadata into extra_fields and 
-        optionally evaluates the equations immediately after adding the data_series.
+        This method acts as a wrapper, preparing the equation-specific arguments and passing
+        them to the core `add_data_series` function for processing.
 
         Args:
             series_name (str): Name of the data_series to be added.
@@ -1540,7 +1557,7 @@ class JSONGrapherRecord:
             y_values (list, optional): List of y-axis values. Defaults to an empty list.
             equation_dict (dict, optional): Dictionary representing equation metadata.
                 The key 'graphical_dimensionality' is automatically set.
-            evaluate_equations_as_added (bool, optional): Whether to evaluate the equation 
+            evaluate_equations_as_added (bool, optional): Whether to evaluate the equation
                 immediately after adding. Defaults to True.
             comments (str, optional): Additional notes or annotations for the data_series.
             trace_style (dict, optional): Dictionary specifying visual trace_style.
@@ -1561,13 +1578,8 @@ class JSONGrapherRecord:
         # Add required key
         equation_dict["graphical_dimensionality"] = int(graphical_dimensionality)
 
-        # Prepare extra_fields with equation dict
-        if extra_fields is None:
-            extra_fields = {}
-        extra_fields["equation"] = equation_dict
-
-        # Add the series
-        data_series = self.add_data_series(
+        # The function now wraps the core function, passing all arguments, including the new `equation` and `evaluate_equations_as_added` parameters.
+        return self.add_data_series(
             series_name=series_name,
             x_values=x_values,
             y_values=y_values,
@@ -1575,19 +1587,10 @@ class JSONGrapherRecord:
             trace_style=trace_style,
             uid=uid,
             line=line,
-            extra_fields=extra_fields
+            extra_fields=extra_fields,
+            equation=equation_dict,
+            evaluate_equations_as_added=evaluate_equations_as_added,
         )
-
-        # Evaluate if required
-        if evaluate_equations_as_added:
-            try:
-                index = len(self.fig_dict["data"]) - 1
-                self.fig_dict = evaluate_equation_for_data_series_by_index(self.fig_dict, index)
-            except Exception:
-                pass
-
-        return data_series
-
         
     def change_data_series_name(self, series_index, series_name):
         """

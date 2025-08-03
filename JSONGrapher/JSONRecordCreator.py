@@ -1179,7 +1179,7 @@ class JSONGrapherRecord:
         populate_from_existing_record: Populates the attributes from an existing JSONGrapher record.
     """
 
-    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_style ="", layout=None, existing_JSONGrapher_record=None):
+    def __init__(self, comments="", graph_title="", datatype="", data_objects_list = None, simulate_as_added = True, evaluate_equations_as_added = True, x_data=None, y_data=None, x_axis_label_including_units="", y_axis_label_including_units ="", plot_style=None, layout=None, existing_JSONGrapher_record=None):
         """
         Initializes a JSONGrapherRecord object that represents a structured fig_dict for graphing.
 
@@ -1241,8 +1241,8 @@ class JSONGrapherRecord:
             }
             )
 
-        if plot_style !="":
-            self.fig_dict["plot_style"] = plot_style
+        if plot_style is None: #should not initialize mutable objects in arguments line, so doing here.
+            plot_style = {"layout_style": "", "trace_styles_collection": ""}  # Fresh dictionary per function call
         if simulate_as_added:  # Will try to simulate, but because this is the default, will use a try-except rather than crash the program.
             try:
                 self.fig_dict = simulate_as_needed_in_fig_dict(self.fig_dict)

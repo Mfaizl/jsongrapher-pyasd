@@ -16,17 +16,15 @@ jobs:
           pip install sphinx sphinx_rtd_theme
       - name: Generate .rst files from source code
         run: |
-          cd docs
-          sphinx-apidoc -o source ../JSONGrapher -f
-
+          cd docs/source
+          sphinx-apidoc -o . ../../JSONGrapher -f
       - name: Build Sphinx docs
         run: |
           cd docs/source
-              sphinx-apidoc -o . ../../JSONGrapher -f
-              python -m sphinx -b html . ../build/html
+          python -m sphinx -b html . ../build/html
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/sphinx-doc-setup' }}  # set for sphinx branch
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/sphinx-doc-setup' }}
         with:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -6,13 +6,12 @@ Welcome to the documentation for **JSONGrapher**, a Python package for visualizi
 Get Started
 -----------
 
-- [GitHub Repository](https://github.com/AdityaSavara/jsongrapher-py)
-- [Installation Guide](install)
-- [API Reference](modules)
+- `GitHub Repository <https://github.com/Mfaizl/jsongrapher-py>`_
+- Installation Guide (coming soon)
+- API Reference
 
 .. toctree::
-:maxdepth: 2
-:caption: Navigation:
+   :maxdepth: 2
+   :caption: Navigation:
 
-install
-modules
+   source/modules

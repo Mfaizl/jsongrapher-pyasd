@@ -21,9 +21,9 @@ jobs:
 
       - name: Build Sphinx docs
         run: |
-          cd docs
-          sphinx-apidoc -o ./source ../JSONGrapher -f
-          python -m sphinx -b html source build/html
+          cd docs/source
+              sphinx-apidoc -o . ../../JSONGrapher -f
+              python -m sphinx -b html . ../build/html
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/sphinx-doc-setup' }}  # set for sphinx branch

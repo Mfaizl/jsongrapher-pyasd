@@ -12,8 +12,8 @@ release = '0.1'
 
 # Extensions to enable
 extensions = [
-    'sphinx.ext.napoleon',
-    'sphinx.ext.autodoc'
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autodoc"
 ]
 
 # HTML theme to use

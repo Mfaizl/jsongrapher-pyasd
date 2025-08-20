@@ -1,19 +1,15 @@
-JSONGrapher Documentation
-==========================
+.. JsonGrapher-py documentation master file
 
-Welcome to the documentation for **JSONGrapher**, a Python package for visualizing and transforming JSON data for graph-based analysis.
-
-Get Started
------------
-
-- 📦 [GitHub Repository](https://github.com/Mfaizl/jsongrapher-py)
-- 📖 [Installation Guide](install)
-- 🧪 [API Reference](modules)
+Welcome to JsonGrapher-py
+=========================
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
+   :hidden:
 
-   jsongrapher/index
-
-   install
    modules
+
+.. raw:: html
+
+   <meta http-equiv="Refresh" content="0; url=modules.html">

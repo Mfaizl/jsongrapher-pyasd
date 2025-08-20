@@ -10,9 +10,10 @@ Get Started
 - 📖 [Installation Guide](install)
 - 🧪 [API Reference](modules)
 
-.. toctree::		
-   :maxdepth: 1
-   :caption: Navigation:
+.. toctree::
+   :maxdepth: 2
+
+   jsongrapher/index
 
    install
    modules

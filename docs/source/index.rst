@@ -11,7 +11,7 @@ Get Started
 - 🧪 [API Reference](modules)
 
 .. toctree::		
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Navigation:
 
    install

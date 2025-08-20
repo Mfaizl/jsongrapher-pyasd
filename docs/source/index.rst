@@ -14,5 +14,4 @@ Get Started
 :maxdepth: 2
 :caption: Navigation:
 
-install
 modules

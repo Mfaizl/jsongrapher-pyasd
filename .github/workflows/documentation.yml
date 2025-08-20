@@ -17,7 +17,7 @@ jobs:
       - name: Generate .rst files from source code
         run: |
           cd docs/source
-          sphinx-apidoc -o . ../../JSONGrapher -f
+          sphinx-apidoc -o . ../JSONGrapher -f
       - name: Build Sphinx docs
         run: |
           cd docs/source

@@ -1,16 +1,15 @@
 JsonGrapher
 ===========
 
-Welcome to JSONGrapher’s Documentation!
----------------------------------------
+Welcome to **JsonGrapher’s Documentation**!
 
-JSONGrapher is a Python library for visualizing and working with JSON data through graph-based structures.  
-This documentation provides tutorials, guides, troubleshooting help, FAQs, and a full API reference.
+JsonGrapher is a Python library for visualizing and working with JSON data
+through graph-based structures. It lets you load JSON files, create graph views,
+and interact with the data programmatically or visually.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents
-   :titlesonly:
 
    installation
    tutorials

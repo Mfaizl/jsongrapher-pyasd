@@ -1,75 +1,38 @@
 .. JSONGrapher documentation master file
 
+JSONGrapher
+===========
+
 Welcome to JSONGrapher’s Documentation
-======================================
+--------------------------------------
 
-JSONGrapher is a Python library for visualizing and working with JSON data
-through graph-based structures.  
-This documentation provides tutorials, guides, and full API reference.
+JSONGrapher is a Python library for visualizing and working with JSON data through graph-based structures.  
+This documentation provides tutorials, guides, and a full API reference.
 
-.. image:: _static/logo.png
+.. image:: _static/json_grapher_logo.png
    :alt: JSONGrapher Logo
    :align: center
    :width: 200px
 
-----
-
-Installation
-============
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Installation
-
-   install
-
-Tutorials
-=========
 
 .. toctree::
    :maxdepth: 2
-   :caption: Tutorials
+   :caption: Contents
 
-   tutorials/getting_started
-   tutorials/examples
+   installation
+   tutorials/index
+   guides/index
+   reference/index
+   troubleshooting
+   faq
 
-Topic Guides
-============
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Topic Guides
-
-   guides/usage
-   guides/architecture
-   guides/faq
-
-Reference
-=========
 
 .. toctree::
    :maxdepth: 3
-   :caption: Reference
+   :caption: API Reference
    :glob:
 
-   modules
    JSONGrapher/*
 
-Troubleshooting
-===============
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Troubleshooting
-
-   troubleshooting/common_issues
-   troubleshooting/debugging
-
-Frequently Asked Questions
-==========================
-
-.. toctree::
-   :maxdepth: 1
-   :caption: FAQ
-
-   faq
+--------

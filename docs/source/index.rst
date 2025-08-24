@@ -1,5 +1,3 @@
-.. JsonGrapher documentation master file
-
 JsonGrapher
 ===========
 
@@ -10,8 +8,8 @@ JSONGrapher is a Python library for visualizing and working with JSON data throu
 This documentation provides tutorials, guides, troubleshooting help, FAQs, and a full API reference.
 
 .. toctree::
-   :caption: Contents
    :maxdepth: 2
+   :caption: Contents
    :titlesonly:
 
    installation

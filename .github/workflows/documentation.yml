@@ -10,21 +10,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
-      - name: Install dependencies
+        with:
+          python-version: "3.x"
+
+      - name: Install Python dependencies
         run: |
           pip install sphinx sphinx_rtd_theme sphinx-js
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node dependencies
+        run: |
+          npm install -g jsdoc
+
       - name: Checkout JSONGrapher (JavaScript repo)
         run: |
           git clone https://github.com/AdityaSavara/JSONGrapher js_src
-      - name: Generate .rst files from source code
+
+      - name: Generate .rst files from Python source code
         run: |
           cd docs/source
           sphinx-apidoc -o . ../../JSONGrapher -f
+
       - name: Build Sphinx docs
         run: |
           cd docs/source
           python -m sphinx -b html . ../build/html
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/sphinx-doc-setup' }}

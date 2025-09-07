@@ -29,3 +29,4 @@ Contents
    reference
    troubleshooting
    faq
+   javascript

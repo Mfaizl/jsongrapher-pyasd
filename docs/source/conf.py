@@ -20,7 +20,7 @@ extensions = [
 js_source_path = ["../js_src/src"]
 root_for_relative_js_paths = "../js_src/src"
 
-js_language = "javascript"
+js_language = "typescript"
 
 # HTML theme to use
 html_theme = 'sphinx_rtd_theme'

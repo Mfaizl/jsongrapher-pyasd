@@ -18,7 +18,8 @@ extensions = [
 ]
 
 js_source_path = ["../js_src/src"]
-root_for_relative_js_paths = "../js_src"
+root_for_relative_js_paths = "../js_src/src"
+
 js_language = "javascript"
 
 # HTML theme to use

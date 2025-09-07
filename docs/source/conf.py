@@ -18,7 +18,7 @@ extensions = [
 ]
 
 js_source_path = [
-    "../js_src/src/fileUtils.js",
+    "../js_src/src/index.js",
 ]
 
 root_for_relative_js_paths = "../js_src/src"

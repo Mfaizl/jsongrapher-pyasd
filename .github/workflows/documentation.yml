@@ -29,7 +29,7 @@ jobs:
 
       - name: Checkout JSONGrapher (JavaScript repo)
         run: |
-          git clone https://github.com/AdityaSavara/JSONGrapher js_src
+          git clone https://github.com/AdityaSavara/JSONGrapher docs/js_src
 
       - name: Generate .rst files from Python source code
         run: |

@@ -13,8 +13,12 @@ release = '0.1'
 # Extensions to enable
 extensions = [
     "sphinx.ext.napoleon",
-    "sphinx.ext.autodoc"
+    "sphinx.ext.autodoc",
+    "sphinx_js",
 ]
+
+# Path to your JavaScript source files (we’ll set this up in a moment)
+js_source_path = ['../js_src']
 
 # HTML theme to use
 html_theme = 'sphinx_rtd_theme'

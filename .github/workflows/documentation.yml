@@ -14,8 +14,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_rtd_theme
-      - name: Checkout JS repo
-        run: git clone https://github.com/yourname/your-js-repo js_src
+      - name: Checkout JSONGrapher (JavaScript repo)
+        run: |
+          git clone https://github.com/AdityaSavara/JSONGrapher js_src
       - name: Generate .rst files from source code
         run: |
           cd docs/source

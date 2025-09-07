@@ -17,10 +17,14 @@ extensions = [
     "sphinx_js",
 ]
 
-js_source_path = ["../js_src/src"]
-root_for_relative_js_paths = "../js_src/src"
+js_source_path = [
+    "../js_src/src/fileUtils.js",
+    "../js_src/src/index.js",
+    "../js_src/src/plottingUtils.js",
+    # add only safe files here
+]
 
-js_language = "Javascript"
+root_for_relative_js_paths = "../js_src/src"
 
 # HTML theme to use
 html_theme = 'sphinx_rtd_theme'

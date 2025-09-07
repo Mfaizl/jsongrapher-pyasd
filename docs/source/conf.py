@@ -17,8 +17,8 @@ extensions = [
     "sphinx_js",
 ]
 
-js_source_path = ["../src"]
-root_for_relative_js_paths = "../src"
+js_source_path = ["../js_src/src"]
+root_for_relative_js_paths = "../js_src/src"
 
 # HTML theme to use
 html_theme = 'sphinx_rtd_theme'

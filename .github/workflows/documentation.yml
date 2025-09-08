@@ -1,6 +1,10 @@
 name: documentation
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main   # only run on push to main
+  workflow_dispatch:  # still allow manual trigger
 
 permissions:
   contents: write
@@ -10,28 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
 
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: |
-          pip install sphinx sphinx_rtd_theme sphinx-js
+          pip install sphinx sphinx_rtd_theme
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Node dependencies
-        run: |
-          npm install -g jsdoc
-
-      - name: Checkout JSONGrapher (JavaScript repo)
-        run: |
-          git clone https://github.com/AdityaSavara/JSONGrapher docs/js_src
-
-      - name: Generate .rst files from Python source code
+      - name: Generate .rst files from source code
         run: |
           cd docs/source
           sphinx-apidoc -o . ../../JSONGrapher -f
@@ -43,7 +32,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/sphinx-doc-setup' }}
+        if: ${{ github.ref == 'refs/heads/main' }}   # deploy only when on main
         with:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}

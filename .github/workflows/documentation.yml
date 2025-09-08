@@ -1,10 +1,6 @@
 name: documentation
 
-on:
-  push:
-    branches:
-      - main   # only run on push to main
-  workflow_dispatch:  # still allow manual trigger
+on: [push, pull_request, workflow_dispatch]
 
 permissions:
   contents: write
@@ -15,24 +11,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_rtd_theme
-
       - name: Generate .rst files from source code
         run: |
           cd docs/source
           sphinx-apidoc -o . ../../JSONGrapher -f
-
       - name: Build Sphinx docs
         run: |
           cd docs/source
           python -m sphinx -b html . ../build/html
-
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.ref == 'refs/heads/main' }}   # deploy only when on main
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/sphinx-doc-setup' }}
         with:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}

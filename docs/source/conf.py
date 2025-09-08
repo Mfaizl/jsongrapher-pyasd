@@ -14,14 +14,10 @@ release = '0.1'
 extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
-    "sphinx_js",
+    
 ]
 
-js_source_path = [
-    "../js_src/src/config.js",
-]
 
-root_for_relative_js_paths = "../js_src/src"
 
 # HTML theme to use
 html_theme = 'sphinx_rtd_theme'
